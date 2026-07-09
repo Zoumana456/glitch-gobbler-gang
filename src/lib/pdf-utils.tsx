@@ -13,29 +13,29 @@ import { formatLongDate } from "./date-utils";
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 44,
     fontFamily: "Helvetica",
     fontSize: 11,
     color: "#1f2937",
-    lineHeight: 1.55,
+    lineHeight: 1.65,
   },
-  header: { marginBottom: 24, borderBottom: "2 solid #2563eb", paddingBottom: 12 },
+  header: { marginBottom: 28, borderBottom: "2 solid #2563eb", paddingBottom: 14 },
   date: { fontSize: 10, color: "#6b7280", marginBottom: 4 },
   title: { fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 6 },
   author: { fontSize: 10, color: "#6b7280" },
-  section: { marginBottom: 18 },
+  section: { marginBottom: 26 },
   h2: {
     fontSize: 14,
     fontWeight: 700,
-    marginTop: 8,
-    marginBottom: 10,
+    marginTop: 6,
+    marginBottom: 12,
     color: "#111827",
   },
-  para: { marginBottom: 8, textAlign: "justify" },
-  bullet: { flexDirection: "row", marginBottom: 6 },
+  para: { marginBottom: 12, textAlign: "justify" },
+  bullet: { flexDirection: "row", marginBottom: 10 },
   bulletDot: { width: 12 },
   bulletText: { flex: 1 },
-  imageRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+  imageRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
   image: { width: 160, height: 120, objectFit: "cover", borderRadius: 4 },
 });
 
