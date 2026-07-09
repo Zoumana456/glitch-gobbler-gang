@@ -72,6 +72,34 @@ function ReportsListPage() {
   const [toDelete, setToDelete] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const rows = query.data ?? [];
+    const q = search.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) =>
+      [r.title, r.intro, r.author_name].filter(Boolean).some((s) =>
+        s.toLowerCase().includes(q),
+      ),
+    );
+  }, [query.data, search]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, { label: string; items: typeof filtered }>();
+    for (const r of filtered) {
+      const d = parseISO(r.report_date);
+      const key = format(d, "yyyy-MM");
+      const label = format(d, "LLLL yyyy", { locale: fr });
+      const cap = label.charAt(0).toUpperCase() + label.slice(1);
+      if (!map.has(key)) map.set(key, { label: cap, items: [] });
+      map.get(key)!.items.push(r);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => (a < b ? 1 : -1))
+      .map(([key, v]) => ({ key, ...v }));
+  }, [filtered]);
+
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => del({ data: { id } }),
