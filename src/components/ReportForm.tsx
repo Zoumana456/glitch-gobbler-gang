@@ -600,6 +600,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
                 onAdd={(files) => handleAddImages(files, sIdx)}
                 onRemove={(k) => removeImage(sIdx, k)}
                 onView={(idx) => setLightbox({ images: section.images, index: idx })}
+                onCaptionChange={(k, c) => updateImageCaption(sIdx, k, c)}
               />
             </CardContent>
           </Card>
@@ -650,6 +651,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
             onAdd={(files) => handleAddImages(files, null)}
             onRemove={(k) => removeImage(null, k)}
             onView={(idx) => setLightbox({ images: form.general_images, index: idx })}
+            onCaptionChange={(k, c) => updateImageCaption(null, k, c)}
           />
         </CardContent>
       </Card>
