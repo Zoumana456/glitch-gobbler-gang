@@ -40,7 +40,7 @@ function RichText({ text }: { text: string }) {
   const paras = text.split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
   if (paras.length === 0) return null;
   return (
-    <div className="space-y-3 text-foreground/90 leading-relaxed">
+    <div className="space-y-5 text-foreground/90 leading-relaxed">
       {paras.map((p, i) => (
         <p key={i} className="whitespace-pre-wrap">
           {p}
@@ -133,7 +133,7 @@ function ReportDetailPage() {
   const isMine = r.author_id === user.id;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="ghost" asChild>
           <Link to="/reports">
@@ -197,13 +197,13 @@ function ReportDetailPage() {
       )}
 
       {r.sections.map((s) => (
-        <section key={s.id} className="space-y-3">
+        <section key={s.id} className="space-y-4">
           <h2 className="text-xl font-semibold">{s.title || "Section"}</h2>
           {s.description && <RichText text={s.description} />}
           {s.bullets.length > 0 && (
-            <ul className="list-disc pl-6 space-y-2">
+            <ul className="list-disc pl-6 space-y-3">
               {s.bullets.map((b) => (
-                <li key={b.id}>{b.content}</li>
+                <li key={b.id} className="leading-relaxed">{b.content}</li>
               ))}
             </ul>
           )}
