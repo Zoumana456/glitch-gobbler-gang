@@ -319,6 +319,9 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
       );
       return { ...prev, sections };
     });
+  }
+
+
 
   function addSection() {
     setForm((prev) => ({
