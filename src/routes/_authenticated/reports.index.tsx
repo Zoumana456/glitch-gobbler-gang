@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { formatLongDate } from "@/lib/date-utils";
 import { downloadReportPdf, shareReportPdf, downloadReportsBundle } from "@/lib/pdf-utils";
 import {
@@ -16,6 +17,7 @@ import {
   Pencil,
   Trash2,
   Eye,
+  Search,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -34,10 +36,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { parseISO, format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
   head: () => ({
