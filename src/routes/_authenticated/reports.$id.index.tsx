@@ -40,7 +40,7 @@ function RichText({ text }: { text: string }) {
   const paras = text.split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
   if (paras.length === 0) return null;
   return (
-    <div className="space-y-3 text-foreground/90 leading-relaxed">
+    <div className="space-y-5 text-foreground/90 leading-relaxed">
       {paras.map((p, i) => (
         <p key={i} className="whitespace-pre-wrap">
           {p}
