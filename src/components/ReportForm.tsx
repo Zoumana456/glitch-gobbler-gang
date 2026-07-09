@@ -684,42 +684,49 @@ function ImagesGrid({
   onAdd,
   onRemove,
   onView,
+  onCaptionChange,
 }: {
   images: FormImage[];
   onAdd: (files: FileList) => void;
   onRemove: (key: string) => void;
   onView: (index: number) => void;
+  onCaptionChange: (key: string, caption: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {images.map((img, idx) => (
-          <div
-            key={img.key}
-            className="relative group aspect-square rounded-md overflow-hidden bg-muted border border-border"
-          >
-            {img.url && (
-              <img
-                src={img.url}
-                alt=""
-                className="w-full h-full object-cover cursor-zoom-in"
-                onClick={() => onView(idx)}
-              />
-            )}
-            {img.uploading && (
-              <div className="absolute inset-0 bg-background/60 grid place-items-center">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => onRemove(img.key)}
-              className="absolute top-1 right-1 rounded-full bg-black/60 text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-              aria-label="Supprimer"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+          <div key={img.key} className="space-y-1.5">
+            <div className="relative group aspect-square rounded-md overflow-hidden bg-muted border border-border">
+              {img.url && (
+                <img
+                  src={img.url}
+                  alt={img.caption || ""}
+                  className="w-full h-full object-cover cursor-zoom-in"
+                  onClick={() => onView(idx)}
+                />
+              )}
+              {img.uploading && (
+                <div className="absolute inset-0 bg-background/60 grid place-items-center">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => onRemove(img.key)}
+                className="absolute top-1 right-1 rounded-full bg-black/60 text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Supprimer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <Input
+              value={img.caption}
+              onChange={(e) => onCaptionChange(img.key, e.target.value)}
+              placeholder="Titre de l'image…"
+              className="h-8 text-xs"
+            />
           </div>
         ))}
         <button
