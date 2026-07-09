@@ -302,6 +302,24 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
     });
   }
 
+  function updateImageCaption(sectionIdx: number | null, key: string, caption: string) {
+    setForm((prev) => {
+      if (sectionIdx === null) {
+        return {
+          ...prev,
+          general_images: prev.general_images.map((i) =>
+            i.key === key ? { ...i, caption } : i,
+          ),
+        };
+      }
+      const sections = prev.sections.map((s, idx) =>
+        idx === sectionIdx
+          ? { ...s, images: s.images.map((i) => (i.key === key ? { ...i, caption } : i)) }
+          : s,
+      );
+      return { ...prev, sections };
+    });
+
   function addSection() {
     setForm((prev) => ({
       ...prev,
