@@ -133,7 +133,7 @@ function ReportDetailPage() {
   const isMine = r.author_id === user.id;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="ghost" asChild>
           <Link to="/reports">
