@@ -262,7 +262,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
               .map((img) =>
                 img.key === opt.key
                   ? res
-                    ? { key: img.key, storage_path: res.storage_path, url: res.url }
+                    ? { key: img.key, storage_path: res.storage_path, url: res.url, caption: img.caption }
                     : null
                   : img,
               )
@@ -275,7 +275,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
             .map((img) =>
               img.key === opt.key
                 ? res
-                  ? { key: img.key, storage_path: res.storage_path, url: res.url }
+                  ? { key: img.key, storage_path: res.storage_path, url: res.url, caption: img.caption }
                   : null
                 : img,
             )
