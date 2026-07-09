@@ -14,10 +14,192 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      report_images: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          report_id: string
+          section_id: string | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position?: number
+          report_id: string
+          section_id?: string | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          report_id?: string
+          section_id?: string | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_images_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_images_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "report_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_sections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          position: number
+          report_id: string
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          position?: number
+          report_id: string
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          position?: number
+          report_id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_sections_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          author_id: string
+          conclusion: string | null
+          created_at: string
+          id: string
+          intro: string | null
+          report_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          conclusion?: string | null
+          created_at?: string
+          id?: string
+          intro?: string | null
+          report_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          conclusion?: string | null
+          created_at?: string
+          id?: string
+          intro?: string | null
+          report_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      section_bullets: {
+        Row: {
+          content: string
+          id: string
+          position: number
+          section_id: string
+        }
+        Insert: {
+          content?: string
+          id?: string
+          position?: number
+          section_id: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          position?: number
+          section_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "section_bullets_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "report_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          full_name?: string | null
+          id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          full_name?: string | null
+          id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
