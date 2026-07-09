@@ -18,6 +18,7 @@ const imageSchema = z.object({
   storage_path: z.string().min(1),
   section_index: z.number().int().nullable().default(null),
   position: z.number().int().default(0),
+  caption: z.string().default(""),
 });
 const sectionSchema = z.object({
   title: z.string().default(""),
@@ -101,7 +102,7 @@ export const getReport = createServerFn({ method: "GET" })
           .order("position", { ascending: true }),
         supabase
           .from("report_images")
-          .select("id, storage_path, section_id, position")
+          .select("id, storage_path, section_id, position, caption")
           .eq("report_id", data.id)
           .order("position", { ascending: true }),
       ]);
@@ -139,6 +140,7 @@ export const getReport = createServerFn({ method: "GET" })
         storage_path: img.storage_path,
         section_id: img.section_id,
         position: img.position,
+        caption: img.caption ?? "",
         url: urls[img.storage_path] ?? "",
       };
       if (img.section_id) (imagesBySection[img.section_id] ??= []).push(li);
@@ -221,6 +223,7 @@ async function persistChildren(
       img.section_index !== null ? insertedSections[img.section_index]?.id ?? null : null,
     storage_path: img.storage_path,
     position: idx,
+    caption: img.caption ?? "",
   }));
   if (imageInserts.length > 0) {
     const { error } = await supabase.from("report_images").insert(imageInserts);

@@ -3,6 +3,7 @@ export type ReportImagePayload = {
   storage_path: string;
   section_id: string | null;
   position: number;
+  caption: string;
 };
 
 export type ReportBulletPayload = {
@@ -33,6 +34,7 @@ export type LoadedImage = {
   storage_path: string;
   section_id: string | null;
   position: number;
+  caption: string;
   url: string;
 };
 
