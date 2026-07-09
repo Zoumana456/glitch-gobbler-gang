@@ -184,6 +184,17 @@ function ReportsListPage() {
         </div>
       </div>
 
+      <div className="relative mb-6 max-w-lg">
+        <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+        <Input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher par titre, intro ou auteur…"
+          className="pl-9"
+        />
+      </div>
+
       {query.isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -218,104 +229,121 @@ function ReportsListPage() {
         </Card>
       )}
 
-      {query.data && query.data.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {query.data.map((r) => {
-            const isMine = r.author_id === user.id;
-            const isSel = selected.has(r.id);
-            return (
-              <Card
-                key={r.id}
-                className={cn(
-                  "group transition-shadow hover:shadow-md relative flex flex-col",
-                  isSel && "ring-2 ring-primary",
-                )}
-              >
-                <CardContent className="p-5 flex flex-col flex-1">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={isSel}
-                        onCheckedChange={() => toggle(r.id)}
-                        aria-label="Sélectionner"
-                      />
-                      <span className="text-xs font-medium text-primary">
-                        {formatLongDate(r.report_date)}
-                      </span>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() =>
-                            navigate({
-                              to: "/reports/$id",
-                              params: { id: r.id },
-                            })
-                          }
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Voir
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDownloadOne(r.id)}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Télécharger PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleShareOne(r.id)}>
-                          <Share2 className="h-4 w-4 mr-2" />
-                          Partager
-                        </DropdownMenuItem>
-                        {isMine && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() =>
-                                navigate({
-                                  to: "/reports/$id/edit",
-                                  params: { id: r.id },
-                                })
-                              }
-                            >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Modifier
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => setToDelete(r.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Supprimer
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <Link
-                    to="/reports/$id"
-                    params={{ id: r.id }}
-                    className="text-lg font-semibold leading-snug hover:text-primary transition-colors line-clamp-2"
-                  >
-                    {r.title}
-                  </Link>
-                  {r.intro && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-2 flex-1">
-                      {r.intro}
-                    </p>
-                  )}
-                  <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
-                    Par <span className="font-medium text-foreground">{r.author_name}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+      {query.data && query.data.length > 0 && filtered.length === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Aucun rapport ne correspond à « {search} ».
+          </CardContent>
+        </Card>
       )}
+
+      {grouped.map((group) => (
+        <section key={group.key} className="mb-10">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 pb-2 border-b border-border">
+            {group.label}
+            <span className="ml-2 text-xs font-normal normal-case tracking-normal">
+              ({group.items.length})
+            </span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {group.items.map((r) => {
+              const isMine = r.author_id === user.id;
+              const isSel = selected.has(r.id);
+              return (
+                <Card
+                  key={r.id}
+                  className={cn(
+                    "group transition-shadow hover:shadow-md relative flex flex-col",
+                    isSel && "ring-2 ring-primary",
+                  )}
+                >
+                  <CardContent className="p-5 flex flex-col flex-1">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={isSel}
+                          onCheckedChange={() => toggle(r.id)}
+                          aria-label="Sélectionner"
+                        />
+                        <span className="text-xs font-medium text-primary">
+                          {formatLongDate(r.report_date)}
+                        </span>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              navigate({
+                                to: "/reports/$id",
+                                params: { id: r.id },
+                              })
+                            }
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Voir
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadOne(r.id)}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Télécharger PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShareOne(r.id)}>
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Partager
+                          </DropdownMenuItem>
+                          {isMine && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate({
+                                    to: "/reports/$id/edit",
+                                    params: { id: r.id },
+                                  })
+                                }
+                              >
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => setToDelete(r.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <Link
+                      to="/reports/$id"
+                      params={{ id: r.id }}
+                      className="text-lg font-semibold leading-snug hover:text-primary transition-colors line-clamp-2"
+                    >
+                      {r.title}
+                    </Link>
+                    {r.intro && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-2 flex-1">
+                        {r.intro}
+                      </p>
+                    )}
+                    <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
+                      Par <span className="font-medium text-foreground">{r.author_name}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
