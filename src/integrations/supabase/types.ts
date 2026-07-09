@@ -86,27 +86,27 @@ export type Database = {
       report_sections: {
         Row: {
           created_at: string
-          description: string
+          description: string | null
           id: string
           position: number
           report_id: string
-          title: string
+          title: string | null
         }
         Insert: {
           created_at?: string
-          description?: string
+          description?: string | null
           id?: string
           position?: number
           report_id: string
-          title?: string
+          title?: string | null
         }
         Update: {
           created_at?: string
-          description?: string
+          description?: string | null
           id?: string
           position?: number
           report_id?: string
-          title?: string
+          title?: string | null
         }
         Relationships: [
           {
@@ -121,30 +121,30 @@ export type Database = {
       reports: {
         Row: {
           author_id: string
-          conclusion: string
+          conclusion: string | null
           created_at: string
           id: string
-          intro: string
+          intro: string | null
           report_date: string
           title: string
           updated_at: string
         }
         Insert: {
           author_id: string
-          conclusion?: string
+          conclusion?: string | null
           created_at?: string
           id?: string
-          intro?: string
-          report_date?: string
+          intro?: string | null
+          report_date: string
           title: string
           updated_at?: string
         }
         Update: {
           author_id?: string
-          conclusion?: string
+          conclusion?: string | null
           created_at?: string
           id?: string
-          intro?: string
+          intro?: string | null
           report_date?: string
           title?: string
           updated_at?: string
@@ -154,21 +154,18 @@ export type Database = {
       section_bullets: {
         Row: {
           content: string
-          created_at: string
           id: string
           position: number
           section_id: string
         }
         Insert: {
           content?: string
-          created_at?: string
           id?: string
           position?: number
           section_id: string
         }
         Update: {
           content?: string
-          created_at?: string
           id?: string
           position?: number
           section_id?: string
