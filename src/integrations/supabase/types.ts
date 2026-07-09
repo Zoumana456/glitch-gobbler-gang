@@ -43,6 +43,7 @@ export type Database = {
       }
       report_images: {
         Row: {
+          caption: string
           created_at: string
           id: string
           position: number
@@ -51,6 +52,7 @@ export type Database = {
           storage_path: string
         }
         Insert: {
+          caption?: string
           created_at?: string
           id?: string
           position?: number
@@ -59,6 +61,7 @@ export type Database = {
           storage_path: string
         }
         Update: {
+          caption?: string
           created_at?: string
           id?: string
           position?: number
