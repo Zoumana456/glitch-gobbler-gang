@@ -37,6 +37,7 @@ type FormImage = {
   key: string;
   storage_path: string;
   url: string;
+  caption: string;
   uploading?: boolean;
 };
 type FormSection = {
@@ -76,12 +77,14 @@ function fromReport(r: LoadedReport): FormState {
         key: nextKey(),
         storage_path: i.storage_path,
         url: i.url,
+        caption: i.caption ?? "",
       })),
     })),
     general_images: r.general_images.map((i) => ({
       key: nextKey(),
       storage_path: i.storage_path,
       url: i.url,
+      caption: i.caption ?? "",
     })),
   };
 }
@@ -145,6 +148,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
                 storage_path: img.storage_path,
                 section_index: sIdx,
                 position: pos,
+                caption: img.caption ?? "",
               })),
           ),
           ...form.general_images
@@ -153,6 +157,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
               storage_path: img.storage_path,
               section_index: null as number | null,
               position: pos,
+              caption: img.caption ?? "",
             })),
         ],
       };
@@ -233,6 +238,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
       key: nextKey(),
       storage_path: "",
       url: URL.createObjectURL(f),
+      caption: "",
       uploading: true,
     }));
     setForm((prev) => {
