@@ -197,13 +197,13 @@ function ReportDetailPage() {
       )}
 
       {r.sections.map((s) => (
-        <section key={s.id} className="space-y-3">
+        <section key={s.id} className="space-y-4">
           <h2 className="text-xl font-semibold">{s.title || "Section"}</h2>
           {s.description && <RichText text={s.description} />}
           {s.bullets.length > 0 && (
-            <ul className="list-disc pl-6 space-y-2">
+            <ul className="list-disc pl-6 space-y-3">
               {s.bullets.map((b) => (
-                <li key={b.id}>{b.content}</li>
+                <li key={b.id} className="leading-relaxed">{b.content}</li>
               ))}
             </ul>
           )}
