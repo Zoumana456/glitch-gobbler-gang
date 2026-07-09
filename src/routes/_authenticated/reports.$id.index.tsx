@@ -210,23 +210,29 @@ function ReportDetailPage() {
           {s.images.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {s.images.map((img, idx) => (
-                <button
-                  key={img.id}
-                  type="button"
-                  onClick={() =>
-                    setLightbox({
-                      images: s.images.map((i) => ({ id: i.id, url: i.url })),
-                      index: idx,
-                    })
-                  }
-                  className="aspect-square rounded-md overflow-hidden bg-muted border border-border"
-                >
-                  <img
-                    src={img.url}
-                    alt=""
-                    className="w-full h-full object-cover hover:scale-105 transition-transform"
-                  />
-                </button>
+                <figure key={img.id} className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLightbox({
+                        images: s.images.map((i) => ({ id: i.id, url: i.url })),
+                        index: idx,
+                      })
+                    }
+                    className="block w-full aspect-square rounded-md overflow-hidden bg-muted border border-border"
+                  >
+                    <img
+                      src={img.url}
+                      alt={img.caption || ""}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform"
+                    />
+                  </button>
+                  {img.caption && (
+                    <figcaption className="text-xs text-muted-foreground text-center leading-snug">
+                      {img.caption}
+                    </figcaption>
+                  )}
+                </figure>
               ))}
             </div>
           )}
@@ -245,23 +251,29 @@ function ReportDetailPage() {
           <h2 className="text-xl font-semibold mb-2">Images</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {r.general_images.map((img, idx) => (
-              <button
-                key={img.id}
-                type="button"
-                onClick={() =>
-                  setLightbox({
-                    images: r.general_images.map((i) => ({ id: i.id, url: i.url })),
-                    index: idx,
-                  })
-                }
-                className="aspect-square rounded-md overflow-hidden bg-muted border border-border"
-              >
-                <img
-                  src={img.url}
-                  alt=""
-                  className="w-full h-full object-cover hover:scale-105 transition-transform"
-                />
-              </button>
+              <figure key={img.id} className="space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightbox({
+                      images: r.general_images.map((i) => ({ id: i.id, url: i.url })),
+                      index: idx,
+                    })
+                  }
+                  className="block w-full aspect-square rounded-md overflow-hidden bg-muted border border-border"
+                >
+                  <img
+                    src={img.url}
+                    alt={img.caption || ""}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform"
+                  />
+                </button>
+                {img.caption && (
+                  <figcaption className="text-xs text-muted-foreground text-center leading-snug">
+                    {img.caption}
+                  </figcaption>
+                )}
+              </figure>
             ))}
           </div>
         </section>

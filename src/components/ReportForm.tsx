@@ -37,6 +37,7 @@ type FormImage = {
   key: string;
   storage_path: string;
   url: string;
+  caption: string;
   uploading?: boolean;
 };
 type FormSection = {
@@ -76,12 +77,14 @@ function fromReport(r: LoadedReport): FormState {
         key: nextKey(),
         storage_path: i.storage_path,
         url: i.url,
+        caption: i.caption ?? "",
       })),
     })),
     general_images: r.general_images.map((i) => ({
       key: nextKey(),
       storage_path: i.storage_path,
       url: i.url,
+      caption: i.caption ?? "",
     })),
   };
 }
@@ -145,6 +148,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
                 storage_path: img.storage_path,
                 section_index: sIdx,
                 position: pos,
+                caption: img.caption ?? "",
               })),
           ),
           ...form.general_images
@@ -153,6 +157,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
               storage_path: img.storage_path,
               section_index: null as number | null,
               position: pos,
+              caption: img.caption ?? "",
             })),
         ],
       };
@@ -233,6 +238,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
       key: nextKey(),
       storage_path: "",
       url: URL.createObjectURL(f),
+      caption: "",
       uploading: true,
     }));
     setForm((prev) => {
@@ -256,7 +262,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
               .map((img) =>
                 img.key === opt.key
                   ? res
-                    ? { key: img.key, storage_path: res.storage_path, url: res.url }
+                    ? { key: img.key, storage_path: res.storage_path, url: res.url, caption: img.caption }
                     : null
                   : img,
               )
@@ -269,7 +275,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
             .map((img) =>
               img.key === opt.key
                 ? res
-                  ? { key: img.key, storage_path: res.storage_path, url: res.url }
+                  ? { key: img.key, storage_path: res.storage_path, url: res.url, caption: img.caption }
                   : null
                 : img,
             )
@@ -295,6 +301,27 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
       return { ...prev, sections };
     });
   }
+
+  function updateImageCaption(sectionIdx: number | null, key: string, caption: string) {
+    setForm((prev) => {
+      if (sectionIdx === null) {
+        return {
+          ...prev,
+          general_images: prev.general_images.map((i) =>
+            i.key === key ? { ...i, caption } : i,
+          ),
+        };
+      }
+      const sections = prev.sections.map((s, idx) =>
+        idx === sectionIdx
+          ? { ...s, images: s.images.map((i) => (i.key === key ? { ...i, caption } : i)) }
+          : s,
+      );
+      return { ...prev, sections };
+    });
+  }
+
+
 
   function addSection() {
     setForm((prev) => ({
@@ -573,6 +600,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
                 onAdd={(files) => handleAddImages(files, sIdx)}
                 onRemove={(k) => removeImage(sIdx, k)}
                 onView={(idx) => setLightbox({ images: section.images, index: idx })}
+                onCaptionChange={(k, c) => updateImageCaption(sIdx, k, c)}
               />
             </CardContent>
           </Card>
@@ -623,6 +651,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
             onAdd={(files) => handleAddImages(files, null)}
             onRemove={(k) => removeImage(null, k)}
             onView={(idx) => setLightbox({ images: form.general_images, index: idx })}
+            onCaptionChange={(k, c) => updateImageCaption(null, k, c)}
           />
         </CardContent>
       </Card>
@@ -655,42 +684,49 @@ function ImagesGrid({
   onAdd,
   onRemove,
   onView,
+  onCaptionChange,
 }: {
   images: FormImage[];
   onAdd: (files: FileList) => void;
   onRemove: (key: string) => void;
   onView: (index: number) => void;
+  onCaptionChange: (key: string, caption: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {images.map((img, idx) => (
-          <div
-            key={img.key}
-            className="relative group aspect-square rounded-md overflow-hidden bg-muted border border-border"
-          >
-            {img.url && (
-              <img
-                src={img.url}
-                alt=""
-                className="w-full h-full object-cover cursor-zoom-in"
-                onClick={() => onView(idx)}
-              />
-            )}
-            {img.uploading && (
-              <div className="absolute inset-0 bg-background/60 grid place-items-center">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => onRemove(img.key)}
-              className="absolute top-1 right-1 rounded-full bg-black/60 text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-              aria-label="Supprimer"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+          <div key={img.key} className="space-y-1.5">
+            <div className="relative group aspect-square rounded-md overflow-hidden bg-muted border border-border">
+              {img.url && (
+                <img
+                  src={img.url}
+                  alt={img.caption || ""}
+                  className="w-full h-full object-cover cursor-zoom-in"
+                  onClick={() => onView(idx)}
+                />
+              )}
+              {img.uploading && (
+                <div className="absolute inset-0 bg-background/60 grid place-items-center">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => onRemove(img.key)}
+                className="absolute top-1 right-1 rounded-full bg-black/60 text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Supprimer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <Input
+              value={img.caption}
+              onChange={(e) => onCaptionChange(img.key, e.target.value)}
+              placeholder="Titre de l'image…"
+              className="h-8 text-xs"
+            />
           </div>
         ))}
         <button

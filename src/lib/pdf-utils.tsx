@@ -36,7 +36,9 @@ const styles = StyleSheet.create({
   bulletDot: { width: 12 },
   bulletText: { flex: 1 },
   imageRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
+  imageBox: { width: 160, marginBottom: 6 },
   image: { width: 160, height: 120, objectFit: "cover", borderRadius: 4 },
+  imageCaption: { fontSize: 9, color: "#4b5563", marginTop: 3, textAlign: "center" },
 });
 
 function splitParagraphs(text: string): string[] {
@@ -95,7 +97,12 @@ function ReportPdfDocument({ report }: { report: LoadedReport }) {
               <View style={styles.imageRow}>
                 {s.images.map((img) =>
                   img.url ? (
-                    <Image key={img.id} src={img.url} style={styles.image} />
+                    <View key={img.id} style={styles.imageBox}>
+                      <Image src={img.url} style={styles.image} />
+                      {img.caption ? (
+                        <Text style={styles.imageCaption}>{img.caption}</Text>
+                      ) : null}
+                    </View>
                   ) : null,
                 )}
               </View>
@@ -115,7 +122,14 @@ function ReportPdfDocument({ report }: { report: LoadedReport }) {
             <Text style={styles.h2}>Images</Text>
             <View style={styles.imageRow}>
               {report.general_images.map((img) =>
-                img.url ? <Image key={img.id} src={img.url} style={styles.image} /> : null,
+                img.url ? (
+                  <View key={img.id} style={styles.imageBox}>
+                    <Image src={img.url} style={styles.image} />
+                    {img.caption ? (
+                      <Text style={styles.imageCaption}>{img.caption}</Text>
+                    ) : null}
+                  </View>
+                ) : null,
               )}
             </View>
           </View>

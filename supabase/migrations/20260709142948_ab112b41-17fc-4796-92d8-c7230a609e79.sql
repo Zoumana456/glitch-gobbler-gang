@@ -1,0 +1,1 @@
+ALTER TABLE public.report_images ADD COLUMN IF NOT EXISTS caption text NOT NULL DEFAULT '';
