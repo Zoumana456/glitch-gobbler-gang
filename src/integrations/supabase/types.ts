@@ -129,6 +129,7 @@ export type Database = {
           id: string
           intro: string | null
           report_date: string
+          share_token: string | null
           title: string
           updated_at: string
         }
@@ -139,6 +140,7 @@ export type Database = {
           id?: string
           intro?: string | null
           report_date: string
+          share_token?: string | null
           title: string
           updated_at?: string
         }
@@ -149,6 +151,7 @@ export type Database = {
           id?: string
           intro?: string | null
           report_date?: string
+          share_token?: string | null
           title?: string
           updated_at?: string
         }
