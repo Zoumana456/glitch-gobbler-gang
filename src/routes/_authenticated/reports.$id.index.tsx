@@ -77,6 +77,10 @@ function ReportDetailPage() {
   const queryClient = useQueryClient();
   const fetchOne = useServerFn(getReport);
   const del = useServerFn(deleteReport);
+  const dup = useServerFn(duplicateReport);
+  const getToken = useServerFn(getShareToken);
+  const enable = useServerFn(enableShare);
+  const revoke = useServerFn(revokeShare);
 
   const query = useQuery({
     queryKey: ["report", id],
@@ -87,6 +91,25 @@ function ReportDetailPage() {
   const [confirm, setConfirm] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const shareUrl =
+    shareToken && typeof window !== "undefined"
+      ? `${window.location.origin}/share/${shareToken}`
+      : "";
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    setShareLoading(true);
+    getToken({ data: { id } })
+      .then((r) => setShareToken(r.token))
+      .catch(() => setShareToken(null))
+      .finally(() => setShareLoading(false));
+  }, [shareOpen, id, getToken]);
 
   const deleteMut = useMutation({
     mutationFn: () => del({ data: { id } }),
@@ -120,6 +143,57 @@ function ReportDetailPage() {
       setSharing(false);
     }
   }
+
+  async function handleDuplicate() {
+    setDuplicating(true);
+    try {
+      const res = await dup({ data: { id } });
+      toast.success("Rapport dupliqué");
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      navigate({ to: "/reports/$id/edit", params: { id: res.id } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Duplication impossible");
+    } finally {
+      setDuplicating(false);
+    }
+  }
+
+  async function handleEnableShare() {
+    setShareLoading(true);
+    try {
+      const r = await enable({ data: { id } });
+      setShareToken(r.token);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Impossible d'activer le partage");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function handleRevokeShare() {
+    setShareLoading(true);
+    try {
+      await revoke({ data: { id } });
+      setShareToken(null);
+      toast.success("Lien révoqué");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Impossible de révoquer");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function copyShareUrl() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      toast.error("Copie impossible");
+    }
+  }
+
 
   if (query.isLoading) {
     return (
