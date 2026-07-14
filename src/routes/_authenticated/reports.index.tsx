@@ -73,17 +73,19 @@ function ReportsListPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [scope, setScope] = useState<"all" | "mine">("all");
 
   const filtered = useMemo(() => {
     const rows = query.data ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) =>
-      [r.title, r.intro, r.author_name].filter(Boolean).some((s) =>
-        s.toLowerCase().includes(q),
-      ),
-    );
-  }, [query.data, search]);
+    return rows.filter((r) => {
+      if (scope === "mine" && r.author_id !== user.id) return false;
+      if (!q) return true;
+      return [r.title, r.intro, r.author_name]
+        .filter(Boolean)
+        .some((s) => s.toLowerCase().includes(q));
+    });
+  }, [query.data, search, scope, user.id]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { label: string; items: typeof filtered }>();
