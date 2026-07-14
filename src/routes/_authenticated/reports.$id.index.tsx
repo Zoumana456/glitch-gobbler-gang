@@ -250,7 +250,19 @@ function ReportDetailPage() {
             ) : (
               <Share2 className="h-4 w-4 mr-2" />
             )}
-            Partager
+            Partager PDF
+          </Button>
+          <Button variant="outline" onClick={() => setShareOpen(true)}>
+            <LinkIcon className="h-4 w-4 mr-2" />
+            Lien de partage
+          </Button>
+          <Button variant="outline" onClick={handleDuplicate} disabled={duplicating}>
+            {duplicating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Copy className="h-4 w-4 mr-2" />
+            )}
+            Dupliquer
           </Button>
           {isMine && (
             <>
