@@ -92,6 +92,18 @@ function ReportPdfDocument({ report }: { report: LoadedReport }) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <View fixed style={styles.runningHeader}>
+          <Text>{report.title}</Text>
+          <Text>{formatLongDate(report.report_date)}</Text>
+        </View>
+        <View fixed style={styles.runningFooter}>
+          <Text>Par {report.author_name}</Text>
+          <Text
+            render={({ pageNumber, totalPages }) =>
+              `${pageNumber} / ${totalPages}`
+            }
+          />
+        </View>
         <View style={styles.header}>
           <Text style={styles.date}>{formatLongDate(report.report_date)}</Text>
           <Text style={styles.title}>{report.title}</Text>
