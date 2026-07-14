@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
@@ -38,6 +39,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareTokenRoute = ShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/share/$token': typeof ShareTokenRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/share/$token': typeof ShareTokenRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/share/$token': typeof ShareTokenRoute
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/profile'
+    | '/share/$token'
     | '/reports/$id'
     | '/reports/new'
     | '/reports/'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/profile'
+    | '/share/$token'
     | '/reports/new'
     | '/reports'
     | '/reports/$id/edit'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/_authenticated/profile'
+    | '/share/$token'
     | '/_authenticated/reports/$id'
     | '/_authenticated/reports/new'
     | '/_authenticated/reports/'
@@ -160,6 +172,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ShareTokenRoute: typeof ShareTokenRoute
   ApiPublicAiTranscribeRoute: typeof ApiPublicAiTranscribeRoute
 }
 
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/$token': {
+      id: '/share/$token'
+      path: '/share/$token'
+      fullPath: '/share/$token'
+      preLoaderRoute: typeof ShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/profile': {
@@ -283,6 +303,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ShareTokenRoute: ShareTokenRoute,
   ApiPublicAiTranscribeRoute: ApiPublicAiTranscribeRoute,
 }
 export const routeTree = rootRouteImport

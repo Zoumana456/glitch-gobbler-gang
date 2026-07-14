@@ -1,7 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getReport, deleteReport } from "@/lib/reports.functions";
+import {
+  getReport,
+  deleteReport,
+  duplicateReport,
+  getShareToken,
+  enableShare,
+  revokeShare,
+} from "@/lib/reports.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,10 +19,13 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  Copy,
+  Link as LinkIcon,
+  Check,
 } from "lucide-react";
 import { formatLongDate } from "@/lib/date-utils";
 import { Lightbox } from "@/components/Lightbox";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { downloadReportPdf, shareReportPdf } from "@/lib/pdf-utils";
 import {
@@ -28,6 +38,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+
 
 export const Route = createFileRoute("/_authenticated/reports/$id/")({
   head: ({ params }) => ({
