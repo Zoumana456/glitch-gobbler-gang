@@ -413,6 +413,53 @@ function ReportDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lien de partage en lecture seule</DialogTitle>
+            <DialogDescription>
+              Toute personne disposant de ce lien pourra consulter le rapport, sans se connecter.
+            </DialogDescription>
+          </DialogHeader>
+          {shareLoading ? (
+            <div className="py-4 flex items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : shareToken ? (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Input readOnly value={shareUrl} onFocus={(e) => e.currentTarget.select()} />
+                <Button type="button" onClick={copyShareUrl} variant="outline">
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              {isMine && (
+                <Button variant="ghost" className="text-destructive" onClick={handleRevokeShare}>
+                  Révoquer le lien
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Aucun lien actif pour ce rapport.
+              </p>
+              {isMine && (
+                <Button onClick={handleEnableShare}>
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                  Générer un lien
+                </Button>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareOpen(false)}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
