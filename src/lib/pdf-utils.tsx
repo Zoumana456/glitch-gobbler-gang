@@ -13,11 +13,37 @@ import { formatLongDate } from "./date-utils";
 
 const styles = StyleSheet.create({
   page: {
-    padding: 44,
+    paddingTop: 64,
+    paddingBottom: 56,
+    paddingHorizontal: 44,
     fontFamily: "Helvetica",
     fontSize: 11,
     color: "#1f2937",
     lineHeight: 1.65,
+  },
+  runningHeader: {
+    position: "absolute",
+    top: 24,
+    left: 44,
+    right: 44,
+    fontSize: 9,
+    color: "#6b7280",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderBottom: "1 solid #e5e7eb",
+    paddingBottom: 6,
+  },
+  runningFooter: {
+    position: "absolute",
+    bottom: 24,
+    left: 44,
+    right: 44,
+    fontSize: 9,
+    color: "#9ca3af",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTop: "1 solid #e5e7eb",
+    paddingTop: 6,
   },
   header: { marginBottom: 28, borderBottom: "2 solid #2563eb", paddingBottom: 14 },
   date: { fontSize: 10, color: "#6b7280", marginBottom: 4 },
@@ -66,6 +92,18 @@ function ReportPdfDocument({ report }: { report: LoadedReport }) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <View fixed style={styles.runningHeader}>
+          <Text>{report.title}</Text>
+          <Text>{formatLongDate(report.report_date)}</Text>
+        </View>
+        <View fixed style={styles.runningFooter}>
+          <Text>Par {report.author_name}</Text>
+          <Text
+            render={({ pageNumber, totalPages }) =>
+              `${pageNumber} / ${totalPages}`
+            }
+          />
+        </View>
         <View style={styles.header}>
           <Text style={styles.date}>{formatLongDate(report.report_date)}</Text>
           <Text style={styles.title}>{report.title}</Text>

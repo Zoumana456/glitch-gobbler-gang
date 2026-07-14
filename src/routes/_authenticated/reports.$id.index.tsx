@@ -1,7 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getReport, deleteReport } from "@/lib/reports.functions";
+import {
+  getReport,
+  deleteReport,
+  duplicateReport,
+  getShareToken,
+  enableShare,
+  revokeShare,
+} from "@/lib/reports.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,10 +19,13 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  Copy,
+  Link as LinkIcon,
+  Check,
 } from "lucide-react";
 import { formatLongDate } from "@/lib/date-utils";
 import { Lightbox } from "@/components/Lightbox";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { downloadReportPdf, shareReportPdf } from "@/lib/pdf-utils";
 import {
@@ -28,6 +38,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+
 
 export const Route = createFileRoute("/_authenticated/reports/$id/")({
   head: ({ params }) => ({
@@ -57,6 +77,10 @@ function ReportDetailPage() {
   const queryClient = useQueryClient();
   const fetchOne = useServerFn(getReport);
   const del = useServerFn(deleteReport);
+  const dup = useServerFn(duplicateReport);
+  const getToken = useServerFn(getShareToken);
+  const enable = useServerFn(enableShare);
+  const revoke = useServerFn(revokeShare);
 
   const query = useQuery({
     queryKey: ["report", id],
@@ -67,6 +91,25 @@ function ReportDetailPage() {
   const [confirm, setConfirm] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const shareUrl =
+    shareToken && typeof window !== "undefined"
+      ? `${window.location.origin}/share/${shareToken}`
+      : "";
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    setShareLoading(true);
+    getToken({ data: { id } })
+      .then((r) => setShareToken(r.token))
+      .catch(() => setShareToken(null))
+      .finally(() => setShareLoading(false));
+  }, [shareOpen, id, getToken]);
 
   const deleteMut = useMutation({
     mutationFn: () => del({ data: { id } }),
@@ -100,6 +143,57 @@ function ReportDetailPage() {
       setSharing(false);
     }
   }
+
+  async function handleDuplicate() {
+    setDuplicating(true);
+    try {
+      const res = await dup({ data: { id } });
+      toast.success("Rapport dupliqué");
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      navigate({ to: "/reports/$id/edit", params: { id: res.id } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Duplication impossible");
+    } finally {
+      setDuplicating(false);
+    }
+  }
+
+  async function handleEnableShare() {
+    setShareLoading(true);
+    try {
+      const r = await enable({ data: { id } });
+      setShareToken(r.token);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Impossible d'activer le partage");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function handleRevokeShare() {
+    setShareLoading(true);
+    try {
+      await revoke({ data: { id } });
+      setShareToken(null);
+      toast.success("Lien révoqué");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Impossible de révoquer");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function copyShareUrl() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      toast.error("Copie impossible");
+    }
+  }
+
 
   if (query.isLoading) {
     return (
@@ -156,7 +250,19 @@ function ReportDetailPage() {
             ) : (
               <Share2 className="h-4 w-4 mr-2" />
             )}
-            Partager
+            Partager PDF
+          </Button>
+          <Button variant="outline" onClick={() => setShareOpen(true)}>
+            <LinkIcon className="h-4 w-4 mr-2" />
+            Lien de partage
+          </Button>
+          <Button variant="outline" onClick={handleDuplicate} disabled={duplicating}>
+            {duplicating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Copy className="h-4 w-4 mr-2" />
+            )}
+            Dupliquer
           </Button>
           {isMine && (
             <>
@@ -307,6 +413,53 @@ function ReportDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lien de partage en lecture seule</DialogTitle>
+            <DialogDescription>
+              Toute personne disposant de ce lien pourra consulter le rapport, sans se connecter.
+            </DialogDescription>
+          </DialogHeader>
+          {shareLoading ? (
+            <div className="py-4 flex items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : shareToken ? (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Input readOnly value={shareUrl} onFocus={(e) => e.currentTarget.select()} />
+                <Button type="button" onClick={copyShareUrl} variant="outline">
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              {isMine && (
+                <Button variant="ghost" className="text-destructive" onClick={handleRevokeShare}>
+                  Révoquer le lien
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Aucun lien actif pour ce rapport.
+              </p>
+              {isMine && (
+                <Button onClick={handleEnableShare}>
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                  Générer un lien
+                </Button>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareOpen(false)}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

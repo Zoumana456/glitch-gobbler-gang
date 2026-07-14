@@ -73,17 +73,19 @@ function ReportsListPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [scope, setScope] = useState<"all" | "mine">("all");
 
   const filtered = useMemo(() => {
     const rows = query.data ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) =>
-      [r.title, r.intro, r.author_name].filter(Boolean).some((s) =>
-        s.toLowerCase().includes(q),
-      ),
-    );
-  }, [query.data, search]);
+    return rows.filter((r) => {
+      if (scope === "mine" && r.author_id !== user.id) return false;
+      if (!q) return true;
+      return [r.title, r.intro, r.author_name]
+        .filter(Boolean)
+        .some((s) => s.toLowerCase().includes(q));
+    });
+  }, [query.data, search, scope, user.id]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { label: string; items: typeof filtered }>();
@@ -184,15 +186,43 @@ function ReportsListPage() {
         </div>
       </div>
 
-      <div className="relative mb-6 max-w-lg">
-        <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-        <Input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher par titre, intro ou auteur…"
-          className="pl-9"
-        />
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[220px] max-w-lg">
+          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher par titre, intro ou auteur…"
+            className="pl-9"
+          />
+        </div>
+        <div className="inline-flex rounded-md border border-border bg-background p-0.5">
+          <button
+            type="button"
+            onClick={() => setScope("all")}
+            className={cn(
+              "px-3 py-1.5 text-sm rounded-sm transition-colors",
+              scope === "all"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            Tous
+          </button>
+          <button
+            type="button"
+            onClick={() => setScope("mine")}
+            className={cn(
+              "px-3 py-1.5 text-sm rounded-sm transition-colors",
+              scope === "mine"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            Mes rapports
+          </button>
+        </div>
       </div>
 
       {query.isLoading && (

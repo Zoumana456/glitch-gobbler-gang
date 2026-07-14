@@ -1,35 +1,41 @@
 
-## Objectif
+# Plan d'améliorations
 
-Confirmer que les pages principales (`/`, `/auth`, `/reports`) du site publié https://glitch-gobbler-gang.lovable.app se chargent correctement, avant et après authentification, sans erreurs runtime.
+Basé sur tes choix (UX & design + Collaboration & partage) plus mes suggestions.
 
-## Étapes de vérification (Playwright headless)
+## 1. UX & design de la liste des rapports
+- Cartes de rapport plus soignées : vignette de la 1re image en aperçu, badge date, nom de l'auteur avec avatar.
+- Filtres rapides : « Mes rapports » / « Tous », plus filtre par auteur.
+- Compteur de résultats et état vide illustré quand la recherche ne renvoie rien.
+- En-têtes de mois « collants » (sticky) lors du scroll.
 
-1. **Anonyme — chargement public**
-   - Ouvrir `https://glitch-gobbler-gang.lovable.app/` → doit rediriger vers `/reports`, qui est protégée, donc rediriger vers `/auth` (via `_authenticated/route.tsx`).
-   - Ouvrir `https://glitch-gobbler-gang.lovable.app/auth` → page connexion visible (form email + bouton Google).
-   - Ouvrir `https://glitch-gobbler-gang.lovable.app/reports` → doit rediriger vers `/auth`.
-   - Capturer console errors + network 4xx/5xx.
-   - Screenshots à chaque étape.
+## 2. Mise en page PDF plus pro
+- Page de couverture avec titre, date en toutes lettres, auteur.
+- En-tête/pied de page sur chaque page (titre du rapport à gauche, pagination « 2 / 8 » à droite).
+- Images légendées centrées avec cadre léger + légende en italique.
+- Puces avec vrai retrait et interligne aéré, éviter les coupures de section en bas de page.
 
-2. **Authentifié — après login**
-   - Utiliser la session Supabase gérée si `LOVABLE_BROWSER_AUTH_STATUS=injected` sur l'URL de production. Sinon créer un compte de test via l'UI (email/password) ou demander à l'utilisateur des identifiants.
-   - Après injection de session / login, naviguer vers `/` → doit rediriger vers `/reports` et afficher la liste.
-   - Naviguer vers `/reports` directement → page liste rapports rendue.
-   - Vérifier appels serverFn (`listReports`) : headers `Authorization: Bearer …` présents, réponses 200.
-   - Rafraîchir `/reports` (hard reload) pour confirmer que la route protégée survit à un refresh.
-   - Screenshots + console + network log.
+## 3. Collaboration & partage
+- **Bouton « Dupliquer »** sur un rapport (copie titre + sections + puces, sans les images, prêt à éditer).
+- **Lien de partage en lecture seule** : jeton unique par rapport → route publique `/share/:token` affichant le rapport sans nav ni édition. Révocable depuis la page rapport.
+- **Export en un clic** : bouton « Télécharger le PDF » déjà présent, ajouter « Copier le lien de partage ».
 
-3. **Diagnostic**
-   - Si une page échoue : lire console, network, HTML rendu, et identifier la cause (SSR crash, redirect loop, bearer manquant, 401 serverFn, module server-only leaké, etc.).
-   - Rapporter précisément la ou les pages qui posent problème et l'erreur exacte.
+## 4. Suggestions supplémentaires (mes ajouts)
+- **Autosave brouillon** dans le formulaire (localStorage) pour ne rien perdre en cas de fermeture accidentelle.
+- **Réordonnancement** des sections et des puces par flèches ↑ ↓ (simple, pas de drag & drop pour rester léger).
+- **Aperçu image en grand** (lightbox) déjà présent — j'ajoute la navigation clavier ← → entre images.
+- **Indicateur de sauvegarde** (« Enregistré à 14:32 ») après un enregistrement réussi.
 
-## Livrable
+## Détails techniques
+- Nouvelle colonne `reports.share_token` (text, nullable, unique) + politique RLS `SELECT` publique quand `share_token = <param>`.
+- Route publique `src/routes/share.$token.tsx` (SSR autorisé, pas de garde d'auth).
+- Server fn `duplicateReport` sous `_authenticated` qui recopie sections + bullets.
+- Refonte `pdf-utils.tsx` : page de couverture + `Page` fixe avec `fixed` header/footer via `@react-pdf/renderer`.
+- Composant `ReportCard` extrait pour la liste, avec vignette signée via URL déjà résolue côté serveur.
 
-Rapport résumé avec, pour chaque page et chaque état (anonyme / authentifié) :
-- statut HTTP final, URL finale
-- rendu visuel (screenshot)
-- erreurs console/network éventuelles
-- verdict OK / KO + cause si KO
+## Ce que je NE change pas
+- La logique métier de génération/édition existante.
+- Le schéma de sections/puces/images.
+- Les règles RLS déjà durcies (auteur uniquement).
 
-Aucune modification de code n'est prévue dans ce plan — uniquement de la vérification. Si un bug est détecté, je reviendrai avec un plan de correction ciblé.
+Dis-moi si je retire, ajoute ou réordonne des points avant que je passe en build.
