@@ -1,41 +1,57 @@
 
-# Plan d'améliorations
+## 1. Base de données (migration)
 
-Basé sur tes choix (UX & design + Collaboration & partage) plus mes suggestions.
+- **`reports`**: ajouter `share_expires_at TIMESTAMPTZ NULL`.
+- **`share_audit_log`** (nouvelle table):
+  - `report_id` (fk reports), `actor_id` (uuid, nullable pour anon), `action` TEXT (`created` | `copied` | `revoked` | `regenerated` | `viewed` | `exported`), `ip` TEXT nullable, `user_agent` TEXT nullable, `created_at`.
+  - GRANT: `SELECT` pour `authenticated` (RLS filtrera par `author_id`), `ALL` pour `service_role`. Pas d'accès `anon`.
+  - RLS: seul l'auteur du rapport lié peut lire (`EXISTS (SELECT 1 FROM reports WHERE reports.id = share_audit_log.report_id AND reports.author_id = auth.uid())`). Insertions uniquement via `supabaseAdmin` server-side.
+- **`getSharedReport`** met à jour la RLS anon existante pour rejeter les rapports avec `share_expires_at < now()`.
 
-## 1. UX & design de la liste des rapports
-- Cartes de rapport plus soignées : vignette de la 1re image en aperçu, badge date, nom de l'auteur avec avatar.
-- Filtres rapides : « Mes rapports » / « Tous », plus filtre par auteur.
-- Compteur de résultats et état vide illustré quand la recherche ne renvoie rien.
-- En-têtes de mois « collants » (sticky) lors du scroll.
+## 2. Server functions (`src/lib/reports.functions.ts`)
 
-## 2. Mise en page PDF plus pro
-- Page de couverture avec titre, date en toutes lettres, auteur.
-- En-tête/pied de page sur chaque page (titre du rapport à gauche, pagination « 2 / 8 » à droite).
-- Images légendées centrées avec cadre léger + légende en italique.
-- Puces avec vrai retrait et interligne aéré, éviter les coupures de section en bas de page.
+- **`enableShare`** accepte `expiresInDays?: number` (null = pas d'expiration), écrit `share_expires_at`, journalise `created` ou `regenerated` (si un token existait déjà).
+- **`revokeShare`** journalise `revoked`.
+- **`logShareEvent`** nouvelle fn authentifiée pour `copied`.
+- **`getShareToken`** retourne aussi `expires_at`.
+- **`getSharedReport`** (public):
+  - Refuse si `share_expires_at` est passé (throw "Lien expiré").
+  - Journalise `viewed` via `supabaseAdmin` (best-effort, capture IP via `getRequest()` headers).
+- **`logSharedExport`** (public, prend token) — journalise `exported`.
+- **`getShareAuditLog`** (auth) — retourne l'historique pour le propriétaire.
 
-## 3. Collaboration & partage
-- **Bouton « Dupliquer »** sur un rapport (copie titre + sections + puces, sans les images, prêt à éditer).
-- **Lien de partage en lecture seule** : jeton unique par rapport → route publique `/share/:token` affichant le rapport sans nav ni édition. Révocable depuis la page rapport.
-- **Export en un clic** : bouton « Télécharger le PDF » déjà présent, ajouter « Copier le lien de partage ».
+## 3. UI — Dialogue de partage (`reports.$id.index.tsx`)
 
-## 4. Suggestions supplémentaires (mes ajouts)
-- **Autosave brouillon** dans le formulaire (localStorage) pour ne rien perdre en cas de fermeture accidentelle.
-- **Réordonnancement** des sections et des puces par flèches ↑ ↓ (simple, pas de drag & drop pour rester léger).
-- **Aperçu image en grand** (lightbox) déjà présent — j'ajoute la navigation clavier ← → entre images.
-- **Indicateur de sauvegarde** (« Enregistré à 14:32 ») après un enregistrement réussi.
+- Sélecteur d'expiration lors de la génération: **Aucune / 24h / 7j / 30j / Personnalisé**.
+- Affichage: URL, badge "Expire le JJ/MM/YYYY" (ou "Sans expiration"), état "Expiré" si dépassé avec bouton régénérer.
+- Bouton **Régénérer** (revoke + enable) qui journalise `regenerated`.
+- Bouton **Copier** appelle `logShareEvent('copied')`.
+- Section **Historique d'activité** (repliable) listant les 20 derniers événements (icône + date + action + IP tronquée).
+
+## 4. Vue publique enrichie (`src/routes/share.$token.tsx`)
+
+- **En-tête sticky** avec titre, auteur, date + bouton PDF (déjà présent, journalise `exported`).
+- **Table des matières** latérale (desktop) / accordéon (mobile) listant les sections avec ancres de navigation.
+- **Lightbox paginée**: navigation ← → clavier (déjà partiellement dans `Lightbox`), indicateur "3 / 12".
+- **États vides** cohérents: sections sans contenu = message discret; rapport sans images = pas de bloc vide.
+- **Écran "Lien expiré"** distinct de "Lien invalide" (basé sur le message d'erreur).
+- **Footer** de la page publique: "Rapport partagé en lecture seule · Généré via Lovable Rapports".
+- Mode lecture seule cohérent: aucune action de mutation, focus visible pour navigation clavier.
+
+## 5. PDF export sur la vue publique
+
+Déjà présent (`downloadReportPdf(query.data)`). Ajouter l'appel `logSharedExport({ token })` avant/après téléchargement pour tracer.
 
 ## Détails techniques
-- Nouvelle colonne `reports.share_token` (text, nullable, unique) + politique RLS `SELECT` publique quand `share_token = <param>`.
-- Route publique `src/routes/share.$token.tsx` (SSR autorisé, pas de garde d'auth).
-- Server fn `duplicateReport` sous `_authenticated` qui recopie sections + bullets.
-- Refonte `pdf-utils.tsx` : page de couverture + `Page` fixe avec `fixed` header/footer via `@react-pdf/renderer`.
-- Composant `ReportCard` extrait pour la liste, avec vignette signée via URL déjà résolue côté serveur.
 
-## Ce que je NE change pas
-- La logique métier de génération/édition existante.
-- Le schéma de sections/puces/images.
-- Les règles RLS déjà durcies (auteur uniquement).
+- Le composant `Lightbox` supporte déjà `onChange`; ajouter le compteur "index/total" dans son rendu si absent.
+- La table des matières utilise `id={sectionSlug}` sur chaque `<section>` et scroll doux.
+- Toutes les insertions d'audit passent par `supabaseAdmin` chargé dynamiquement dans le handler (respect règle `.functions.ts`).
+- Aucun changement au client Supabase généré.
 
-Dis-moi si je retire, ajoute ou réordonne des points avant que je passe en build.
+## Ordre de livraison
+
+1. Migration (table audit + colonne expiration).
+2. Server functions (expiration, audit, régénération).
+3. Dialogue de partage enrichi.
+4. Vue publique enrichie + journalisation export/view.

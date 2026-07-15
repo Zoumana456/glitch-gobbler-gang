@@ -8,6 +8,8 @@ import {
   getShareToken,
   enableShare,
   revokeShare,
+  logShareCopy,
+  getShareAuditLog,
 } from "@/lib/reports.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +24,9 @@ import {
   Copy,
   Link as LinkIcon,
   Check,
+  RefreshCcw,
+  Clock,
+  History,
 } from "lucide-react";
 import { formatLongDate } from "@/lib/date-utils";
 import { Lightbox } from "@/components/Lightbox";
@@ -47,17 +52,29 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/reports/$id/")({
-  head: ({ params }) => ({
-    meta: [{ title: `Rapport — Lovable Rapports`, }, { name: "robots", content: "noindex" }],
+  head: () => ({
+    meta: [
+      { title: `Rapport — Lovable Rapports` },
+      { name: "robots", content: "noindex" },
+    ],
   }),
   component: ReportDetailPage,
 });
 
 function RichText({ text }: { text: string }) {
-  const paras = text.split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
+  const paras = text
+    .split(/\n\s*\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (paras.length === 0) return null;
   return (
     <div className="space-y-5 text-foreground/90 leading-relaxed">
@@ -68,6 +85,34 @@ function RichText({ text }: { text: string }) {
       ))}
     </div>
   );
+}
+
+const EXPIRATION_OPTIONS: { value: string; label: string; days: number | null }[] =
+  [
+    { value: "none", label: "Sans expiration", days: null },
+    { value: "1", label: "24 heures", days: 1 },
+    { value: "7", label: "7 jours", days: 7 },
+    { value: "30", label: "30 jours", days: 30 },
+    { value: "90", label: "90 jours", days: 90 },
+  ];
+
+function actionLabel(action: string): string {
+  switch (action) {
+    case "created":
+      return "Lien créé";
+    case "regenerated":
+      return "Lien régénéré";
+    case "revoked":
+      return "Lien révoqué";
+    case "copied":
+      return "Lien copié";
+    case "viewed":
+      return "Consultation";
+    case "exported":
+      return "Export PDF";
+    default:
+      return action;
+  }
 }
 
 function ReportDetailPage() {
@@ -81,35 +126,58 @@ function ReportDetailPage() {
   const getToken = useServerFn(getShareToken);
   const enable = useServerFn(enableShare);
   const revoke = useServerFn(revokeShare);
+  const logCopy = useServerFn(logShareCopy);
+  const fetchAudit = useServerFn(getShareAuditLog);
 
   const query = useQuery({
     queryKey: ["report", id],
     queryFn: () => fetchOne({ data: { id } }),
   });
 
-  const [lightbox, setLightbox] = useState<{ images: { url: string; id: string }[]; index: number } | null>(null);
+  const [lightbox, setLightbox] = useState<{
+    images: { url: string; id: string }[];
+    index: number;
+  } | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareExpires, setShareExpires] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [expirationChoice, setExpirationChoice] = useState<string>("7");
+  const [showAudit, setShowAudit] = useState(false);
 
   const shareUrl =
     shareToken && typeof window !== "undefined"
       ? `${window.location.origin}/share/${shareToken}`
       : "";
 
+  const isExpired =
+    !!shareExpires && new Date(shareExpires).getTime() < Date.now();
+
   useEffect(() => {
     if (!shareOpen) return;
     setShareLoading(true);
     getToken({ data: { id } })
-      .then((r) => setShareToken(r.token))
-      .catch(() => setShareToken(null))
+      .then((r) => {
+        setShareToken(r.token);
+        setShareExpires(r.expires_at);
+      })
+      .catch(() => {
+        setShareToken(null);
+        setShareExpires(null);
+      })
       .finally(() => setShareLoading(false));
   }, [shareOpen, id, getToken]);
+
+  const auditQuery = useQuery({
+    queryKey: ["share-audit", id],
+    queryFn: () => fetchAudit({ data: { id } }),
+    enabled: shareOpen && showAudit,
+  });
 
   const deleteMut = useMutation({
     mutationFn: () => del({ data: { id } }),
@@ -161,8 +229,14 @@ function ReportDetailPage() {
   async function handleEnableShare() {
     setShareLoading(true);
     try {
-      const r = await enable({ data: { id } });
+      const opt = EXPIRATION_OPTIONS.find((o) => o.value === expirationChoice);
+      const r = await enable({
+        data: { id, expiresInDays: opt?.days ?? null },
+      });
       setShareToken(r.token);
+      setShareExpires(r.expires_at);
+      queryClient.invalidateQueries({ queryKey: ["share-audit", id] });
+      toast.success("Lien de partage généré");
     } catch (e: any) {
       toast.error(e?.message ?? "Impossible d'activer le partage");
     } finally {
@@ -170,11 +244,17 @@ function ReportDetailPage() {
     }
   }
 
+  async function handleRegenerate() {
+    await handleEnableShare();
+  }
+
   async function handleRevokeShare() {
     setShareLoading(true);
     try {
       await revoke({ data: { id } });
       setShareToken(null);
+      setShareExpires(null);
+      queryClient.invalidateQueries({ queryKey: ["share-audit", id] });
       toast.success("Lien révoqué");
     } catch (e: any) {
       toast.error(e?.message ?? "Impossible de révoquer");
@@ -189,11 +269,12 @@ function ReportDetailPage() {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
+      logCopy({ data: { id } }).catch(() => {});
+      queryClient.invalidateQueries({ queryKey: ["share-audit", id] });
     } catch {
       toast.error("Copie impossible");
     }
   }
-
 
   if (query.isLoading) {
     return (
@@ -256,7 +337,11 @@ function ReportDetailPage() {
             <LinkIcon className="h-4 w-4 mr-2" />
             Lien de partage
           </Button>
-          <Button variant="outline" onClick={handleDuplicate} disabled={duplicating}>
+          <Button
+            variant="outline"
+            onClick={handleDuplicate}
+            disabled={duplicating}
+          >
             {duplicating ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
@@ -309,7 +394,9 @@ function ReportDetailPage() {
           {s.bullets.length > 0 && (
             <ul className="list-disc pl-6 space-y-3">
               {s.bullets.map((b) => (
-                <li key={b.id} className="leading-relaxed">{b.content}</li>
+                <li key={b.id} className="leading-relaxed">
+                  {b.content}
+                </li>
               ))}
             </ul>
           )}
@@ -321,7 +408,10 @@ function ReportDetailPage() {
                     type="button"
                     onClick={() =>
                       setLightbox({
-                        images: s.images.map((i) => ({ id: i.id, url: i.url })),
+                        images: s.images.map((i) => ({
+                          id: i.id,
+                          url: i.url,
+                        })),
                         index: idx,
                       })
                     }
@@ -362,7 +452,10 @@ function ReportDetailPage() {
                   type="button"
                   onClick={() =>
                     setLightbox({
-                      images: r.general_images.map((i) => ({ id: i.id, url: i.url })),
+                      images: r.general_images.map((i) => ({
+                        id: i.id,
+                        url: i.url,
+                      })),
                       index: idx,
                     })
                   }
@@ -415,11 +508,12 @@ function ReportDetailPage() {
       </AlertDialog>
 
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Lien de partage en lecture seule</DialogTitle>
             <DialogDescription>
-              Toute personne disposant de ce lien pourra consulter le rapport, sans se connecter.
+              Toute personne disposant de ce lien pourra consulter le rapport,
+              sans se connecter.
             </DialogDescription>
           </DialogHeader>
           {shareLoading ? (
@@ -427,18 +521,112 @@ function ReportDetailPage() {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : shareToken ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex gap-2">
-                <Input readOnly value={shareUrl} onFocus={(e) => e.currentTarget.select()} />
+                <Input
+                  readOnly
+                  value={shareUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                />
                 <Button type="button" onClick={copyShareUrl} variant="outline">
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                {shareExpires ? (
+                  isExpired ? (
+                    <span className="text-destructive font-medium">
+                      Lien expiré le {formatLongDate(shareExpires.slice(0, 10))}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Expire le {formatLongDate(shareExpires.slice(0, 10))}
+                    </span>
+                  )
+                ) : (
+                  <span className="text-muted-foreground">Sans expiration</span>
+                )}
+              </div>
               {isMine && (
-                <Button variant="ghost" className="text-destructive" onClick={handleRevokeShare}>
-                  Révoquer le lien
-                </Button>
+                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={expirationChoice}
+                      onValueChange={setExpirationChoice}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXPIRATION_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      onClick={handleRegenerate}
+                      disabled={shareLoading}
+                    >
+                      <RefreshCcw className="h-4 w-4 mr-2" />
+                      Régénérer
+                    </Button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={handleRevokeShare}
+                  >
+                    Révoquer
+                  </Button>
+                </div>
               )}
+              <div className="border-t pt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAudit((v) => !v)}
+                  className="text-sm"
+                >
+                  <History className="h-4 w-4 mr-2" />
+                  {showAudit ? "Masquer" : "Afficher"} l'historique
+                </Button>
+                {showAudit && (
+                  <div className="mt-3 max-h-64 overflow-y-auto border rounded-md divide-y">
+                    {auditQuery.isLoading ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        Chargement…
+                      </div>
+                    ) : (auditQuery.data ?? []).length === 0 ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        Aucun événement pour l'instant.
+                      </div>
+                    ) : (
+                      (auditQuery.data ?? []).map((e) => (
+                        <div
+                          key={e.id}
+                          className="px-3 py-2 text-xs flex items-center justify-between gap-2"
+                        >
+                          <span className="font-medium">
+                            {actionLabel(e.action)}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {new Date(e.created_at).toLocaleString("fr-FR")}
+                            {e.ip ? ` · ${e.ip}` : ""}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -446,10 +634,32 @@ function ReportDetailPage() {
                 Aucun lien actif pour ce rapport.
               </p>
               {isMine && (
-                <Button onClick={handleEnableShare}>
-                  <LinkIcon className="h-4 w-4 mr-2" />
-                  Générer un lien
-                </Button>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">
+                      Expiration
+                    </label>
+                    <Select
+                      value={expirationChoice}
+                      onValueChange={setExpirationChoice}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXPIRATION_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleEnableShare}>
+                    <LinkIcon className="h-4 w-4 mr-2" />
+                    Générer un lien
+                  </Button>
+                </div>
               )}
             </div>
           )}

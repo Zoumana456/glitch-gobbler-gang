@@ -129,6 +129,7 @@ export type Database = {
           id: string
           intro: string | null
           report_date: string
+          share_expires_at: string | null
           share_token: string | null
           title: string
           updated_at: string
@@ -140,6 +141,7 @@ export type Database = {
           id?: string
           intro?: string | null
           report_date: string
+          share_expires_at?: string | null
           share_token?: string | null
           title: string
           updated_at?: string
@@ -151,6 +153,7 @@ export type Database = {
           id?: string
           intro?: string | null
           report_date?: string
+          share_expires_at?: string | null
           share_token?: string | null
           title?: string
           updated_at?: string
@@ -182,6 +185,44 @@ export type Database = {
             columns: ["section_id"]
             isOneToOne: false
             referencedRelation: "report_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      share_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          report_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          report_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          report_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_audit_log_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
             referencedColumns: ["id"]
           },
         ]

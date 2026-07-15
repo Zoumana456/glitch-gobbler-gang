@@ -408,6 +408,54 @@ function randomToken(): string {
     .slice(0, 24);
 }
 
+async function logAudit(
+  admin: any,
+  reportId: string,
+  actorId: string | null,
+  action:
+    | "created"
+    | "copied"
+    | "revoked"
+    | "regenerated"
+    | "viewed"
+    | "exported",
+  ip: string | null,
+  userAgent: string | null,
+) {
+  try {
+    await admin.from("share_audit_log").insert({
+      report_id: reportId,
+      actor_id: actorId,
+      action,
+      ip,
+      user_agent: userAgent,
+    });
+  } catch {
+    // best-effort
+  }
+}
+
+async function getRequestMeta(): Promise<{
+  ip: string | null;
+  ua: string | null;
+}> {
+  try {
+    const mod: any = await import("@tanstack/react-start/server");
+    const getHeader = mod.getRequestHeader ?? mod.getHeader;
+    const ua = getHeader?.("user-agent") ?? null;
+    const ip =
+      getHeader?.("cf-connecting-ip") ??
+      getHeader?.("x-forwarded-for") ??
+      null;
+    return {
+      ip: typeof ip === "string" ? ip.split(",")[0].trim() : null,
+      ua: typeof ua === "string" ? ua.slice(0, 300) : null,
+    };
+  } catch {
+    return { ip: null, ua: null };
+  }
+}
+
 export const getShareToken = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) =>
@@ -417,32 +465,78 @@ export const getShareToken = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data: row } = await supabase
       .from("reports")
-      .select("share_token, author_id")
+      .select("share_token, share_expires_at, author_id")
       .eq("id", data.id)
       .maybeSingle();
     if (!row) throw new Error("Rapport introuvable");
     if (row.author_id !== userId) throw new Error("Non autorisé");
-    return { token: row.share_token as string | null };
+    return {
+      token: (row.share_token as string | null) ?? null,
+      expires_at: (row.share_expires_at as string | null) ?? null,
+    };
   });
 
 export const enableShare = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string }) =>
-    z.object({ id: z.string().uuid() }).parse(data),
+  .inputValidator(
+    (data: { id: string; expiresInDays?: number | null }) =>
+      z
+        .object({
+          id: z.string().uuid(),
+          expiresInDays: z
+            .number()
+            .int()
+            .min(1)
+            .max(3650)
+            .nullable()
+            .optional(),
+        })
+        .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { data: existing } = await supabase
+      .from("reports")
+      .select("share_token, author_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!existing) throw new Error("Rapport introuvable");
+    if (existing.author_id !== userId) throw new Error("Non autorisé");
+
     const token = randomToken();
+    const expiresAt =
+      data.expiresInDays && data.expiresInDays > 0
+        ? new Date(
+            Date.now() + data.expiresInDays * 24 * 60 * 60 * 1000,
+          ).toISOString()
+        : null;
     const { data: upd, error } = await supabase
       .from("reports")
-      .update({ share_token: token })
+      .update({ share_token: token, share_expires_at: expiresAt })
       .eq("id", data.id)
       .eq("author_id", userId)
-      .select("share_token")
+      .select("share_token, share_expires_at")
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!upd) throw new Error("Non autorisé");
-    return { token: upd.share_token as string };
+
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const meta = await getRequestMeta();
+    await logAudit(
+      supabaseAdmin,
+      data.id,
+      userId,
+      existing.share_token ? "regenerated" : "created",
+      meta.ip,
+      meta.ua,
+    );
+
+    return {
+      token: upd.share_token as string,
+      expires_at: (upd.share_expires_at as string | null) ?? null,
+    };
   });
 
 export const revokeShare = createServerFn({ method: "POST" })
@@ -454,11 +548,64 @@ export const revokeShare = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { error } = await supabase
       .from("reports")
-      .update({ share_token: null })
+      .update({ share_token: null, share_expires_at: null })
       .eq("id", data.id)
       .eq("author_id", userId);
     if (error) throw new Error(error.message);
+
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const meta = await getRequestMeta();
+    await logAudit(supabaseAdmin, data.id, userId, "revoked", meta.ip, meta.ua);
     return { ok: true };
+  });
+
+export const logShareCopy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) =>
+    z.object({ id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const meta = await getRequestMeta();
+    await logAudit(supabaseAdmin, data.id, userId, "copied", meta.ip, meta.ua);
+    return { ok: true };
+  });
+
+export type ShareAuditEntry = {
+  id: string;
+  action: string;
+  actor_id: string | null;
+  ip: string | null;
+  user_agent: string | null;
+  created_at: string;
+};
+
+export const getShareAuditLog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) =>
+    z.object({ id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }): Promise<ShareAuditEntry[]> => {
+    const { supabase, userId } = context;
+    const { data: row } = await supabase
+      .from("reports")
+      .select("author_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!row || row.author_id !== userId) throw new Error("Non autorisé");
+    const { data: rows, error } = await supabase
+      .from("share_audit_log")
+      .select("id, action, actor_id, ip, user_agent, created_at")
+      .eq("report_id", data.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as ShareAuditEntry[];
   });
 
 // ---- Public read via share token ----
@@ -477,6 +624,13 @@ export const getSharedReport = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!report) throw new Error("Lien de partage invalide");
+
+    if (
+      report.share_expires_at &&
+      new Date(report.share_expires_at).getTime() < Date.now()
+    ) {
+      throw new Error("Lien expiré");
+    }
 
     const [{ data: sections }, { data: images }, { data: profile }] =
       await Promise.all([
@@ -541,6 +695,9 @@ export const getSharedReport = createServerFn({ method: "GET" })
       images: imagesBySection[s.id] ?? [],
     }));
 
+    const meta = await getRequestMeta();
+    await logAudit(supabaseAdmin, report.id, null, "viewed", meta.ip, meta.ua);
+
     return {
       id: report.id,
       author_id: report.author_id,
@@ -554,5 +711,32 @@ export const getSharedReport = createServerFn({ method: "GET" })
       updated_at: report.updated_at,
       sections: loadedSections,
       general_images: generalImages,
-    };
+      share_expires_at: (report.share_expires_at as string | null) ?? null,
+    } as LoadedReport;
   });
+
+export const logSharedExport = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string }) =>
+    z.object({ token: z.string().min(8).max(64) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { data: rep } = await supabaseAdmin
+      .from("reports")
+      .select("id, share_expires_at")
+      .eq("share_token", data.token)
+      .maybeSingle();
+    if (!rep) return { ok: false };
+    if (
+      rep.share_expires_at &&
+      new Date(rep.share_expires_at).getTime() < Date.now()
+    ) {
+      return { ok: false };
+    }
+    const meta = await getRequestMeta();
+    await logAudit(supabaseAdmin, rep.id, null, "exported", meta.ip, meta.ua);
+    return { ok: true };
+  });
+
