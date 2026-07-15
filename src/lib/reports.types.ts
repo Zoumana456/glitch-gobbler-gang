@@ -60,6 +60,7 @@ export type LoadedReport = {
   updated_at: string;
   sections: LoadedSection[];
   general_images: LoadedImage[];
+  share_expires_at?: string | null;
 };
 
 export type ReportListItem = {
