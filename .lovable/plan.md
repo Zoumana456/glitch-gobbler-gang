@@ -1,57 +1,83 @@
 
-## 1. Base de données (migration)
+## Objectif
 
-- **`reports`**: ajouter `share_expires_at TIMESTAMPTZ NULL`.
-- **`share_audit_log`** (nouvelle table):
-  - `report_id` (fk reports), `actor_id` (uuid, nullable pour anon), `action` TEXT (`created` | `copied` | `revoked` | `regenerated` | `viewed` | `exported`), `ip` TEXT nullable, `user_agent` TEXT nullable, `created_at`.
-  - GRANT: `SELECT` pour `authenticated` (RLS filtrera par `author_id`), `ALL` pour `service_role`. Pas d'accès `anon`.
-  - RLS: seul l'auteur du rapport lié peut lire (`EXISTS (SELECT 1 FROM reports WHERE reports.id = share_audit_log.report_id AND reports.author_id = auth.uid())`). Insertions uniquement via `supabaseAdmin` server-side.
-- **`getSharedReport`** met à jour la RLS anon existante pour rejeter les rapports avec `share_expires_at < now()`.
+Intégrer un assistant IA complet (Google Gemini) dans l'éditeur de rapport : conversation d'aide à la rédaction, imports multi-sources (image OCR, PDF, Word), outils one-shot (corriger, reformuler, résumer, détecter incohérences) et 8 styles de rédaction.
 
-## 2. Server functions (`src/lib/reports.functions.ts`)
+## Fournisseur & clé
 
-- **`enableShare`** accepte `expiresInDays?: number` (null = pas d'expiration), écrit `share_expires_at`, journalise `created` ou `regenerated` (si un token existait déjà).
-- **`revokeShare`** journalise `revoked`.
-- **`logShareEvent`** nouvelle fn authentifiée pour `copied`.
-- **`getShareToken`** retourne aussi `expires_at`.
-- **`getSharedReport`** (public):
-  - Refuse si `share_expires_at` est passé (throw "Lien expiré").
-  - Journalise `viewed` via `supabaseAdmin` (best-effort, capture IP via `getRequest()` headers).
-- **`logSharedExport`** (public, prend token) — journalise `exported`.
-- **`getShareAuditLog`** (auth) — retourne l'historique pour le propriétaire.
+- Ajouter le secret `GEMINI_API_KEY` (Google AI Studio) via `add_secret`.
+- Tous les appels passent par des `createServerFn` (jamais côté client).
+- Modèles :
+  - `gemini-2.5-flash` par défaut (rapide, économique) — chat, outils courts.
+  - `gemini-2.5-pro` pour "génération complète" et "détection d'incohérences".
+- Endpoint : `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key=$GEMINI_API_KEY`, format natif Gemini (`contents`/`parts`, `systemInstruction`, `responseMimeType: application/json` avec `responseSchema` pour les sorties structurées).
 
-## 3. UI — Dialogue de partage (`reports.$id.index.tsx`)
+## Architecture serveur (`src/lib/ai.functions.ts`)
 
-- Sélecteur d'expiration lors de la génération: **Aucune / 24h / 7j / 30j / Personnalisé**.
-- Affichage: URL, badge "Expire le JJ/MM/YYYY" (ou "Sans expiration"), état "Expiré" si dépassé avec bouton régénérer.
-- Bouton **Régénérer** (revoke + enable) qui journalise `regenerated`.
-- Bouton **Copier** appelle `logShareEvent('copied')`.
-- Section **Historique d'activité** (repliable) listant les 20 derniers événements (icône + date + action + IP tronquée).
+Nouvelles fonctions server (mémoire session, pas de table) :
 
-## 4. Vue publique enrichie (`src/routes/share.$token.tsx`)
+| Fonction | Entrée | Sortie | Modèle |
+|---|---|---|---|
+| `aiChat` | `{ history:[{role,parts}], userMessage, reportDraft, style }` | `{ reply, updatedDraft?, missingInfo:[] }` structuré | flash |
+| `aiExtractFromImage` | `{ base64, mimeType }` | `ExtractedReport` (OCR + structuration) | flash |
+| `aiExtractFromPdf` | `{ base64, mimeType, filename }` | `ExtractedReport` | flash (existant, réutilisé/étendu) |
+| `aiExtractFromDocx` | `{ base64, filename }` | `ExtractedReport` | flash — texte brut extrait côté serveur via `mammoth`, puis Gemini |
+| `aiImprove` | `{ text, action: "fix-fr" \| "rephrase" \| "shorten" \| "expand" }` | `{ text }` | flash |
+| `aiSummarize` | `{ report, mode: "short" \| "executive" }` | `{ summary }` | flash |
+| `aiDetectIssues` | `{ report }` | `{ issues:[{type,message,location}] }` (dates, montants, doublons, incohérences) | pro |
+| `aiApplyStyle` | `{ report, style }` | `LoadedReport`-shape reformulé | pro |
+| `aiGenerateFull` | `{ history, style }` | rapport complet structuré | pro |
 
-- **En-tête sticky** avec titre, auteur, date + bouton PDF (déjà présent, journalise `exported`).
-- **Table des matières** latérale (desktop) / accordéon (mobile) listant les sections avec ancres de navigation.
-- **Lightbox paginée**: navigation ← → clavier (déjà partiellement dans `Lightbox`), indicateur "3 / 12".
-- **États vides** cohérents: sections sans contenu = message discret; rapport sans images = pas de bloc vide.
-- **Écran "Lien expiré"** distinct de "Lien invalide" (basé sur le message d'erreur).
-- **Footer** de la page publique: "Rapport partagé en lecture seule · Généré via Lovable Rapports".
-- Mode lecture seule cohérent: aucune action de mutation, focus visible pour navigation clavier.
+Toutes utilisent `requireSupabaseAuth` (assistants réservés aux utilisateurs connectés). Historique de chat = état React, envoyé à chaque appel.
 
-## 5. PDF export sur la vue publique
+Dépendance à ajouter : `mammoth` (extraction texte DOCX, pure JS, compatible Worker).
 
-Déjà présent (`downloadReportPdf(query.data)`). Ajouter l'appel `logSharedExport({ token })` avant/après téléchargement pour tracer.
+## Frontend
 
-## Détails techniques
+### 1. Panneau de chat dans `ReportForm.tsx`
 
-- Le composant `Lightbox` supporte déjà `onChange`; ajouter le compteur "index/total" dans son rendu si absent.
-- La table des matières utilise `id={sectionSlug}` sur chaque `<section>` et scroll doux.
-- Toutes les insertions d'audit passent par `supabaseAdmin` chargé dynamiquement dans le handler (respect règle `.functions.ts`).
-- Aucun changement au client Supabase généré.
+Nouveau composant `src/components/AIAssistantPanel.tsx` (drawer/sheet à droite) :
+- Fil de messages (markdown via `react-markdown`, déjà installé sinon à ajouter).
+- Composer avec :
+  - Zone de texte + envoi.
+  - Boutons d'import : 📷 Photo, 📄 PDF, 📝 Word — déclenchent l'extraction et injectent le résultat.
+  - Bouton micro (réutilise `DictationButton` existant).
+- Sélecteur de style (8 options du cahier des charges).
+- Bouton "Générer le rapport" → appelle `aiGenerateFull` et remplit tous les champs du form.
+- Bouton "Détecter les incohérences" → liste d'issues cliquables.
 
-## Ordre de livraison
+### 2. Menu "Améliorer avec l'IA" par champ
 
-1. Migration (table audit + colonne expiration).
-2. Server functions (expiration, audit, régénération).
-3. Dialogue de partage enrichi.
-4. Vue publique enrichie + journalisation export/view.
+Petit menu ✨ à côté du titre / intro / conclusion / descriptions de section avec :
+Corriger le français · Reformuler · Version courte · Version longue · Résumé exécutif (sur le rapport entier).
+
+### 3. Sélecteur de style global
+
+Nouveau champ en haut du formulaire (Select) : Administratif, Technique, Chantier, Intervention, Maintenance, Mission, Visite, Audit. Utilisé par `aiGenerateFull` et `aiApplyStyle`. Non persisté en base au V1.
+
+## Structure enrichie du rapport
+
+Le cahier des charges cite : Titre, Objet, Contexte, Description, Observations, Analyse, Recommandations, Conclusion.
+
+Le modèle actuel a : `title`, `intro`, `sections[]`, `conclusion`. On mappe la structure demandée sur des **sections préréglées** que l'IA remplit (`title` = "Contexte", "Observations", "Analyse", "Recommandations", etc.), plus `intro` = Objet et `conclusion` = Conclusion. Aucune migration schéma nécessaire.
+
+## Limites & gestion d'erreurs
+
+- Fichier max côté client : 15 Mo image, 20 Mo PDF/DOCX (Gemini inline base64 ≈ 20 Mo max).
+- Codes 429 / 402 (quota Google) remontés en toast clair.
+- Sortie JSON invalide → retry unique avec message "corrige et renvoie du JSON valide".
+
+## Fichiers touchés
+
+- `src/lib/ai.functions.ts` — étendu (toutes les fonctions ci-dessus, migration Lovable Gateway → Gemini direct).
+- `src/components/AIAssistantPanel.tsx` — nouveau.
+- `src/components/AIFieldMenu.tsx` — nouveau (menu ✨).
+- `src/components/ReportForm.tsx` — intégration panneau + menus + sélecteur de style.
+- `package.json` — `mammoth`, éventuellement `react-markdown` si absent.
+
+## Hors périmètre V1
+
+- Persistance de l'historique de conversation (session uniquement, confirmé).
+- Export Word (l'export PDF existe déjà).
+- Traduction (mentionnée dans le CdC mais pas dans la portée choisie).
+- Vraie recherche de doublons entre rapports différents (limité au rapport en cours).
