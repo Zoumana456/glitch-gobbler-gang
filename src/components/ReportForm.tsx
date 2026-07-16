@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DictationButton } from "./DictationButton";
 import { Lightbox } from "./Lightbox";
+import { AIAssistantPanel, type AIStyle } from "./AIAssistantPanel";
+import type { ExtractedReport } from "@/lib/ai.functions";
 import { formatShortDate, todayIso } from "@/lib/date-utils";
 import {
   ArrowLeft,
@@ -26,6 +28,7 @@ import {
   FileUp,
   ImagePlus,
   X,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fr } from "date-fns/locale";
@@ -122,7 +125,41 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
   const [lightbox, setLightbox] = useState<{ images: FormImage[]; index: number } | null>(
     null,
   );
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiStyle, setAiStyle] = useState<AIStyle>("");
   const pdfInput = useRef<HTMLInputElement>(null);
+
+  function getDraft(): ExtractedReport {
+    return {
+      title: form.title,
+      intro: form.intro,
+      conclusion: form.conclusion,
+      sections: form.sections.map((s) => ({
+        title: s.title,
+        description: s.description,
+        bullets: s.bullets.map((b) => b.content).filter(Boolean),
+      })),
+    };
+  }
+
+  function applyDraft(r: ExtractedReport) {
+    setForm((prev) => ({
+      ...prev,
+      title: r.title || prev.title,
+      intro: r.intro || prev.intro,
+      conclusion: r.conclusion || prev.conclusion,
+      sections:
+        r.sections.length > 0
+          ? r.sections.map((s) => ({
+              key: nextKey(),
+              title: s.title,
+              description: s.description,
+              bullets: s.bullets.map((c) => ({ key: nextKey(), content: c })),
+              images: [],
+            }))
+          : prev.sections,
+    }));
+  }
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -393,7 +430,10 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
         <h1 className="text-xl font-semibold">
           {form.id ? "Modifier le rapport" : "Nouveau rapport"}
         </h1>
-        <div className="w-24" />
+        <Button variant="default" size="sm" onClick={() => setAiOpen(true)}>
+          <Sparkles className="h-4 w-4 mr-1.5" />
+          Assistant IA
+        </Button>
       </div>
 
       {/* Import PDF */}
@@ -675,6 +715,15 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
           onChange={(i) => setLightbox({ ...lightbox, index: i })}
         />
       )}
+
+      <AIAssistantPanel
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        getDraft={getDraft}
+        applyDraft={applyDraft}
+        style={aiStyle}
+        onStyleChange={setAiStyle}
+      />
     </div>
   );
 }
