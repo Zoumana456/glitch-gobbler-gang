@@ -125,7 +125,41 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
   const [lightbox, setLightbox] = useState<{ images: FormImage[]; index: number } | null>(
     null,
   );
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiStyle, setAiStyle] = useState<AIStyle>("");
   const pdfInput = useRef<HTMLInputElement>(null);
+
+  function getDraft(): ExtractedReport {
+    return {
+      title: form.title,
+      intro: form.intro,
+      conclusion: form.conclusion,
+      sections: form.sections.map((s) => ({
+        title: s.title,
+        description: s.description,
+        bullets: s.bullets.map((b) => b.content).filter(Boolean),
+      })),
+    };
+  }
+
+  function applyDraft(r: ExtractedReport) {
+    setForm((prev) => ({
+      ...prev,
+      title: r.title || prev.title,
+      intro: r.intro || prev.intro,
+      conclusion: r.conclusion || prev.conclusion,
+      sections:
+        r.sections.length > 0
+          ? r.sections.map((s) => ({
+              key: nextKey(),
+              title: s.title,
+              description: s.description,
+              bullets: s.bullets.map((c) => ({ key: nextKey(), content: c })),
+              images: [],
+            }))
+          : prev.sections,
+    }));
+  }
 
   const saveMut = useMutation({
     mutationFn: async () => {
