@@ -28,6 +28,7 @@ import {
   FileUp,
   ImagePlus,
   X,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fr } from "date-fns/locale";
