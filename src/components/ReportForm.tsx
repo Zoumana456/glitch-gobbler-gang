@@ -430,7 +430,10 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
         <h1 className="text-xl font-semibold">
           {form.id ? "Modifier le rapport" : "Nouveau rapport"}
         </h1>
-        <div className="w-24" />
+        <Button variant="default" size="sm" onClick={() => setAiOpen(true)}>
+          <Sparkles className="h-4 w-4 mr-1.5" />
+          Assistant IA
+        </Button>
       </div>
 
       {/* Import PDF */}
