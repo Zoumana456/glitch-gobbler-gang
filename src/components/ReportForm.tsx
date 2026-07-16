@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DictationButton } from "./DictationButton";
 import { Lightbox } from "./Lightbox";
+import { AIAssistantPanel, type AIStyle } from "./AIAssistantPanel";
+import type { ExtractedReport } from "@/lib/ai.functions";
 import { formatShortDate, todayIso } from "@/lib/date-utils";
 import {
   ArrowLeft,
