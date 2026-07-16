@@ -715,6 +715,15 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
           onChange={(i) => setLightbox({ ...lightbox, index: i })}
         />
       )}
+
+      <AIAssistantPanel
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        getDraft={getDraft}
+        applyDraft={applyDraft}
+        style={aiStyle}
+        onStyleChange={setAiStyle}
+      />
     </div>
   );
 }
