@@ -126,7 +126,7 @@ export function AIAssistantPanel({
           history,
           userMessage: msg,
           reportDraft: getDraft(),
-          style: style || undefined,
+          style: style === "free" ? undefined : style,
         },
       });
       setHistory([...nextHist, { role: "assistant", content: res.reply || "…" }]);
