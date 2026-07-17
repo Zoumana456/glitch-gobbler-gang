@@ -57,11 +57,18 @@ export async function callGemini(opts: GeminiCallOpts): Promise<string> {
 }
 
 export function parseJsonLoose<T>(text: string): T {
+  // strip markdown fences
+  let s = text.trim();
+  if (s.startsWith("```")) {
+    s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  }
   try {
-    return JSON.parse(text) as T;
+    return JSON.parse(s) as T;
   } catch {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Réponse IA invalide (JSON introuvable)");
-    return JSON.parse(match[0]) as T;
+    // extract from first { to last }
+    const first = s.indexOf("{");
+    const last = s.lastIndexOf("}");
+    if (first < 0 || last <= first) throw new Error("Réponse IA invalide (JSON introuvable)");
+    return JSON.parse(s.slice(first, last + 1)) as T;
   }
 }
