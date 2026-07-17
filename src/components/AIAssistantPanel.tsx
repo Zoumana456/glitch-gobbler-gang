@@ -149,7 +149,7 @@ export function AIAssistantPanel({
     setBusy(true);
     try {
       const res = await generate({
-        data: { history, reportDraft: getDraft(), style: style || undefined },
+        data: { history, reportDraft: getDraft(), style: style === "free" ? undefined : style },
       });
       applyDraft(res);
       toast.success("Rapport généré");
