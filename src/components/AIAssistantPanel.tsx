@@ -190,7 +190,7 @@ export function AIAssistantPanel({
   }
 
   async function doApplyStyle() {
-    if (!style) {
+    if (!style || style === "free") {
       toast.error("Choisissez un style d'abord");
       return;
     }
