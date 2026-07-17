@@ -126,7 +126,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
     null,
   );
   const [aiOpen, setAiOpen] = useState(false);
-  const [aiStyle, setAiStyle] = useState<AIStyle>("");
+  const [aiStyle, setAiStyle] = useState<AIStyle>("free");
   const pdfInput = useRef<HTMLInputElement>(null);
 
   function getDraft(): ExtractedReport {

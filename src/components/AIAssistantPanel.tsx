@@ -40,7 +40,7 @@ import {
 type Message = { role: "user" | "assistant"; content: string };
 
 export type AIStyle =
-  | ""
+  | "free"
   | "administratif"
   | "technique"
   | "chantier"
@@ -51,7 +51,7 @@ export type AIStyle =
   | "audit";
 
 const STYLES: { value: AIStyle; label: string }[] = [
-  { value: "", label: "Style libre" },
+  { value: "free", label: "Style libre" },
   { value: "administratif", label: "Administratif" },
   { value: "technique", label: "Technique" },
   { value: "chantier", label: "Chantier" },
@@ -61,6 +61,7 @@ const STYLES: { value: AIStyle; label: string }[] = [
   { value: "visite", label: "Visite" },
   { value: "audit", label: "Audit" },
 ];
+
 
 async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -125,7 +126,7 @@ export function AIAssistantPanel({
           history,
           userMessage: msg,
           reportDraft: getDraft(),
-          style: style || undefined,
+          style: style === "free" ? undefined : style,
         },
       });
       setHistory([...nextHist, { role: "assistant", content: res.reply || "…" }]);
@@ -148,7 +149,7 @@ export function AIAssistantPanel({
     setBusy(true);
     try {
       const res = await generate({
-        data: { history, reportDraft: getDraft(), style: style || undefined },
+        data: { history, reportDraft: getDraft(), style: style === "free" ? undefined : style },
       });
       applyDraft(res);
       toast.success("Rapport généré");
@@ -189,7 +190,7 @@ export function AIAssistantPanel({
   }
 
   async function doApplyStyle() {
-    if (!style) {
+    if (!style || style === "free") {
       toast.error("Choisissez un style d'abord");
       return;
     }
