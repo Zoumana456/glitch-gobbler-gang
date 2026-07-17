@@ -53,7 +53,7 @@ export const extractReportFromPdf = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => pdfInput.parse(data))
   .handler(async ({ data }): Promise<ExtractedReport> => {
     const text = await callGemini({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       system:
         "Tu es un assistant qui analyse des rapports d'activités PDF en français et en extrait la structure. Réponds uniquement avec un JSON strict.",
       responseMimeType: "application/json",
@@ -87,7 +87,7 @@ export const aiExtractFromImage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => imageInput.parse(d))
   .handler(async ({ data }): Promise<ExtractedReport> => {
     const text = await callGemini({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       system:
         "Tu lis des photos de rapports ou de notes manuscrites en français et tu produis un JSON structuré. Réponds uniquement en JSON.",
       responseMimeType: "application/json",
@@ -126,7 +126,7 @@ export const aiExtractFromDocx = createServerFn({ method: "POST" })
     const clipped = rawText.slice(0, 30_000);
 
     const text = await callGemini({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       system:
         "Tu structures des textes bruts issus de documents Word en rapports JSON en français. Réponds uniquement en JSON.",
       responseMimeType: "application/json",
@@ -172,7 +172,7 @@ export const aiImprove = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => improveInput.parse(d))
   .handler(async ({ data }): Promise<{ text: string }> => {
     const text = await callGemini({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       system:
         "Tu es un assistant de rédaction professionnelle en français." + styleClause(data.style),
       responseMimeType: "text/plain",
@@ -237,7 +237,7 @@ export const aiSummarize = createServerFn({ method: "POST" })
         ? "Rédige un résumé court en 3 à 5 phrases, en français."
         : "Rédige un résumé exécutif structuré (contexte, faits clés, recommandations) en français, ~200 mots.";
     const text = await callGemini({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       system: "Tu es un assistant de synthèse de rapports professionnels.",
       responseMimeType: "text/plain",
       contents: [
@@ -271,7 +271,7 @@ export const aiDetectIssues = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => detectInput.parse(d))
   .handler(async ({ data }): Promise<z.infer<typeof issueSchema>> => {
     const text = await callGemini({
-      model: "gemini-2.5-pro",
+      model: "gemini-pro-latest",
       system:
         "Tu es un relecteur d'audit. Trouve incohérences (dates, chiffres, montants), affirmations contradictoires, doublons, informations manquantes clés. Réponds en JSON strict.",
       responseMimeType: "application/json",
@@ -305,7 +305,7 @@ export const aiApplyStyle = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => applyStyleInput.parse(d))
   .handler(async ({ data }): Promise<ExtractedReport> => {
     const text = await callGemini({
-      model: "gemini-2.5-pro",
+      model: "gemini-pro-latest",
       system:
         "Tu reformules des rapports en français en gardant tous les faits mais en changeant le ton." +
         styleClause(data.style),
@@ -391,7 +391,7 @@ export const aiChat = createServerFn({ method: "POST" })
     contents.push({ role: "user", parts: [{ text: data.userMessage }] });
 
     const text = await callGemini({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       system,
       responseMimeType: "application/json",
       contents,
@@ -423,7 +423,7 @@ export const aiGenerateFull = createServerFn({ method: "POST" })
     const draftJson = data.reportDraft ? JSON.stringify(data.reportDraft) : "aucun";
 
     const text = await callGemini({
-      model: "gemini-2.5-pro",
+      model: "gemini-pro-latest",
       system,
       responseMimeType: "application/json",
       contents: [

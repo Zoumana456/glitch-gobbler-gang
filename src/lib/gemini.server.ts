@@ -22,7 +22,7 @@ export async function callGemini(opts: GeminiCallOpts): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("Clé API Gemini manquante côté serveur");
 
-  const model = opts.model ?? "gemini-2.5-flash";
+  const model = opts.model ?? "gemini-flash-latest";
   const body: Record<string, unknown> = {
     contents: opts.contents,
     generationConfig: {
