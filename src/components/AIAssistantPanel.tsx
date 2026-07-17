@@ -40,7 +40,7 @@ import {
 type Message = { role: "user" | "assistant"; content: string };
 
 export type AIStyle =
-  | ""
+  | "free"
   | "administratif"
   | "technique"
   | "chantier"
@@ -51,7 +51,7 @@ export type AIStyle =
   | "audit";
 
 const STYLES: { value: AIStyle; label: string }[] = [
-  { value: "", label: "Style libre" },
+  { value: "free", label: "Style libre" },
   { value: "administratif", label: "Administratif" },
   { value: "technique", label: "Technique" },
   { value: "chantier", label: "Chantier" },
@@ -61,6 +61,7 @@ const STYLES: { value: AIStyle; label: string }[] = [
   { value: "visite", label: "Visite" },
   { value: "audit", label: "Audit" },
 ];
+
 
 async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
