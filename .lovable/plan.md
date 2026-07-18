@@ -1,31 +1,34 @@
 ## Objectif
-Corriger le bug bloquant du panneau IA et exécuter un test complet d'envoi/réception de message via l'assistant Gemini.
+Remplacer l'API Gemini directe (qui a un quota journalier gratuit strict et cause des 429) par le **Lovable AI Gateway** déjà intégré au projet via `LOVABLE_API_KEY`. Aucune clé à configurer, pas de quota journalier fixe : l'usage puise dans l'allocation mensuelle gratuite du workspace puis dans les crédits.
 
-## 1. Correction du bug `Select.Item` (crash actuel)
-Les logs montrent :
-> A `<Select.Item />` must have a value prop that is not an empty string.
+## Changements
 
-Dans `src/components/AIAssistantPanel.tsx`, l'option « Style libre » utilise `value=""`, ce qui casse Radix et fait tomber la page en erreur (« Cette page n'a pas pu se charger ») dès l'ouverture du panneau.
+### 1. Nouveau helper serveur `src/lib/ai-gateway.server.ts`
+- Provider `createLovableAiGatewayProvider` (OpenAI-compatible, header `Lovable-API-Key`).
+- Fonctions utilitaires : `callAI({ system, messages, json })` et `callAIWithImage / callAIWithPdf` (envoi multimodal via `image_url` base64 / `file` base64).
+- Modèle par défaut : **`google/gemini-3.5-flash`** (rapide, multimodal, adapté aux rapports). Modèle "pro" pour analyse/style : **`google/gemini-3.1-pro-preview`**.
+- Parsing JSON tolérant (réutilise `parseJsonLoose`).
 
-Fix :
-- Remplacer la valeur sentinel `""` par `"free"` dans la liste `STYLES` et le type `AIStyle`.
-- Adapter la logique côté `aiApplyStyle` / `aiGenerateFull` pour traiter `"free"` comme « pas de style ».
+### 2. Refactor `src/lib/ai.functions.ts`
+- Remplacer chaque appel `callGemini(...)` par le nouveau helper `callAI(...)`.
+- Conserver les schémas Zod, les prompts et la logique existante.
+- Adapter les appels multimodaux (image OCR, extraction PDF) à la syntaxe messages `content: [{type:"text"},{type:"image_url",...}]` compatible OpenAI.
+- Mapper les erreurs 429 / 402 en messages clairs pour l'utilisateur ("Limite atteinte, réessayez" / "Crédits épuisés").
 
-## 2. Test complet d'envoi/réponse
-Via Playwright headless sur `http://localhost:8080` (session Supabase injectée) :
+### 3. Nettoyage
+- Supprimer `src/lib/gemini.server.ts` (plus utilisé), ou le garder uniquement pour `parseJsonLoose` exporté.
+- La clé `GEMINI_API_KEY` peut rester dans les secrets (inoffensive) ou être retirée plus tard.
 
-1. Se connecter puis aller sur `/reports/new`.
-2. Ouvrir le panneau **Assistant IA**.
-3. **Test chat** : taper « Bonjour, résume-moi ce qu'est un rapport d'intervention. » → cliquer Envoyer → attendre la réponse streamée → screenshot.
-4. **Test génération** : cliquer « Générer » avec un prompt court → vérifier que le brouillon est appliqué au formulaire.
-5. **Test style** : sélectionner un style (« Technique ») → cliquer « Style » sur un texte existant → vérifier le retour.
-6. **Test incohérences** + **Résumer** : déclencher chaque bouton, capturer la réponse.
-7. Vérifier les logs AI Gateway (`ai_gateway_logs`) pour confirmer les appels Gemini réussis (status 200, model 2.5-flash).
-
-## 3. Rapport
-Retourner à l'utilisateur : captures d'écran de chaque étape, statut de chaque test (OK/KO), et corrections appliquées.
+### 4. Test de bout en bout
+- Playwright : ouvrir `/reports/new` → panneau Assistant IA → envoyer un message chat → vérifier réponse.
+- Tester extraction image (petit JPG) et génération complète.
+- Vérifier logs AI Gateway (`ai_gateway_logs`) : statut 200, modèle `google/gemini-3.5-flash`.
 
 ## Détails techniques
-- Fichiers modifiés : `src/components/AIAssistantPanel.tsx` (constantes STYLES + type), éventuellement `src/lib/ai.functions.ts` (mapper `"free"` → pas de style côté serveur).
-- Aucun changement de schéma DB.
-- Aucun secret supplémentaire (GEMINI_API_KEY déjà en place).
+- Aucun changement de schéma DB, aucun changement UI (`AIAssistantPanel.tsx` reste identique).
+- `LOVABLE_API_KEY` déjà provisionnée (confirmé dans les secrets projet).
+- Modèles utilisés — allocation mensuelle gratuite Lovable AI Gateway couvre un usage normal ; au-delà, débit sur crédits workspace. Pas de rate-limit journalier fixe comme le free tier Gemini.
+
+## Ce qui reste identique
+- L'UX de l'assistant, les styles métiers, les imports Image/Word/PDF, le chat mémorisé.
+- La qualité (on reste sur Gemini 3.5 Flash / 3.1 Pro côté modèle, juste routés via Lovable).

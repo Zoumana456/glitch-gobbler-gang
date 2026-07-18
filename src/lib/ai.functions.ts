@@ -1,7 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { callGemini, parseJsonLoose, type GeminiMessage } from "./gemini.server";
+import {
+  callAI,
+  parseJsonLoose,
+  DEFAULT_MODEL,
+  PRO_MODEL,
+  type AIMessage,
+} from "./ai-gateway.server";
 
 // ----- Shared schemas -----
 
@@ -40,7 +46,7 @@ function styleClause(style?: string): string {
   return ` Adopte un ${STYLE_HINTS[style]}.`;
 }
 
-// ----- Legacy: extract from PDF (kept for backwards compat with import UI) -----
+// ----- Legacy: extract from PDF -----
 
 const pdfInput = z.object({
   pdfBase64: z.string().min(10),
@@ -52,22 +58,29 @@ export const extractReportFromPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => pdfInput.parse(data))
   .handler(async ({ data }): Promise<ExtractedReport> => {
-    const text = await callGemini({
-      model: "gemini-flash-latest",
+    const text = await callAI({
+      model: DEFAULT_MODEL,
       system:
         "Tu es un assistant qui analyse des rapports d'activités PDF en français et en extrait la structure. Réponds uniquement avec un JSON strict.",
-      responseMimeType: "application/json",
-      contents: [
+      json: true,
+      messages: [
         {
           role: "user",
-          parts: [
+          content: [
             {
+              type: "text",
               text:
                 "Extrait la structure de ce rapport en JSON exact :\n" +
                 REPORT_JSON_SHAPE +
                 "\nUtilise le français. Aucun texte hors JSON.",
             },
-            { inlineData: { mimeType: data.mimeType, data: data.pdfBase64 } },
+            {
+              type: "file",
+              file: {
+                filename: data.filename,
+                file_data: `data:${data.mimeType};base64,${data.pdfBase64}`,
+              },
+            },
           ],
         },
       ],
@@ -75,7 +88,7 @@ export const extractReportFromPdf = createServerFn({ method: "POST" })
     return extractedSchema.parse(parseJsonLoose(text));
   });
 
-// ----- Extract from image (OCR + structure) -----
+// ----- Extract from image -----
 
 const imageInput = z.object({
   base64: z.string().min(10),
@@ -86,22 +99,26 @@ export const aiExtractFromImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => imageInput.parse(d))
   .handler(async ({ data }): Promise<ExtractedReport> => {
-    const text = await callGemini({
-      model: "gemini-flash-latest",
+    const text = await callAI({
+      model: DEFAULT_MODEL,
       system:
         "Tu lis des photos de rapports ou de notes manuscrites en français et tu produis un JSON structuré. Réponds uniquement en JSON.",
-      responseMimeType: "application/json",
-      contents: [
+      json: true,
+      messages: [
         {
           role: "user",
-          parts: [
+          content: [
             {
+              type: "text",
               text:
                 "OCR + structure ce document en JSON :\n" +
                 REPORT_JSON_SHAPE +
                 "\nEn français, JSON uniquement.",
             },
-            { inlineData: { mimeType: data.mimeType, data: data.base64 } },
+            {
+              type: "image_url",
+              image_url: { url: `data:${data.mimeType};base64,${data.base64}` },
+            },
           ],
         },
       ],
@@ -109,7 +126,7 @@ export const aiExtractFromImage = createServerFn({ method: "POST" })
     return extractedSchema.parse(parseJsonLoose(text));
   });
 
-// ----- Extract from DOCX (Word) -----
+// ----- Extract from DOCX -----
 
 const docxInput = z.object({
   base64: z.string().min(10),
@@ -125,30 +142,26 @@ export const aiExtractFromDocx = createServerFn({ method: "POST" })
     const { value: rawText } = await mammoth.extractRawText({ buffer });
     const clipped = rawText.slice(0, 30_000);
 
-    const text = await callGemini({
-      model: "gemini-flash-latest",
+    const text = await callAI({
+      model: DEFAULT_MODEL,
       system:
         "Tu structures des textes bruts issus de documents Word en rapports JSON en français. Réponds uniquement en JSON.",
-      responseMimeType: "application/json",
-      contents: [
+      json: true,
+      messages: [
         {
           role: "user",
-          parts: [
-            {
-              text:
-                "Structure ce contenu Word en JSON exact :\n" +
-                REPORT_JSON_SHAPE +
-                "\nContenu :\n\n" +
-                clipped,
-            },
-          ],
+          content:
+            "Structure ce contenu Word en JSON exact :\n" +
+            REPORT_JSON_SHAPE +
+            "\nContenu :\n\n" +
+            clipped,
         },
       ],
     });
     return extractedSchema.parse(parseJsonLoose(text));
   });
 
-// ----- Improve a single text field -----
+// ----- Improve a text field -----
 
 const improveInput = z.object({
   text: z.string().min(1),
@@ -171,29 +184,24 @@ export const aiImprove = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => improveInput.parse(d))
   .handler(async ({ data }): Promise<{ text: string }> => {
-    const text = await callGemini({
-      model: "gemini-flash-latest",
+    const text = await callAI({
+      model: DEFAULT_MODEL,
       system:
         "Tu es un assistant de rédaction professionnelle en français." + styleClause(data.style),
-      responseMimeType: "text/plain",
-      contents: [
+      messages: [
         {
           role: "user",
-          parts: [
-            {
-              text:
-                ACTION_INSTRUCTION[data.action] +
-                "\n\nRenvoie uniquement le texte final, sans commentaire ni guillemets.\n\nTEXTE :\n" +
-                data.text,
-            },
-          ],
+          content:
+            ACTION_INSTRUCTION[data.action] +
+            "\n\nRenvoie uniquement le texte final, sans commentaire ni guillemets.\n\nTEXTE :\n" +
+            data.text,
         },
       ],
     });
     return { text: text.trim() };
   });
 
-// ----- Summarize the full report -----
+// ----- Summarize -----
 
 const reportShape = z.object({
   title: z.string().default(""),
@@ -236,14 +244,13 @@ export const aiSummarize = createServerFn({ method: "POST" })
       data.mode === "short"
         ? "Rédige un résumé court en 3 à 5 phrases, en français."
         : "Rédige un résumé exécutif structuré (contexte, faits clés, recommandations) en français, ~200 mots.";
-    const text = await callGemini({
-      model: "gemini-flash-latest",
+    const text = await callAI({
+      model: DEFAULT_MODEL,
       system: "Tu es un assistant de synthèse de rapports professionnels.",
-      responseMimeType: "text/plain",
-      contents: [
+      messages: [
         {
           role: "user",
-          parts: [{ text: instruction + "\n\nRAPPORT :\n" + reportToText(data.report) }],
+          content: instruction + "\n\nRAPPORT :\n" + reportToText(data.report),
         },
       ],
     });
@@ -270,23 +277,19 @@ export const aiDetectIssues = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => detectInput.parse(d))
   .handler(async ({ data }): Promise<z.infer<typeof issueSchema>> => {
-    const text = await callGemini({
-      model: "gemini-pro-latest",
+    const text = await callAI({
+      model: PRO_MODEL,
       system:
         "Tu es un relecteur d'audit. Trouve incohérences (dates, chiffres, montants), affirmations contradictoires, doublons, informations manquantes clés. Réponds en JSON strict.",
-      responseMimeType: "application/json",
-      contents: [
+      json: true,
+      messages: [
         {
           role: "user",
-          parts: [
-            {
-              text:
-                "Analyse ce rapport et renvoie ce JSON exact :\n" +
-                '{"issues": [{"type": "date"|"montant"|"incohérence"|"doublon"|"manquant"|"autre", "message": string, "location": string}]}\n\n' +
-                "RAPPORT :\n" +
-                reportToText(data.report),
-            },
-          ],
+          content:
+            "Analyse ce rapport et renvoie ce JSON exact :\n" +
+            '{"issues": [{"type": "date"|"montant"|"incohérence"|"doublon"|"manquant"|"autre", "message": string, "location": string}]}\n\n' +
+            "RAPPORT :\n" +
+            reportToText(data.report),
         },
       ],
     });
@@ -304,31 +307,27 @@ export const aiApplyStyle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => applyStyleInput.parse(d))
   .handler(async ({ data }): Promise<ExtractedReport> => {
-    const text = await callGemini({
-      model: "gemini-pro-latest",
+    const text = await callAI({
+      model: PRO_MODEL,
       system:
         "Tu reformules des rapports en français en gardant tous les faits mais en changeant le ton." +
         styleClause(data.style),
-      responseMimeType: "application/json",
-      contents: [
+      json: true,
+      messages: [
         {
           role: "user",
-          parts: [
-            {
-              text:
-                "Reformule ce rapport dans le style demandé. Renvoie ce JSON exact, sans texte hors JSON :\n" +
-                REPORT_JSON_SHAPE +
-                "\n\nRAPPORT SOURCE :\n" +
-                reportToText(data.report),
-            },
-          ],
+          content:
+            "Reformule ce rapport dans le style demandé. Renvoie ce JSON exact, sans texte hors JSON :\n" +
+            REPORT_JSON_SHAPE +
+            "\n\nRAPPORT SOURCE :\n" +
+            reportToText(data.report),
         },
       ],
     });
     return extractedSchema.parse(parseJsonLoose(text));
   });
 
-// ----- Chat (session memory) -----
+// ----- Chat -----
 
 const chatMsg = z.object({
   role: z.enum(["user", "assistant"]),
@@ -365,42 +364,35 @@ export const aiChat = createServerFn({ method: "POST" })
       "Sinon renvoie le rapport COMPLET mis à jour." +
       styleClause(data.style);
 
-    const contents: GeminiMessage[] = [];
+    const messages: AIMessage[] = [];
     if (data.reportDraft) {
-      contents.push({
+      messages.push({
         role: "user",
-        parts: [
-          {
-            text:
-              "État courant du rapport (référence, ne pas répéter dans reply) :\n" +
-              JSON.stringify(data.reportDraft),
-          },
-        ],
+        content:
+          "État courant du rapport (référence, ne pas répéter dans reply) :\n" +
+          JSON.stringify(data.reportDraft),
       });
-      contents.push({
-        role: "model",
-        parts: [{ text: '{"reply":"Compris, je tiens compte du brouillon.","updatedDraft":null,"missingInfo":[]}' }],
+      messages.push({
+        role: "assistant",
+        content:
+          '{"reply":"Compris, je tiens compte du brouillon.","updatedDraft":null,"missingInfo":[]}',
       });
     }
     for (const m of data.history) {
-      contents.push({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      });
+      messages.push({ role: m.role, content: m.content });
     }
-    contents.push({ role: "user", parts: [{ text: data.userMessage }] });
+    messages.push({ role: "user", content: data.userMessage });
 
-    const text = await callGemini({
-      model: "gemini-flash-latest",
+    const text = await callAI({
+      model: DEFAULT_MODEL,
       system,
-      responseMimeType: "application/json",
-      contents,
+      json: true,
+      messages,
     });
-    const parsed = chatReplySchema.parse(parseJsonLoose(text));
-    return parsed;
+    return chatReplySchema.parse(parseJsonLoose(text));
   });
 
-// ----- Generate the full report from the conversation -----
+// ----- Generate the full report -----
 
 const generateInput = z.object({
   history: z.array(chatMsg).default([]),
@@ -422,24 +414,20 @@ export const aiGenerateFull = createServerFn({ method: "POST" })
       .join("\n\n");
     const draftJson = data.reportDraft ? JSON.stringify(data.reportDraft) : "aucun";
 
-    const text = await callGemini({
-      model: "gemini-pro-latest",
+    const text = await callAI({
+      model: PRO_MODEL,
       system,
-      responseMimeType: "application/json",
-      contents: [
+      json: true,
+      messages: [
         {
           role: "user",
-          parts: [
-            {
-              text:
-                "Rédige le rapport final. JSON exact :\n" +
-                REPORT_JSON_SHAPE +
-                "\n\nBROUILLON ACTUEL : " +
-                draftJson +
-                "\n\nCONVERSATION :\n" +
-                convo,
-            },
-          ],
+          content:
+            "Rédige le rapport final. JSON exact :\n" +
+            REPORT_JSON_SHAPE +
+            "\n\nBROUILLON ACTUEL : " +
+            draftJson +
+            "\n\nCONVERSATION :\n" +
+            convo,
         },
       ],
     });
