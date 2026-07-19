@@ -58,7 +58,7 @@ export type AdminCompanyRow = {
 export const listCompaniesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminCompanyRow[]> => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: companies } = await supabaseAdmin
       .from("companies")
@@ -103,7 +103,7 @@ export const updateSeatLimit = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("companies")
@@ -123,7 +123,7 @@ export type PlatformAdminRow = {
 export const listPlatformAdmins = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PlatformAdminRow[]> => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows } = await supabaseAdmin
       .from("platform_admins")
@@ -150,7 +150,7 @@ export const addPlatformAdmin = createServerFn({ method: "POST" })
     z.object({ email: z.string().email() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const email = data.email.toLowerCase();
     const { data: prof } = await supabaseAdmin
@@ -172,7 +172,7 @@ export const removePlatformAdmin = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     if (data.userId === context.userId)
       throw new Error("Vous ne pouvez pas vous retirer vous-même");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
