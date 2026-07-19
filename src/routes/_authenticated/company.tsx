@@ -120,7 +120,15 @@ function CompanyPage() {
       toast.success("Entreprise créée");
       queryClient.invalidateQueries({ queryKey: ["my-company"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Erreur"),
+    onError: (e: any) => {
+      const msg = String(e?.message ?? "Erreur");
+      if (msg.includes("protégé") || msg.toLowerCase().includes("vérification")) {
+        setVerifyOpen(true);
+        toast.info("Ce nom est réservé — ouvrez une demande de vérification.");
+        return;
+      }
+      toast.error(msg);
+    },
   });
 
   if (isLoading) return <div className="p-8">Chargement...</div>;
