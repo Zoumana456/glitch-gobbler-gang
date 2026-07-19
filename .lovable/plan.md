@@ -1,24 +1,54 @@
+
 ## Objectif
-Vous donner accès à `/admin` en enregistrant votre compte dans la table `platform_admins`.
 
-## Compte cible
-- Email : `yapifranckzoumana5@gmail.com`
-- user_id : `5ff4d716-9a62-4c62-8098-b62dd4876e87`
+Créer un compte **exclusivement administrateur** pour `yapi401@gmail.com` (mot de passe `ZOUM3011####`), qui :
+- N'a pas encore de compte dans la base
+- Ne doit **jamais** posséder d'entreprise ni de rapports
+- Sert uniquement à gérer la plateforme via `/admin`
 
-(Le compte `yapi401@gmail.com` n'existe pas dans la base — merci de confirmer que c'est bien le bon compte avant que j'exécute.)
+Le compte actuellement promu (`yapifranckzoumana5@gmail.com`) sera rétrogradé pour ne laisser QUE le nouveau compte admin.
 
-## Action
-Insérer une ligne dans `public.platform_admins` :
+## Étapes
 
-```sql
-INSERT INTO public.platform_admins (user_id)
-VALUES ('5ff4d716-9a62-4c62-8098-b62dd4876e87')
-ON CONFLICT (user_id) DO NOTHING;
-```
+### 1. Création du compte auth (via serveur)
+Appel `supabaseAdmin.auth.admin.createUser` avec :
+- `email: yapi401@gmail.com`
+- `password: ZOUM3011####`
+- `email_confirm: true` (pas de mail de confirmation)
+- `user_metadata: { full_name: "DailyBrief Admin", role: "platform_admin_only" }`
 
-## Résultat attendu
-- Après reconnexion (ou refresh), le lien "Administration" apparaît dans la sidebar.
-- Vous pouvez ouvrir `/admin` et voir les 9 onglets (Dashboard, Entreprises, Utilisateurs, Plans, Factures, Vérifications, Noms réservés, Super admins, Audit).
+Le trigger `handle_new_user` créera automatiquement une ligne `profiles`.
 
-## Sécurité
-Changez le mot de passe que vous avez partagé par précaution — je ne l'ai ni lu ni utilisé, mais un mot de passe ne doit jamais être envoyé dans le chat.
+### 2. Marquage "admin-only" du compte
+Ajout d'une colonne `admin_only BOOLEAN NOT NULL DEFAULT false` sur `profiles` (migration).
+Le nouveau profil est passé à `admin_only = true`.
+
+### 3. Blocage côté application
+- **`createCompanyFn`** (`src/lib/company.functions.ts`) : refuse si `profiles.admin_only = true` → message clair "Compte réservé à l'administration".
+- **Server fns rapports/minutes** (création) : même contrôle.
+- **UI** (`src/routes/_authenticated/*`) : lorsque `admin_only = true`, la sidebar affiche uniquement le lien Administration et Profil (masque Rapports / Minutes / Entreprise). Redirection automatique vers `/admin` après login.
+
+### 4. Politique RLS de renfort
+Ajout d'une policy `CHECK` sur `companies` et `reports` :  
+`author_id/owner_id` ne peut pas correspondre à un user dont `profiles.admin_only = true`.  
+→ Défense en profondeur si l'UI est contournée.
+
+### 5. Ajout à `platform_admins`
+Insertion du nouveau `user_id` dans `platform_admins`.  
+**Retrait** de `yapifranckzoumana5@gmail.com` de `platform_admins` (via `removePlatformAdmin` ou insert direct de suppression) pour ne conserver que le compte dédié.
+
+> Note : la 2FA (TOTP) devra être configurée à la 1ère connexion via `MfaGate` déjà en place — obligatoire pour accéder à `/admin`.
+
+## Livrables
+
+1. Migration SQL : colonne `profiles.admin_only` + policies de blocage.
+2. Insert : création user auth + profile flaggé + entrée `platform_admins` + retrait de l'ancien admin.
+3. Modifs code :
+   - `company.functions.ts`, `reports.functions.ts`, `minutes.functions.ts` → garde `admin_only`.
+   - `routes/_authenticated/route.tsx` (ou layout sidebar) → masque les liens non-admin et redirige vers `/admin`.
+4. Communication des identifiants au user avec rappel : se connecter → activer 2FA immédiatement.
+
+## Questions avant implémentation
+
+1. Confirmez-vous que `yapifranckzoumana5@gmail.com` doit **perdre** son statut super admin (conservé uniquement pour usage courant / rapports) ?  
+2. Souhaitez-vous que le compte admin-only puisse quand même voir en **lecture seule** les rapports d'autres entreprises (utile pour du support) ou strictement rien ?
