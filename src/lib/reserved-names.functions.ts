@@ -101,17 +101,19 @@ export const checkNameReserved = createServerFn({ method: "POST" })
   });
 
 
+const KycInput = z.object({
+  name: z.string().min(1).max(200),
+  proofPath: z.string().min(1),
+  identityPath: z.string().min(1),
+  identityType: z.enum(["id_card", "passport", "driving_license"]),
+  selfiePath: z.string().min(1),
+  fullLegalName: z.string().trim().min(2).max(120),
+  message: z.string().max(2000).optional(),
+});
+
 export const requestCompanyVerification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { name: string; proofPath: string; message?: string }) =>
-    z
-      .object({
-        name: z.string().min(1).max(200),
-        proofPath: z.string().min(1),
-        message: z.string().max(2000).optional(),
-      })
-      .parse(d),
-  )
+  .inputValidator((d: unknown) => KycInput.parse(d))
   .handler(async ({ data, context }) => {
     const slug = normalize(data.name);
     if (!slug) throw new Error("Nom invalide");
@@ -124,15 +126,116 @@ export const requestCompanyVerification = createServerFn({ method: "POST" })
       .in("status", ["pending", "approved"])
       .maybeSingle();
     if (pending) throw new Error("Une demande existe déjà pour ce nom");
-    const { error } = await supabase.from("company_verification_requests").insert({
-      user_id: userId,
-      requested_name: data.name.trim(),
-      slug,
-      proof_path: data.proofPath,
-      message: data.message ?? null,
-    });
+    const { data: inserted, error } = await supabase
+      .from("company_verification_requests")
+      .insert({
+        user_id: userId,
+        requested_name: data.name.trim(),
+        slug,
+        proof_path: data.proofPath,
+        identity_document_path: data.identityPath,
+        identity_document_type: data.identityType,
+        selfie_path: data.selfiePath,
+        full_legal_name: data.fullLegalName,
+        message: data.message ?? null,
+        ai_check_status: "pending",
+      })
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
+
+    // Fire-and-forget AI KYC check (do not block user submission on it)
+    if (inserted?.id) {
+      runKycAiCheck(inserted.id, {
+        name: data.name.trim(),
+        proofPath: data.proofPath,
+        identityPath: data.identityPath,
+        identityType: data.identityType,
+        selfiePath: data.selfiePath,
+        fullLegalName: data.fullLegalName,
+      }).catch((err) => console.error("KYC AI check failed:", err));
+    }
+
     return { ok: true };
+  });
+
+async function runKycAiCheck(
+  requestId: string,
+  d: {
+    name: string;
+    proofPath: string;
+    identityPath: string;
+    identityType: string;
+    selfiePath: string;
+    fullLegalName: string;
+  },
+) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  async function toDataUrl(path: string): Promise<string | null> {
+    const { data: file } = await supabaseAdmin.storage.from("company-proofs").download(path);
+    if (!file) return null;
+    const buf = Buffer.from(await file.arrayBuffer());
+    const mime = file.type || "application/octet-stream";
+    return `data:${mime};base64,${buf.toString("base64")}`;
+  }
+
+  try {
+    const [proofUrl, idUrl, selfieUrl] = await Promise.all([
+      toDataUrl(d.proofPath),
+      toDataUrl(d.identityPath),
+      toDataUrl(d.selfiePath),
+    ]);
+
+    const system =
+      "Tu es un agent de conformité KYC. Analyse les documents et réponds STRICTEMENT en JSON avec les champs: face_match (0-100), name_match (0-100), person_on_business_proof (boolean), documents_readable (boolean), documents_authentic (0-100), issues (string[]), overall ('passed'|'flagged'), summary (string). Sois strict mais factuel.";
+
+    const isImage = (p: string) => /\.(png|jpe?g|webp)$/i.test(p);
+    const content: Array<
+      | { type: "text"; text: string }
+      | { type: "image_url"; image_url: { url: string } }
+      | { type: "file"; file: { filename: string; file_data: string } }
+    > = [
+      {
+        type: "text",
+        text: `Entreprise demandée: "${d.name}"\nNom légal déclaré: "${d.fullLegalName}"\nType de pièce d'identité: ${d.identityType}\n\nDocuments joints dans l'ordre: 1) justificatif d'entreprise, 2) pièce d'identité, 3) selfie avec la pièce. Vérifie: le visage du selfie correspond-il à la pièce ? Le nom sur la pièce correspond-il au nom déclaré ? La personne apparaît-elle sur le justificatif d'entreprise ? Documents lisibles/non altérés ?`,
+      },
+    ];
+    if (proofUrl) {
+      content.push(
+        isImage(d.proofPath)
+          ? { type: "image_url", image_url: { url: proofUrl } }
+          : { type: "file", file: { filename: "proof", file_data: proofUrl } },
+      );
+    }
+    if (idUrl) content.push({ type: "image_url", image_url: { url: idUrl } });
+    if (selfieUrl) content.push({ type: "image_url", image_url: { url: selfieUrl } });
+
+    const raw = await callAI({
+      system,
+      messages: [{ role: "user", content }],
+      json: true,
+      temperature: 0.1,
+    });
+    const report = parseJsonLoose<Record<string, unknown>>(raw);
+    const status =
+      typeof report.overall === "string" && report.overall === "passed" ? "passed" : "flagged";
+    await supabaseAdmin
+      .from("company_verification_requests")
+      .update({ ai_check_status: status, ai_check_report: report as unknown as JsonValue })
+      .eq("id", requestId);
+  } catch (err: any) {
+    await supabaseAdmin
+      .from("company_verification_requests")
+      .update({
+        ai_check_status: "flagged",
+        ai_check_report: { error: String(err?.message ?? err) } as unknown as JsonValue,
+      })
+      .eq("id", requestId);
+  }
+}
+
+
   });
 
 export const listMyVerificationRequests = createServerFn({ method: "GET" })
