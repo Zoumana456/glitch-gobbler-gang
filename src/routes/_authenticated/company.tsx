@@ -164,6 +164,11 @@ function CompanyPage() {
             </Button>
           </CardContent>
         </Card>
+        <RequestVerificationDialog
+          open={verifyOpen}
+          onOpenChange={setVerifyOpen}
+          companyName={newCompanyName.trim()}
+        />
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Rejoindre une entreprise</CardTitle>
