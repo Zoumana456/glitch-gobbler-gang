@@ -334,11 +334,37 @@ function SidebarInner({
           collapsed ? "p-2" : "p-3",
         )}
       >
-        {!collapsed && (
-          <div className="px-2 text-xs text-muted-foreground truncate animate-fade-in" title={email}>
-            {email}
-          </div>
-        )}
+        <Link
+          to="/profile"
+          className={cn(
+            "flex items-center rounded-md hover:bg-sidebar-accent/60 transition-colors",
+            collapsed ? "justify-center p-1" : "gap-2 px-2 py-1.5",
+          )}
+          title={collapsed ? displayName : "Voir mon profil"}
+        >
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarImage src={avatarUrl} alt={displayName} />
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <div className="min-w-0 flex-1 animate-fade-in">
+              <div className="text-sm font-medium truncate leading-tight">{displayName}</div>
+              <div className="text-xs text-muted-foreground truncate leading-tight" title={email}>{email}</div>
+            </div>
+          )}
+        </Link>
+        <Link
+          to="/profile"
+          hash="verification"
+          className={cn(
+            "flex items-center rounded-md text-sm transition-colors hover:bg-sidebar-accent/60",
+            collapsed ? "justify-center h-9 w-9 mx-auto" : "gap-2 px-2 py-1.5",
+          )}
+          title={collapsed ? "Vérifier mon identité" : undefined}
+        >
+          <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+          {!collapsed && <span className="truncate">Vérifier mon identité</span>}
+        </Link>
         <Button
           variant="ghost"
           size={collapsed ? "icon" : "sm"}
