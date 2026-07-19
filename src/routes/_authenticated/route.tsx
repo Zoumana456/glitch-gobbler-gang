@@ -160,8 +160,8 @@ function AuthenticatedLayout() {
             <Menu className="h-5 w-5" />
           </Button>
           <Link to="/reports" className="flex items-center gap-2 font-semibold">
-            <FileText className="h-5 w-5 text-primary" />
-            Lovable Rapports
+            <img src={logoDailyBrief} alt="DailyBrief" className="h-6 w-6 rounded" />
+            DailyBrief
           </Link>
         </header>
         <main className="flex-1 min-w-0">
