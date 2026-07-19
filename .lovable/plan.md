@@ -1,58 +1,68 @@
-## Objectif
-Détecter automatiquement les tentatives d'usurpation lorsqu'un utilisateur saisit un nom d'entreprise qui correspond à une société ivoirienne connue — sans devoir maintenir manuellement la liste dans `reserved_company_names`.
+# Feuille de route DailyBrief → production-ready
 
-## Approche : vérification automatique en arrière-plan via IA + cache
+Audit rapide de l'app (rapports, entreprises, KYC, admin, IA, partage). Voici ce qui manque ou peut être renforcé, classé par priorité.
 
-On garde le mécanisme `reserved_company_names` existant (liste blanche stricte) et on **ajoute** une couche IA qui interroge le web (Lovable AI Gateway avec grounding Google Search) pour repérer les marques/entreprises réelles de Côte d'Ivoire.
+## 1. Fiabilité & sécurité (P0 — à faire en premier)
 
-### 1. Nouvelle table de cache
+- **Rate-limiting IA** : le check de nom d'entreprise et l'assistant Gemini sont appelés par utilisateur authentifié sans limite → un utilisateur peut vider les crédits Lovable AI. Ajouter un compteur par `user_id` + fenêtre glissante (table `ai_usage_log`) et retour `429` propre.
+- **Modération des uploads** : `report-images`, `report-attachments`, `company-proofs` acceptent tout MIME/taille. Imposer taille max (5 Mo images, 10 Mo PDF), whitelist MIME, et scan basique.
+- **Audit log unifié** : `admin_audit_log` et `share_audit_log` existent, mais rien ne trace les actions dangereuses (ban, suppression user, reset MFA d'urgence, changement de plan). Étendre la journalisation.
+- **Session 2FA** : le `MfaGate` couvre `/admin`, mais un admin qui perd son téléphone n'a que le reset email. Ajouter codes de secours (backup codes chiffrés) à la première activation.
+- **Politiques RLS restantes** : passer un dernier scan (`security--run_security_scan`) et fermer les policies trop larges éventuelles.
 
-Migration : `company_name_risk_cache`
-- `slug text primary key` (nom normalisé)
-- `risk_level text` — `none` | `low` | `medium` | `high`
-- `matched_entity text` — nom officiel trouvé (ex : « Jumia Côte d'Ivoire »)
-- `evidence text` — courte justification (source/URL)
-- `checked_at timestamptz default now()`
-- RLS : lecture `authenticated`, écriture réservée aux server fns (service_role).
-- GRANTs standards + `service_role` full.
+## 2. UX & parcours utilisateur (P1)
 
-TTL : 30 jours. Une entrée `high` sert de blocage tant que non expirée.
+- **Onboarding guidé** : au 1er login, wizard 3 étapes (profil → entreprise ou rejoindre → premier rapport). Aujourd'hui l'utilisateur atterrit sur une page vide.
+- **États vides soignés** : `/reports`, `/minutes`, dashboard entreprise — illustrations + CTA clairs quand aucune donnée.
+- **Notifications in-app** : cloche dans la topbar pour invitations reçues, rapports partagés, KYC approuvé, changement de plan validé.
+- **Recherche globale** : `Cmd+K` (cmdk est déjà dans shadcn) pour naviguer entre rapports, PV, employés, pages.
+- **Mode brouillon explicite** : distinguer visuellement "brouillon" vs "publié" sur les rapports, avec bouton "Publier" séparé de "Enregistrer".
+- **Responsive mobile** : audit rapide — sidebar `/admin` et le formulaire de rapport sont serrés en < 400px.
+- **Dark mode** : les tokens existent (styles.css) mais plusieurs écrans forcent du blanc. Un pass de nettoyage.
 
-### 2. Server function `checkCompanyNameRisk`
+## 3. Fonctionnalités manquantes (P1)
 
-Fichier : `src/lib/company-risk.functions.ts` (nouveau)
-- Input : `{ name: string }`
-- Étapes :
-  1. Normaliser en slug.
-  2. Lire le cache — si frais et `risk_level != none`, retourner directement.
-  3. Sinon, appeler Lovable AI Gateway (`google/gemini-2.5-flash` avec l'outil `google_search`) avec un prompt :
-     > « Est-ce que "<name>" correspond à une entreprise, marque ou institution reconnue en Côte d'Ivoire (banque, opérateur télécom, société cotée, ONG, administration, franchise) ? Réponds en JSON : `{risk_level, matched_entity, evidence}`. »
-  4. Écrire le résultat en cache via `supabaseAdmin` (upsert).
-  5. Retourner `{ risk_level, matched_entity, evidence }`.
+- **Notifications email** : Resend (via connector) pour invitations, KYC validé/refusé, rapport partagé, plan expirant. Aujourd'hui tout se joue in-app.
+- **Export bulk** : bouton "Exporter tous mes rapports" (ZIP de PDFs) sur `/reports`.
+- **Statistiques employé** : sur la fiche employé côté DG — nb rapports/mois, taux de complétion, tendance.
+- **Templates de rapports** : le DG définit des modèles réutilisables (sections + questions types) que les employés instancient.
+- **Commentaires sur rapports** : fil de discussion DG ↔ employé sur un rapport (table `report_comments`).
+- **Recherche full-text** dans le contenu des rapports (Postgres `tsvector` + index GIN).
 
-### 3. Intégration dans `createCompany`
+## 4. Facturation & business (P2)
 
-Fichier : `src/lib/company.functions.ts` (lignes 139-169)
-- Après le check `reserved_company_names`, ajouter :
-  - Si `risk_level === "high"` et pas de demande KYC approuvée sur ce slug → renvoyer le même signal `{ id: null, needsVerification: true, reason: "Ce nom correspond à « <matched_entity> » (…). Ouvrez une demande de vérification pour l'utiliser." }`.
-  - Sinon on continue la création.
+- **Paiement réel** : les plans sont demandés/approuvés à la main. Intégrer Stripe (via `payments--enable_stripe_payments`) pour paiement mensuel/annuel automatique.
+- **Cycle de vie plan** : dates de début/fin, renouvellement auto, downgrade auto en fin de période, alerte 7j avant expiration.
+- **Factures PDF** : générer un vrai PDF téléchargeable pour chaque `company_invoice`.
+- **Grille tarifaire publique** : page `/pricing` en public route avec SEO propre.
 
-### 4. UI temps réel dans le formulaire d'entreprise
+## 5. Performance & qualité technique (P2)
 
-Fichier : `src/routes/_authenticated/company.tsx`
-- Sur le champ « Nom de l'entreprise » (mode création), ajouter un debounce 700ms qui appelle `checkCompanyNameRisk`.
-- Afficher un badge dynamique sous le champ :
-  - `none` → rien
-  - `low` → info bleue « Aucune correspondance connue »
-  - `medium` → avertissement orange
-  - `high` → alerte rouge avec bouton « Demander la vérification »
-- Le bouton « Créer » n'est pas bloqué (le gate reste côté serveur), mais un toast avertit avant soumission si `high`.
+- **Pagination** : liste des rapports, employés, factures, audit — actuellement tout est chargé d'un coup.
+- **Images optimisées** : compresser côté client (browser-image-compression) avant upload, servir en WebP.
+- **Preloading LCP** : hero et logo via `head().links`.
+- **Cache TanStack Query** : ajuster `staleTime` et `gcTime` par type de donnée (données admin longues, dashboard courtes).
+- **Tests E2E** : suite Playwright couvrant les 5 parcours clés (signup, création rapport, invitation, partage, admin ban).
+- **Monitoring** : logger les erreurs serveur (server-function-logs suffisent au début, sinon Sentry).
 
-### 5. Points hors périmètre
-- On ne peuple **pas** manuellement `reserved_company_names` avec toutes les entreprises ivoiriennes — la couche IA + grounding s'en occupe dynamiquement. L'admin peut toujours forcer un nom via l'onglet « Noms réservés » (comportement inchangé).
-- Coût maîtrisé grâce au cache 30 jours + normalisation slug.
+## 6. SEO & référencement (P3)
 
-## Sécurité
-- Fonction IA nécessite `requireSupabaseAuth`.
-- Écriture dans le cache via `supabaseAdmin` chargé dans le handler uniquement.
-- Le résultat IA n'est jamais opposable à l'utilisateur sans humain dans la boucle : `high` déclenche seulement le KYC, jamais un rejet définitif.
+- Page d'accueil publique + `/pricing` + `/about` + `/legal/*` avec `head()` par route (title, description, OG).
+- `public/llms.txt` + `public/robots.txt` + sitemap.
+- Page `/blog` optionnelle si contenu prévu.
+
+## 7. Conformité (P3)
+
+- Pages **Mentions légales**, **Politique de confidentialité**, **CGU/CGV** — obligatoires en Côte d'Ivoire + RGPD pour utilisateurs UE.
+- Bandeau cookies si analytics ajouté.
+- Export & suppression de compte côté utilisateur (droit RGPD).
+
+## Comment on avance
+
+Je propose d'attaquer par **P0 (sécurité/fiabilité)** puis **P1 (UX + fonctionnalités manquantes)** en lots courts. Dis-moi si tu veux :
+
+- **(A)** que je démarre par P0 en entier (rate-limit IA + uploads + audit + backup codes 2FA + scan sécurité),
+- **(B)** que je m'attaque à un lot précis parmi la liste (dis lequel),
+- **(C)** un plan resserré "MVP commercial" : notifications email + Stripe + pricing publique + onboarding, pour pouvoir vendre.
+
+Rien n'est encore modifié — c'est un plan à valider.
