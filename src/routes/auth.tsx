@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, FileText, Building2, User, Users, Check, ShieldAlert } from "lucide-react";
+import { Loader2, FileText, Building2, User, Users, Check, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
