@@ -51,6 +51,7 @@ const NAV = [
   { to: "/reports/new", label: "Nouveau rapport", icon: FilePlus2 },
   { to: "/minutes", label: "Procès-verbaux", icon: FileSignature },
   { to: "/company", label: "Entreprise", icon: Building2 },
+  { to: "/plans", label: "Plans", icon: Package },
   { to: "/profile", label: "Profil", icon: UserCircle2 },
 ] as const;
 
