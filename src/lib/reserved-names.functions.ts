@@ -245,7 +245,17 @@ export const listMyVerificationRequests = createServerFn({ method: "GET" })
       .from("company_verification_requests")
       .select("id, requested_name, slug, status, proof_path, message, admin_note, created_at, reviewed_at")
       .order("created_at", { ascending: false });
-    return (data ?? []) as MyVerificationRequest[];
+
+export const listMyVerificationRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<MyVerificationRequest[]> => {
+    const { data } = await context.supabase
+      .from("company_verification_requests")
+      .select(
+        "id, requested_name, slug, status, proof_path, identity_document_path, identity_document_type, selfie_path, full_legal_name, ai_check_status, ai_check_report, message, admin_note, created_at, reviewed_at",
+      )
+      .order("created_at", { ascending: false });
+    return (data ?? []) as unknown as MyVerificationRequest[];
   });
 
 // ============= Admin operations =============
