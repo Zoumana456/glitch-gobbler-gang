@@ -321,6 +321,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admin_only: boolean
           avatar_url: string | null
           created_at: string
           email: string | null
@@ -329,6 +330,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_only?: boolean
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -337,6 +339,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_only?: boolean
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -834,7 +837,7 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      assert_not_admin_only: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
