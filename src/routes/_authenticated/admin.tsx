@@ -72,25 +72,27 @@ function AdminPage() {
         </p>
       </header>
 
-      <Tabs defaultValue="companies">
-        <TabsList>
-          <TabsTrigger value="companies">Entreprises</TabsTrigger>
-          <TabsTrigger value="admins">Super admins</TabsTrigger>
-          <TabsTrigger value="reserved">Noms réservés</TabsTrigger>
-          <TabsTrigger value="verifications">Vérifications</TabsTrigger>
+      <Tabs defaultValue="dashboard">
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="dashboard"><LayoutDashboard className="h-4 w-4 mr-1" />Dashboard</TabsTrigger>
+          <TabsTrigger value="companies"><Users className="h-4 w-4 mr-1" />Entreprises</TabsTrigger>
+          <TabsTrigger value="users"><UserCog className="h-4 w-4 mr-1" />Utilisateurs</TabsTrigger>
+          <TabsTrigger value="plans"><Package className="h-4 w-4 mr-1" />Plans</TabsTrigger>
+          <TabsTrigger value="invoices"><Receipt className="h-4 w-4 mr-1" />Factures</TabsTrigger>
+          <TabsTrigger value="verifications"><ShieldCheck className="h-4 w-4 mr-1" />Vérifications</TabsTrigger>
+          <TabsTrigger value="reserved"><Lock className="h-4 w-4 mr-1" />Noms réservés</TabsTrigger>
+          <TabsTrigger value="admins"><Shield className="h-4 w-4 mr-1" />Super admins</TabsTrigger>
+          <TabsTrigger value="audit"><ScrollText className="h-4 w-4 mr-1" />Audit</TabsTrigger>
         </TabsList>
-        <TabsContent value="companies" className="mt-4">
-          <CompaniesPanel />
-        </TabsContent>
-        <TabsContent value="admins" className="mt-4">
-          <AdminsPanel />
-        </TabsContent>
-        <TabsContent value="reserved" className="mt-4">
-          <ReservedNamesPanel />
-        </TabsContent>
-        <TabsContent value="verifications" className="mt-4">
-          <VerificationsPanel />
-        </TabsContent>
+        <TabsContent value="dashboard" className="mt-4"><DashboardPanel /></TabsContent>
+        <TabsContent value="companies" className="mt-4"><CompaniesPanel /></TabsContent>
+        <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
+        <TabsContent value="plans" className="mt-4"><PlansPanel /></TabsContent>
+        <TabsContent value="invoices" className="mt-4"><InvoicesPanel /></TabsContent>
+        <TabsContent value="verifications" className="mt-4"><VerificationsPanel /></TabsContent>
+        <TabsContent value="reserved" className="mt-4"><ReservedNamesPanel /></TabsContent>
+        <TabsContent value="admins" className="mt-4"><AdminsPanel /></TabsContent>
+        <TabsContent value="audit" className="mt-4"><AuditPanel /></TabsContent>
       </Tabs>
 
     </div>
