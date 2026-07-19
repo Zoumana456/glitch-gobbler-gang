@@ -84,28 +84,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable — Rapports d'équipe" },
+      { title: "DailyBrief — Team reports made simple" },
       {
         name: "description",
         content:
-          "Créez, partagez et consultez les rapports d'activités quotidiens de votre équipe.",
+          "DailyBrief : créez, partagez et consultez les rapports quotidiens de votre équipe, en toute simplicité.",
       },
-      { property: "og:title", content: "Lovable — Rapports d'équipe" },
+      { property: "og:title", content: "DailyBrief — Team reports made simple" },
       {
         property: "og:description",
         content:
-          "Créez, partagez et consultez les rapports d'activités quotidiens de votre équipe.",
+          "DailyBrief : créez, partagez et consultez les rapports quotidiens de votre équipe, en toute simplicité.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Lovable — Rapports d'équipe" },
-      { name: "twitter:description", content: "Créez, partagez et consultez les rapports d'activités quotidiens de votre équipe." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/11a4d890-016c-4ba1-beac-f527c8144628/id-preview-8dfba7c7--db096027-fe28-45c5-b4fe-d62ff910e03a.lovable.app-1784457080995.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/11a4d890-016c-4ba1-beac-f527c8144628/id-preview-8dfba7c7--db096027-fe28-45c5-b4fe-d62ff910e03a.lovable.app-1784457080995.png" },
+      { property: "og:site_name", content: "DailyBrief" },
+      { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "DailyBrief — Team reports made simple" },
+      { name: "twitter:description", content: "Créez, partagez et consultez les rapports quotidiens de votre équipe." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", type: "image/png", href: "/favicon-dailybrief.png" },
     ],
   }),
   shellComponent: RootShell,
