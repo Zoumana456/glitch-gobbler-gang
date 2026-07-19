@@ -63,8 +63,7 @@ function AdminPage() {
   }, [status, isLoading, navigate]);
 
   async function handleMfaVerified() {
-    // Rafraîchir la session pour récupérer le nouveau JWT avec aal2
-    await supabase.auth.refreshSession();
+    // Le SDK a déjà persisté un JWT aal2. Rafraîchir la vue admin.
     await queryClient.invalidateQueries({ queryKey: ["admin-access-status"] });
   }
 
