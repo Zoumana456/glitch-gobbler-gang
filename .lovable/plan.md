@@ -1,39 +1,27 @@
 ## Objectif
+Remplacer le compte super-admin actuel (`yapi401@gmail.com`) par un nouveau compte dédié `yapi.zoumana01@gmail.com` avec le mot de passe `ZOUM3011####`.
 
-Rendre la page de connexion évidente à trouver et ajouter un bouton « afficher/masquer » sur le champ mot de passe.
+## Étapes
 
-## Où vous connecter aujourd'hui
+1. **Créer le compte auth** `yapi.zoumana01@gmail.com` via l'API Auth Admin
+   - mot de passe : `ZOUM3011####`
+   - email confirmé automatiquement (pas de vérification par mail requise)
 
-L'écran de connexion existe déjà à l'adresse `/auth` (page `src/routes/auth.tsx`). Le lien direct depuis votre site publié :
+2. **Marquer le profil `admin_only = true`** dans `public.profiles` pour que ce compte ne puisse pas créer d'entreprise, de rapport ou de PV (déjà bloqué par le trigger `block_admin_only_writes`).
 
-```
-https://rapport-journaliere.lovable.app/auth
-```
+3. **Promouvoir dans `public.platform_admins`** le nouvel utilisateur.
 
-Sur cet écran vous avez :
-- « Continuer avec Google » (le bouton que vous utilisez habituellement)
-- ou email + mot de passe (mode « Connexion » par défaut)
+4. **Retirer les anciens admins** (`yapi401@gmail.com` et `yapifranckzoumana5@gmail.com` s'ils y sont encore) de `platform_admins` pour ne garder qu'un seul super-admin actif.
 
-Le lien « Créer un compte » n'est utile que si vous n'avez pas encore de compte — sinon restez sur « Connexion ».
+5. **Vérifier la connexion** via un test rapide (login API) pour confirmer que `yapi.zoumana01@gmail.com` / `ZOUM3011####` fonctionne avant de vous rendre la main.
 
-## Modifications à faire
+## Connexion (après application)
+- Page : `/auth`
+- Email : `yapi.zoumana01@gmail.com`
+- Mot de passe : `ZOUM3011####`
+- Redirection automatique vers `/admin` avec la demande d'activation 2FA (scan QR code au premier login).
 
-1. **Ajouter un bouton œil (afficher/masquer) dans le champ mot de passe**
-   - Fichier : `src/routes/auth.tsx`
-   - Sur le champ `#password` (mode signin et signup) : passer le `type` de `password` à `text` selon un nouvel état `showPassword`.
-   - Icône `Eye` / `EyeOff` de `lucide-react`, positionnée à droite dans l'input (bouton `type="button"` pour ne pas soumettre le formulaire).
-   - `aria-label` dynamique « Afficher le mot de passe » / « Masquer le mot de passe ».
-
-2. **Mieux signaler « où me connecter »**
-   - Sur la page d'accueil `/` (`src/routes/index.tsx`) : s'assurer qu'un bouton « Se connecter » bien visible pointe vers `/auth`. Si un utilisateur déjà connecté arrive, le rediriger vers `/reports` (déjà géré par `/auth`).
-   - Ajouter une petite mention sous le titre de la carte : « Déjà un compte ? Utilisez « Connexion ». Nouveau ? Cliquez sur « Créer un compte » en bas. » pour lever l'ambiguïté.
-
-3. (Optionnel, si vous le souhaitez) Ajouter le même bouton œil sur la page `/reset-password`.
-
-## Détail technique
-
-- Nouvel état local dans `AuthPage` : `const [showPassword, setShowPassword] = useState(false);`
-- Champ mot de passe entouré d'un `<div className="relative">` avec l'`Input` (padding-right augmenté) et un `<button>` absolu à droite qui bascule `showPassword`.
-- Aucun changement backend, aucun changement de base de données, aucun impact sur les rapports existants.
-
-Confirmez-vous que je peux appliquer ces changements ?
+## Détails techniques
+- Création via `POST /auth/v1/admin/users` avec `email_confirm: true` (utilise `SUPABASE_SERVICE_ROLE_KEY` côté sandbox, jamais exposé au client).
+- Migration SQL pour `profiles.admin_only = true` et upsert dans `platform_admins`, plus `DELETE` des anciens admins.
+- Aucun changement de code applicatif — uniquement données + auth.
