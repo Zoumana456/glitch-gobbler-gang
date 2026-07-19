@@ -314,14 +314,19 @@ export const listVerificationRequests = createServerFn({ method: "GET" })
       .in("id", ids);
     const profMap = Object.fromEntries((profs ?? []).map((p: any) => [p.id, p]));
     const out: AdminVerificationRequest[] = [];
+    async function sign(path: string | null): Promise<string | null> {
+      if (!path) return null;
+      const { data: signed } = await supabaseAdmin.storage
+        .from("company-proofs")
+        .createSignedUrl(path, 5 * 60);
+      return signed?.signedUrl ?? null;
+    }
     for (const r of rows as any[]) {
-      let proofUrl: string | null = null;
-      if (r.proof_path) {
-        const { data: signed } = await supabaseAdmin.storage
-          .from("company-proofs")
-          .createSignedUrl(r.proof_path, 5 * 60); // 5 min
-        proofUrl = signed?.signedUrl ?? null;
-      }
+      const [proofUrl, identityUrl, selfieUrl] = await Promise.all([
+        sign(r.proof_path),
+        sign(r.identity_document_path),
+        sign(r.selfie_path),
+      ]);
       out.push({
         id: r.id,
         user_id: r.user_id,
@@ -332,6 +337,14 @@ export const listVerificationRequests = createServerFn({ method: "GET" })
         status: r.status,
         proof_path: r.proof_path,
         proof_url: proofUrl,
+        identity_document_path: r.identity_document_path ?? null,
+        identity_document_type: r.identity_document_type ?? null,
+        identity_document_url: identityUrl,
+        selfie_path: r.selfie_path ?? null,
+        selfie_url: selfieUrl,
+        full_legal_name: r.full_legal_name ?? null,
+        ai_check_status: r.ai_check_status ?? null,
+        ai_check_report: (r.ai_check_report ?? null) as JsonValue | null,
         message: r.message,
         admin_note: r.admin_note,
         created_at: r.created_at,
