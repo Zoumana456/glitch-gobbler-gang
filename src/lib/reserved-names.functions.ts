@@ -33,7 +33,7 @@ export type MyVerificationRequest = {
   selfie_path: string | null;
   full_legal_name: string | null;
   ai_check_status: string | null;
-  ai_check_report: Record<string, unknown> | null;
+  ai_check_report: JsonValue | null;
   message: string | null;
   admin_note: string | null;
   created_at: string;
