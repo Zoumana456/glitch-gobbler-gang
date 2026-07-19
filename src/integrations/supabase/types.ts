@@ -14,6 +14,166 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          seat_limit: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          seat_limit?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          seat_limit?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_invitations: {
+        Row: {
+          company_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          status: string
+          token: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_members: {
+        Row: {
+          company_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          joined_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_verification_requests: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          id: string
+          message: string | null
+          proof_path: string | null
+          requested_name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          slug: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          proof_path?: string | null
+          requested_name: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          slug: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          proof_path?: string | null
+          requested_name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          slug?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -40,6 +200,57 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      report_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          mime_type: string
+          position: number
+          report_id: string
+          section_id: string | null
+          size_bytes: number
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          mime_type: string
+          position?: number
+          report_id: string
+          section_id?: string | null
+          size_bytes: number
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          mime_type?: string
+          position?: number
+          report_id?: string
+          section_id?: string | null
+          size_bytes?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_attachments_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_attachments_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "report_sections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_images: {
         Row: {
@@ -86,6 +297,113 @@ export type Database = {
           },
         ]
       }
+      report_minutes: {
+        Row: {
+          attendees: Json
+          author_id: string
+          created_at: string
+          decisions: string
+          facts: string
+          held_at: string
+          id: string
+          location: string
+          number: string
+          report_id: string
+          signature_url: string | null
+          signer_name: string
+          signer_role: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          attendees?: Json
+          author_id: string
+          created_at?: string
+          decisions?: string
+          facts?: string
+          held_at?: string
+          id?: string
+          location?: string
+          number?: string
+          report_id: string
+          signature_url?: string | null
+          signer_name?: string
+          signer_role?: string
+          subject?: string
+          updated_at?: string
+        }
+        Update: {
+          attendees?: Json
+          author_id?: string
+          created_at?: string
+          decisions?: string
+          facts?: string
+          held_at?: string
+          id?: string
+          location?: string
+          number?: string
+          report_id?: string
+          signature_url?: string | null
+          signer_name?: string
+          signer_role?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_minutes_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_notes: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          report_id: string
+          section_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          report_id: string
+          section_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          report_id?: string
+          section_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_notes_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_notes_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "report_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_sections: {
         Row: {
           created_at: string
@@ -114,6 +432,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "report_sections_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_shares: {
+        Row: {
+          created_at: string
+          id: string
+          permission: string
+          report_id: string
+          shared_by: string
+          shared_with: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission: string
+          report_id: string
+          shared_by: string
+          shared_with: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission?: string
+          report_id?: string
+          shared_by?: string
+          shared_with?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_shares_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "reports"
@@ -157,6 +513,33 @@ export type Database = {
           share_token?: string | null
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reserved_company_names: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          display_name: string
+          id: string
+          notes: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          display_name: string
+          id?: string
+          notes?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          id?: string
+          notes?: string | null
+          slug?: string
         }
         Relationships: []
       }
@@ -249,7 +632,7 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
