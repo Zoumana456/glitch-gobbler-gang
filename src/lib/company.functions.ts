@@ -157,9 +157,12 @@ export const createCompany = createServerFn({ method: "POST" })
           .eq("status", "approved")
           .maybeSingle();
         if (!approved) {
-          throw new Error(
-            "Ce nom d'entreprise est protégé. Ouvrez une demande de vérification depuis votre profil (justificatif requis) avant de pouvoir l'utiliser.",
-          );
+          return {
+            id: null,
+            needsVerification: true as const,
+            reason:
+              "Ce nom d'entreprise est protégé. Ouvrez une demande de vérification (KYC) pour l'utiliser.",
+          };
         }
       }
     }
@@ -176,7 +179,7 @@ export const createCompany = createServerFn({ method: "POST" })
       role: "owner",
     });
     if (e2) throw new Error(e2.message);
-    return { id: company.id };
+    return { id: company.id as string, needsVerification: false as const };
   });
 
 
