@@ -461,16 +461,26 @@ function AuthPage() {
                 {mode === "forgot" && "Envoyer le lien"}
               </Button>
             </form>
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-sm text-muted-foreground space-y-2">
               {mode === "signin" ? (
                 <>
-                  Pas encore de compte ?{" "}
-                  <button
-                    onClick={() => setMode("signup")}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    Créer un compte
-                  </button>
+                  <div>
+                    Pas encore de compte ?{" "}
+                    <button
+                      onClick={() => setMode("signup")}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Créer un compte
+                    </button>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => setMode("forgot")}
+                      className="text-xs text-muted-foreground hover:text-primary underline underline-offset-2"
+                    >
+                      J'ai perdu l'accès à mon compte
+                    </button>
+                  </div>
                 </>
               ) : (
                 <button
