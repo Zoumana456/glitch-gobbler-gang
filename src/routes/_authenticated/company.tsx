@@ -15,6 +15,7 @@ import {
   getCompanyDashboard,
   getCompanyDailyStatus,
 } from "@/lib/company.functions";
+import { checkCompanyNameRisk, type CompanyNameRisk } from "@/lib/company-risk.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
