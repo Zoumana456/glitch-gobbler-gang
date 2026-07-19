@@ -32,9 +32,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Shield, ShieldAlert, ShieldCheck, Trash2, Plus, Users, Lock, ExternalLink } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck, Trash2, Plus, Users, Lock, ExternalLink, LayoutDashboard, Package, Receipt, ScrollText, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { formatLongDate } from "@/lib/date-utils";
+import { DashboardPanel } from "@/components/admin/DashboardPanel";
+import { PlansPanel } from "@/components/admin/PlansPanel";
+import { InvoicesPanel } from "@/components/admin/InvoicesPanel";
+import { UsersPanel } from "@/components/admin/UsersPanel";
+import { AuditPanel } from "@/components/admin/AuditPanel";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
