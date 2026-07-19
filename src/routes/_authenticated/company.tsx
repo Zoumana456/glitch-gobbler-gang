@@ -39,6 +39,7 @@ import {
   CalendarCheck2,
   CircleCheck,
   CircleAlert,
+  ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatLongDate } from "@/lib/date-utils";
@@ -96,6 +97,7 @@ function CompanyPage() {
 
   const [newCompanyName, setNewCompanyName] = useState("");
   const [verifyOpen, setVerifyOpen] = useState(false);
+  const [protectedReason, setProtectedReason] = useState<string | null>(null);
   const [activityFilter, setActivityFilter] = useState<"all" | "active" | "inactive">("all");
 
   function changeThreshold(v: 3 | 4) {
@@ -114,12 +116,24 @@ function CompanyPage() {
     }, 50);
   }
 
+  function triggerProtectedFlow(reason: string) {
+    setProtectedReason(reason);
+    setVerifyOpen(true);
+    toast.warning("Nom d'entreprise protégé", {
+      description: `${reason} Une vérification d'identité (KYC) est nécessaire pour l'utiliser.`,
+      duration: 10000,
+      action: {
+        label: "Vérifier mon identité",
+        onClick: () => setVerifyOpen(true),
+      },
+    });
+  }
+
   const createMut = useMutation({
     mutationFn: (name: string) => createCompanyFn({ data: { name } }),
     onSuccess: (res) => {
       if (res?.needsVerification) {
-        setVerifyOpen(true);
-        toast.info(res.reason ?? "Nom réservé — vérification requise.");
+        triggerProtectedFlow(res.reason ?? "Ce nom d'entreprise est réservé.");
         return;
       }
       toast.success("Entreprise créée");
@@ -128,8 +142,7 @@ function CompanyPage() {
     onError: (e: any) => {
       const msg = String(e?.message ?? "Erreur");
       if (msg.includes("protégé") || msg.toLowerCase().includes("vérification")) {
-        setVerifyOpen(true);
-        toast.info("Ce nom est réservé — ouvrez une demande de vérification.");
+        triggerProtectedFlow("Ce nom d'entreprise est réservé.");
         return;
       }
       toast.error(msg);
@@ -157,10 +170,41 @@ function CompanyPage() {
               <Input
                 id="name"
                 value={newCompanyName}
-                onChange={(e) => setNewCompanyName(e.target.value)}
+                onChange={(e) => {
+                  setNewCompanyName(e.target.value);
+                  if (protectedReason) setProtectedReason(null);
+                }}
                 placeholder="Ma société"
               />
             </div>
+            {protectedReason && (
+              <div className="rounded-md border border-amber-500/60 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-semibold text-amber-900 dark:text-amber-100">
+                      Ce nom est réservé
+                    </p>
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      {protectedReason} Une vérification d'identité (KYC) est nécessaire pour l'utiliser.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pl-8">
+                  <Button
+                    size="sm"
+                    onClick={() => setVerifyOpen(true)}
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    <ShieldAlert className="h-4 w-4 mr-1.5" />
+                    Démarrer la vérification (KYC)
+                  </Button>
+                  <Button asChild size="sm" variant="ghost">
+                    <Link to="/profile">En savoir plus</Link>
+                  </Button>
+                </div>
+              </div>
+            )}
             <Button
               onClick={() => newCompanyName.trim() && createMut.mutate(newCompanyName.trim())}
               disabled={!newCompanyName.trim() || createMut.isPending}
