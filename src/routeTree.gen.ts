@@ -14,13 +14,21 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedCompanyRouteImport } from './routes/_authenticated/company'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
+import { Route as AuthenticatedMinutesIndexRouteImport } from './routes/_authenticated/minutes.index'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
+import { Route as AuthenticatedMinutesDashboardRouteImport } from './routes/_authenticated/minutes.dashboard'
+import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authenticated/minutes.$id'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
 import { Route as ApiPublicAiTranscribeRouteImport } from './routes/api/public/ai/transcribe'
+import { Route as ApiPublicAiSpeakRouteImport } from './routes/api/public/ai/speak'
 import { Route as AuthenticatedReportsIdEditRouteImport } from './routes/_authenticated/reports.$id.edit'
+import { Route as AuthenticatedCompanyEmployeesIdRouteImport } from './routes/_authenticated/company.employees.$id'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -46,15 +54,36 @@ const ShareTokenRoute = ShareTokenRouteImport.update({
   path: '/share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCompanyRoute = AuthenticatedCompanyRouteImport.update({
+  id: '/company',
+  path: '/company',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedReportsIndexRoute =
   AuthenticatedReportsIndexRouteImport.update({
     id: '/reports/',
     path: '/reports/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMinutesIndexRoute =
+  AuthenticatedMinutesIndexRouteImport.update({
+    id: '/minutes/',
+    path: '/minutes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedReportsNewRoute = AuthenticatedReportsNewRouteImport.update({
@@ -65,6 +94,17 @@ const AuthenticatedReportsNewRoute = AuthenticatedReportsNewRouteImport.update({
 const AuthenticatedReportsIdRoute = AuthenticatedReportsIdRouteImport.update({
   id: '/reports/$id',
   path: '/reports/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMinutesDashboardRoute =
+  AuthenticatedMinutesDashboardRouteImport.update({
+    id: '/minutes/dashboard',
+    path: '/minutes/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMinutesIdRoute = AuthenticatedMinutesIdRouteImport.update({
+  id: '/minutes/$id',
+  path: '/minutes/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedReportsIdIndexRoute =
@@ -78,23 +118,42 @@ const ApiPublicAiTranscribeRoute = ApiPublicAiTranscribeRouteImport.update({
   path: '/api/public/ai/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAiSpeakRoute = ApiPublicAiSpeakRouteImport.update({
+  id: '/api/public/ai/speak',
+  path: '/api/public/ai/speak',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedReportsIdEditRoute =
   AuthenticatedReportsIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () => AuthenticatedReportsIdRoute,
   } as any)
+const AuthenticatedCompanyEmployeesIdRoute =
+  AuthenticatedCompanyEmployeesIdRouteImport.update({
+    id: '/employees/$id',
+    path: '/employees/$id',
+    getParentRoute: () => AuthenticatedCompanyRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/company': typeof AuthenticatedCompanyRouteWithChildren
   '/profile': typeof AuthenticatedProfileRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/share/$token': typeof ShareTokenRoute
+  '/minutes/$id': typeof AuthenticatedMinutesIdRoute
+  '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
+  '/company/employees/$id': typeof AuthenticatedCompanyEmployeesIdRoute
   '/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
+  '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
   '/api/public/ai/transcribe': typeof ApiPublicAiTranscribeRoute
   '/reports/$id/': typeof AuthenticatedReportsIdIndexRoute
 }
@@ -102,11 +161,19 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/company': typeof AuthenticatedCompanyRouteWithChildren
   '/profile': typeof AuthenticatedProfileRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/share/$token': typeof ShareTokenRoute
+  '/minutes/$id': typeof AuthenticatedMinutesIdRoute
+  '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/minutes': typeof AuthenticatedMinutesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
+  '/company/employees/$id': typeof AuthenticatedCompanyEmployeesIdRoute
   '/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
+  '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
   '/api/public/ai/transcribe': typeof ApiPublicAiTranscribeRoute
   '/reports/$id': typeof AuthenticatedReportsIdIndexRoute
 }
@@ -116,12 +183,20 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/company': typeof AuthenticatedCompanyRouteWithChildren
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/share/$token': typeof ShareTokenRoute
+  '/_authenticated/minutes/$id': typeof AuthenticatedMinutesIdRoute
+  '/_authenticated/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
+  '/_authenticated/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
+  '/_authenticated/company/employees/$id': typeof AuthenticatedCompanyEmployeesIdRoute
   '/_authenticated/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
+  '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
   '/api/public/ai/transcribe': typeof ApiPublicAiTranscribeRoute
   '/_authenticated/reports/$id/': typeof AuthenticatedReportsIdIndexRoute
 }
@@ -131,12 +206,20 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/admin'
+    | '/company'
     | '/profile'
+    | '/invite/$token'
     | '/share/$token'
+    | '/minutes/$id'
+    | '/minutes/dashboard'
     | '/reports/$id'
     | '/reports/new'
+    | '/minutes/'
     | '/reports/'
+    | '/company/employees/$id'
     | '/reports/$id/edit'
+    | '/api/public/ai/speak'
     | '/api/public/ai/transcribe'
     | '/reports/$id/'
   fileRoutesByTo: FileRoutesByTo
@@ -144,11 +227,19 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/admin'
+    | '/company'
     | '/profile'
+    | '/invite/$token'
     | '/share/$token'
+    | '/minutes/$id'
+    | '/minutes/dashboard'
     | '/reports/new'
+    | '/minutes'
     | '/reports'
+    | '/company/employees/$id'
     | '/reports/$id/edit'
+    | '/api/public/ai/speak'
     | '/api/public/ai/transcribe'
     | '/reports/$id'
   id:
@@ -157,12 +248,20 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/admin'
+    | '/_authenticated/company'
     | '/_authenticated/profile'
+    | '/invite/$token'
     | '/share/$token'
+    | '/_authenticated/minutes/$id'
+    | '/_authenticated/minutes/dashboard'
     | '/_authenticated/reports/$id'
     | '/_authenticated/reports/new'
+    | '/_authenticated/minutes/'
     | '/_authenticated/reports/'
+    | '/_authenticated/company/employees/$id'
     | '/_authenticated/reports/$id/edit'
+    | '/api/public/ai/speak'
     | '/api/public/ai/transcribe'
     | '/_authenticated/reports/$id/'
   fileRoutesById: FileRoutesById
@@ -172,7 +271,9 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  ApiPublicAiSpeakRoute: typeof ApiPublicAiSpeakRoute
   ApiPublicAiTranscribeRoute: typeof ApiPublicAiTranscribeRoute
 }
 
@@ -213,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -220,11 +328,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/company': {
+      id: '/_authenticated/company'
+      path: '/company'
+      fullPath: '/company'
+      preLoaderRoute: typeof AuthenticatedCompanyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/': {
       id: '/_authenticated/reports/'
       path: '/reports'
       fullPath: '/reports/'
       preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/minutes/': {
+      id: '/_authenticated/minutes/'
+      path: '/minutes'
+      fullPath: '/minutes/'
+      preLoaderRoute: typeof AuthenticatedMinutesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/new': {
@@ -241,6 +370,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/minutes/dashboard': {
+      id: '/_authenticated/minutes/dashboard'
+      path: '/minutes/dashboard'
+      fullPath: '/minutes/dashboard'
+      preLoaderRoute: typeof AuthenticatedMinutesDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/minutes/$id': {
+      id: '/_authenticated/minutes/$id'
+      path: '/minutes/$id'
+      fullPath: '/minutes/$id'
+      preLoaderRoute: typeof AuthenticatedMinutesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/$id/': {
       id: '/_authenticated/reports/$id/'
       path: '/'
@@ -255,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAiTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai/speak': {
+      id: '/api/public/ai/speak'
+      path: '/api/public/ai/speak'
+      fullPath: '/api/public/ai/speak'
+      preLoaderRoute: typeof ApiPublicAiSpeakRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/reports/$id/edit': {
       id: '/_authenticated/reports/$id/edit'
       path: '/edit'
@@ -262,8 +412,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsIdEditRouteImport
       parentRoute: typeof AuthenticatedReportsIdRoute
     }
+    '/_authenticated/company/employees/$id': {
+      id: '/_authenticated/company/employees/$id'
+      path: '/employees/$id'
+      fullPath: '/company/employees/$id'
+      preLoaderRoute: typeof AuthenticatedCompanyEmployeesIdRouteImport
+      parentRoute: typeof AuthenticatedCompanyRoute
+    }
   }
 }
+
+interface AuthenticatedCompanyRouteChildren {
+  AuthenticatedCompanyEmployeesIdRoute: typeof AuthenticatedCompanyEmployeesIdRoute
+}
+
+const AuthenticatedCompanyRouteChildren: AuthenticatedCompanyRouteChildren = {
+  AuthenticatedCompanyEmployeesIdRoute: AuthenticatedCompanyEmployeesIdRoute,
+}
+
+const AuthenticatedCompanyRouteWithChildren =
+  AuthenticatedCompanyRoute._addFileChildren(AuthenticatedCompanyRouteChildren)
 
 interface AuthenticatedReportsIdRouteChildren {
   AuthenticatedReportsIdEditRoute: typeof AuthenticatedReportsIdEditRoute
@@ -282,16 +450,26 @@ const AuthenticatedReportsIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedCompanyRoute: typeof AuthenticatedCompanyRouteWithChildren
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedMinutesIdRoute: typeof AuthenticatedMinutesIdRoute
+  AuthenticatedMinutesDashboardRoute: typeof AuthenticatedMinutesDashboardRoute
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
+  AuthenticatedMinutesIndexRoute: typeof AuthenticatedMinutesIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedCompanyRoute: AuthenticatedCompanyRouteWithChildren,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedMinutesIdRoute: AuthenticatedMinutesIdRoute,
+  AuthenticatedMinutesDashboardRoute: AuthenticatedMinutesDashboardRoute,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
+  AuthenticatedMinutesIndexRoute: AuthenticatedMinutesIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
 }
 
@@ -303,9 +481,21 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  InviteTokenRoute: InviteTokenRoute,
   ShareTokenRoute: ShareTokenRoute,
+  ApiPublicAiSpeakRoute: ApiPublicAiSpeakRoute,
   ApiPublicAiTranscribeRoute: ApiPublicAiTranscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
