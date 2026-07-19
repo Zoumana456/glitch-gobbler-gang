@@ -143,13 +143,14 @@ export const createCompany = createServerFn({ method: "POST" })
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "");
     if (slug) {
-      const { data: reserved } = await supabase
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: reserved } = await supabaseAdmin
         .from("reserved_company_names")
         .select("slug")
         .eq("slug", slug)
         .maybeSingle();
       if (reserved) {
-        const { data: approved } = await supabase
+        const { data: approved } = await supabaseAdmin
           .from("company_verification_requests")
           .select("id")
           .eq("user_id", userId)
