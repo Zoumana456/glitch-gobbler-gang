@@ -31,8 +31,12 @@ function ProfilePage() {
   const fetchProfile = useServerFn(getMyProfile);
   const updateProfile = useServerFn(updateMyProfile);
   const q = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
+  const listVerif = useServerFn(listMyVerificationRequests);
+  const verif = useQuery({ queryKey: ["my-verification-requests"], queryFn: () => listVerif() });
   const [fullName, setFullName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [verifCompany, setVerifCompany] = useState("");
+  const [verifOpen, setVerifOpen] = useState(false);
 
   useEffect(() => {
     if (q.data) setFullName(q.data.full_name ?? "");
