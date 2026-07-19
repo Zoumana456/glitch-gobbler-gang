@@ -199,15 +199,31 @@ function SidebarInner({
     queryFn: () => profileFn(),
     staleTime: 60_000,
   });
+  const adminOnly = (profile as any)?.admin_only === true;
+
+  // Redirect admin-only accounts to /admin (allow /admin and /profile)
+  useEffect(() => {
+    if (!adminOnly) return;
+    if (!pathname.startsWith("/admin") && !pathname.startsWith("/profile")) {
+      router.navigate({ to: "/admin", replace: true });
+    }
+  }, [adminOnly, pathname, router]);
+
   const avatarUrl = profile?.avatar_url ?? undefined;
   const displayName = profile?.full_name ?? email;
   const initials = (profile?.full_name ?? email ?? "?").slice(0, 2).toUpperCase();
-  const navItems = [
-    ...NAV,
-    ...(isAdmin
-      ? ([{ to: "/admin", label: "Admin plateforme", icon: ShieldAlert }] as const)
-      : []),
-  ];
+  const navItems = adminOnly
+    ? ([
+        { to: "/admin", label: "Admin plateforme", icon: ShieldAlert },
+        { to: "/profile", label: "Profil", icon: UserCircle2 },
+      ] as const)
+    : [
+        ...NAV,
+        ...(isAdmin
+          ? ([{ to: "/admin", label: "Admin plateforme", icon: ShieldAlert }] as const)
+          : []),
+      ];
+
   return (
     <>
       <div
