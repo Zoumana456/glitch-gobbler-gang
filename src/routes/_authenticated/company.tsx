@@ -101,6 +101,30 @@ function CompanyPage() {
   const [verifyOpen, setVerifyOpen] = useState(false);
   const [protectedReason, setProtectedReason] = useState<string | null>(null);
   const [activityFilter, setActivityFilter] = useState<"all" | "active" | "inactive">("all");
+  const [riskInfo, setRiskInfo] = useState<CompanyNameRisk | null>(null);
+  const [riskLoading, setRiskLoading] = useState(false);
+  const checkRiskFn = useServerFn(checkCompanyNameRisk);
+
+  useEffect(() => {
+    const name = newCompanyName.trim();
+    if (name.length < 3) {
+      setRiskInfo(null);
+      setRiskLoading(false);
+      return;
+    }
+    setRiskLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await checkRiskFn({ data: { name } });
+        setRiskInfo(r);
+      } catch {
+        setRiskInfo(null);
+      } finally {
+        setRiskLoading(false);
+      }
+    }, 700);
+    return () => clearTimeout(t);
+  }, [newCompanyName, checkRiskFn]);
 
   function changeThreshold(v: 3 | 4) {
     setThresholdDays(v);
