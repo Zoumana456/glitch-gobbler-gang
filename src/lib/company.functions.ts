@@ -563,3 +563,114 @@ export const getCompanyDailyStatus = createServerFn({ method: "GET" })
     });
   });
 
+
+// ----------- Plan selection for a company owner -----------
+
+export type MyCompanyPlan = {
+  companyId: string | null;
+  companyName: string | null;
+  isOwner: boolean;
+  currentPlanId: string | null;
+  currentPlanName: string | null;
+  billingCycle: string | null;
+  pendingPlanId: string | null;
+  pendingPlanName: string | null;
+  pendingBillingCycle: string | null;
+  pendingRequestedAt: string | null;
+};
+
+export const getMyCompanyPlan = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<MyCompanyPlan> => {
+    const { supabase, userId } = context;
+    const { data: mem } = await supabase
+      .from("company_members")
+      .select("company_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!mem) {
+      return {
+        companyId: null,
+        companyName: null,
+        isOwner: false,
+        currentPlanId: null,
+        currentPlanName: null,
+        billingCycle: null,
+        pendingPlanId: null,
+        pendingPlanName: null,
+        pendingBillingCycle: null,
+        pendingRequestedAt: null,
+      };
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: comp } = await supabaseAdmin
+      .from("companies")
+      .select(
+        "id, name, owner_id, plan_id, billing_cycle, pending_plan_id, pending_billing_cycle, pending_requested_at, current_plan:subscription_plans!companies_plan_id_fkey(name), pending_plan:subscription_plans!companies_pending_plan_id_fkey(name)"
+      )
+      .eq("id", mem.company_id)
+      .maybeSingle();
+    if (!comp) {
+      return {
+        companyId: null,
+        companyName: null,
+        isOwner: false,
+        currentPlanId: null,
+        currentPlanName: null,
+        billingCycle: null,
+        pendingPlanId: null,
+        pendingPlanName: null,
+        pendingBillingCycle: null,
+        pendingRequestedAt: null,
+      };
+    }
+    return {
+      companyId: comp.id,
+      companyName: comp.name,
+      isOwner: comp.owner_id === userId,
+      currentPlanId: comp.plan_id ?? null,
+      currentPlanName: (comp as any).current_plan?.name ?? null,
+      billingCycle: comp.billing_cycle ?? null,
+      pendingPlanId: comp.pending_plan_id ?? null,
+      pendingPlanName: (comp as any).pending_plan?.name ?? null,
+      pendingBillingCycle: comp.pending_billing_cycle ?? null,
+      pendingRequestedAt: comp.pending_requested_at ?? null,
+    };
+  });
+
+export const requestPlanChange = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { planId: string; billingCycle: "monthly" | "yearly" }) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        billingCycle: z.enum(["monthly", "yearly"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: comp } = await supabase
+      .from("companies")
+      .select("id")
+      .eq("owner_id", userId)
+      .maybeSingle();
+    if (!comp) throw new Error("Seul le dirigeant peut demander un changement de plan.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: plan } = await supabaseAdmin
+      .from("subscription_plans")
+      .select("id, is_active")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (!plan || !plan.is_active) throw new Error("Plan indisponible.");
+    const { error } = await supabaseAdmin
+      .from("companies")
+      .update({
+        pending_plan_id: data.planId,
+        pending_billing_cycle: data.billingCycle,
+        pending_requested_at: new Date().toISOString(),
+      })
+      .eq("id", comp.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
