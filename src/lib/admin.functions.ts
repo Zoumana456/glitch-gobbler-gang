@@ -12,8 +12,11 @@ async function isPlatformAdmin(userId: string): Promise<boolean> {
   return !!data;
 }
 
-async function assertAdmin(userId: string) {
+async function assertAdmin(userId: string, claims?: any) {
   if (!(await isPlatformAdmin(userId))) throw new Error("Réservé aux super admins");
+  if (claims !== undefined && claims?.aal !== "aal2") {
+    throw new Error("2FA requise (super admin doit valider un code TOTP)");
+  }
 }
 
 async function logAction(
@@ -52,7 +55,7 @@ export type AdminDashboard = {
 export const getAdminDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminDashboard> => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -123,7 +126,7 @@ export const upsertPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => planSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const payload: any = { ...data };
     if (data.id) {
@@ -143,7 +146,7 @@ export const deletePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("subscription_plans").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -164,7 +167,7 @@ export const assignCompanyPlan = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch: any = {
       plan_id: data.planId,
@@ -208,7 +211,7 @@ export const listInvoices = createServerFn({ method: "GET" })
     z.object({ status: z.string().optional(), companyId: z.string().uuid().optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<Invoice[]> => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("company_invoices")
@@ -273,7 +276,7 @@ export const createInvoice = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const number = await nextInvoiceNumber();
     const { data: row, error } = await supabaseAdmin
@@ -302,7 +305,7 @@ export const updateInvoiceStatus = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), status: z.enum(["draft", "sent", "paid", "void", "overdue"]) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch: any = { status: data.status };
     if (data.status === "paid") patch.paid_at = new Date().toISOString();
@@ -316,7 +319,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("company_invoices").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -341,7 +344,7 @@ export const listUsers = createServerFn({ method: "GET" })
     z.object({ q: z.string().optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<AdminUserRow[]> => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("profiles")
@@ -398,7 +401,7 @@ export const listAuditLog = createServerFn({ method: "GET" })
     z.object({ q: z.string().optional(), action: z.string().optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<AuditRow[]> => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("admin_audit_log")

@@ -12,14 +12,35 @@ async function isPlatformAdmin(userId: string): Promise<boolean> {
   return !!data;
 }
 
-async function assertPlatformAdmin(_supabase: any, userId: string) {
+function hasAal2(claims: any): boolean {
+  return claims?.aal === "aal2";
+}
+
+async function assertPlatformAdmin(_supabase: any, userId: string, claims?: any) {
   if (!(await isPlatformAdmin(userId))) throw new Error("Réservé aux super admins");
+  if (claims !== undefined && !hasAal2(claims)) {
+    throw new Error("2FA requise (super admin doit valider un code TOTP)");
+  }
 }
 
 export const checkIsPlatformAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<boolean> => {
     return isPlatformAdmin(context.userId);
+  });
+
+export type AdminAccessStatus = {
+  isAdmin: boolean;
+  aal: string | null;
+  mfaVerified: boolean;
+};
+
+export const getAdminAccessStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminAccessStatus> => {
+    const isAdmin = await isPlatformAdmin(context.userId);
+    const aal = (context.claims as any)?.aal ?? null;
+    return { isAdmin, aal, mfaVerified: aal === "aal2" };
   });
 
 
@@ -37,7 +58,7 @@ export type AdminCompanyRow = {
 export const listCompaniesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminCompanyRow[]> => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: companies } = await supabaseAdmin
       .from("companies")
@@ -82,7 +103,7 @@ export const updateSeatLimit = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("companies")
@@ -102,7 +123,7 @@ export type PlatformAdminRow = {
 export const listPlatformAdmins = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PlatformAdminRow[]> => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows } = await supabaseAdmin
       .from("platform_admins")
@@ -129,7 +150,7 @@ export const addPlatformAdmin = createServerFn({ method: "POST" })
     z.object({ email: z.string().email() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const email = data.email.toLowerCase();
     const { data: prof } = await supabaseAdmin
@@ -151,7 +172,7 @@ export const removePlatformAdmin = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, context.claims);
     if (data.userId === context.userId)
       throw new Error("Vous ne pouvez pas vous retirer vous-même");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

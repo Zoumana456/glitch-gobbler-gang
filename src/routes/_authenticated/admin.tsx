@@ -4,12 +4,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import {
   checkIsPlatformAdmin,
+  getAdminAccessStatus,
   listCompaniesAdmin,
   updateSeatLimit,
   listPlatformAdmins,
   addPlatformAdmin,
   removePlatformAdmin,
 } from "@/lib/platform.functions";
+import { MfaGate } from "@/components/admin/MfaGate";
 import {
   listReservedNames,
   addReservedName,
@@ -48,18 +50,40 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 function AdminPage() {
   const navigate = useNavigate();
-  const checkFn = useServerFn(checkIsPlatformAdmin);
-  const { data: isAdmin, isLoading } = useQuery({
-    queryKey: ["is-platform-admin"],
-    queryFn: () => checkFn(),
+  const queryClient = useQueryClient();
+  const statusFn = useServerFn(getAdminAccessStatus);
+  const { data: status, isLoading } = useQuery({
+    queryKey: ["admin-access-status"],
+    queryFn: () => statusFn(),
   });
 
   useEffect(() => {
-    if (!isLoading && isAdmin === false) navigate({ to: "/reports" });
-  }, [isAdmin, isLoading, navigate]);
+    if (!isLoading && status && !status.isAdmin) navigate({ to: "/reports" });
+  }, [status, isLoading, navigate]);
+
+  async function handleMfaVerified() {
+    // Le SDK a déjà persisté un JWT aal2. Rafraîchir la vue admin.
+    await queryClient.invalidateQueries({ queryKey: ["admin-access-status"] });
+  }
 
   if (isLoading) return <div className="p-8">Chargement...</div>;
-  if (!isAdmin) return null;
+  if (!status?.isAdmin) return null;
+
+  if (!status.mfaVerified) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-6">
+        <header>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <ShieldAlert className="h-6 w-6 text-primary" /> Administration plateforme
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Validation de la double authentification requise.
+          </p>
+        </header>
+        <MfaGate onVerified={handleMfaVerified} />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-6">
