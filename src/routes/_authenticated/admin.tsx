@@ -110,7 +110,7 @@ function AdminPage() {
         <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
         <TabsContent value="plans" className="mt-4"><PlansPanel /></TabsContent>
         <TabsContent value="invoices" className="mt-4"><InvoicesPanel /></TabsContent>
-        <TabsContent value="verifications" className="mt-4"><VerificationsPanel /></TabsContent>
+        
         <TabsContent value="reserved" className="mt-4"><ReservedNamesPanel /></TabsContent>
         <TabsContent value="admins" className="mt-4"><AdminsPanel /></TabsContent>
         <TabsContent value="audit" className="mt-4"><AuditPanel /></TabsContent>
