@@ -215,8 +215,8 @@ export const emergencyResetMyMfa = createServerFn({ method: "POST" })
       await supabaseAdmin.from("admin_audit_log").insert({
         actor_id: context.userId,
         action: "mfa.emergency_reset",
-        target_type: "user",
-        target_id: context.userId,
+        entity_type: "user",
+        entity_id: context.userId,
         metadata: { factors_removed: factors.length },
       });
     }
