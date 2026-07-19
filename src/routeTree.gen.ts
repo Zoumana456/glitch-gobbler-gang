@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
+import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated/plans'
@@ -59,6 +60,11 @@ const IndexRoute = IndexRouteImport.update({
 const ShareTokenRoute = ShareTokenRouteImport.update({
   id: '/share/$token',
   path: '/share/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/plans': typeof AuthenticatedPlansRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
   '/share/$token': typeof ShareTokenRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/plans': typeof AuthenticatedPlansRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
   '/share/$token': typeof ShareTokenRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/_authenticated/plans': typeof AuthenticatedPlansRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/_authenticated/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/plans'
     | '/profile'
     | '/invite/$token'
+    | '/legal/privacy'
     | '/share/$token'
     | '/minutes/$id'
     | '/minutes/dashboard'
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/plans'
     | '/profile'
     | '/invite/$token'
+    | '/legal/privacy'
     | '/share/$token'
     | '/minutes/$id'
     | '/minutes/dashboard'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plans'
     | '/_authenticated/profile'
     | '/invite/$token'
+    | '/legal/privacy'
     | '/share/$token'
     | '/_authenticated/minutes/$id'
     | '/_authenticated/minutes/dashboard'
@@ -297,6 +309,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiPublicAiSpeakRoute: typeof ApiPublicAiSpeakRoute
   ApiPublicAiTranscribeRoute: typeof ApiPublicAiTranscribeRoute
@@ -344,6 +357,13 @@ declare module '@tanstack/react-router' {
       path: '/share/$token'
       fullPath: '/share/$token'
       preLoaderRoute: typeof ShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -524,6 +544,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   InviteTokenRoute: InviteTokenRoute,
+  LegalPrivacyRoute: LegalPrivacyRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiPublicAiSpeakRoute: ApiPublicAiSpeakRoute,
   ApiPublicAiTranscribeRoute: ApiPublicAiTranscribeRoute,
