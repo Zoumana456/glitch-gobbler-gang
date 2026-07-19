@@ -117,13 +117,19 @@ export type Database = {
       company_verification_requests: {
         Row: {
           admin_note: string | null
+          ai_check_report: Json | null
+          ai_check_status: string | null
           created_at: string
+          full_legal_name: string | null
           id: string
+          identity_document_path: string | null
+          identity_document_type: string | null
           message: string | null
           proof_path: string | null
           requested_name: string
           reviewed_at: string | null
           reviewed_by: string | null
+          selfie_path: string | null
           slug: string
           status: string
           updated_at: string
@@ -131,13 +137,19 @@ export type Database = {
         }
         Insert: {
           admin_note?: string | null
+          ai_check_report?: Json | null
+          ai_check_status?: string | null
           created_at?: string
+          full_legal_name?: string | null
           id?: string
+          identity_document_path?: string | null
+          identity_document_type?: string | null
           message?: string | null
           proof_path?: string | null
           requested_name: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          selfie_path?: string | null
           slug: string
           status?: string
           updated_at?: string
@@ -145,13 +157,19 @@ export type Database = {
         }
         Update: {
           admin_note?: string | null
+          ai_check_report?: Json | null
+          ai_check_status?: string | null
           created_at?: string
+          full_legal_name?: string | null
           id?: string
+          identity_document_path?: string | null
+          identity_document_type?: string | null
           message?: string | null
           proof_path?: string | null
           requested_name?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          selfie_path?: string | null
           slug?: string
           status?: string
           updated_at?: string
