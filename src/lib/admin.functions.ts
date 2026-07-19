@@ -333,26 +333,20 @@ export type AdminUserRow = {
   reports_count: number;
   company_name: string | null;
   is_admin: boolean;
+  is_banned: boolean;
+  banned_reason: string | null;
 };
 
 export const listUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { q?: string } | undefined) =>
-    z.object({ q: z.string().optional() }).parse(d ?? {}),
-  )
-  .handler(async ({ data, context }): Promise<AdminUserRow[]> => {
+  .handler(async ({ context }): Promise<AdminUserRow[]> => {
     await assertAdmin(context.userId, context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    let q = supabaseAdmin
+    const { data: profs, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, full_name, created_at")
+      .select("id, email, full_name, created_at, is_banned, banned_reason")
       .order("created_at", { ascending: false })
       .limit(500);
-    if (data.q && data.q.trim()) {
-      const like = `%${data.q.trim()}%`;
-      q = q.or(`email.ilike.${like},full_name.ilike.${like}`);
-    }
-    const { data: profs, error } = await q;
     if (error) throw new Error(error.message);
     if (!profs || profs.length === 0) return [];
     const ids = profs.map((p: any) => p.id);
@@ -378,7 +372,79 @@ export const listUsers = createServerFn({ method: "GET" })
       reports_count: reportsCount[p.id] ?? 0,
       company_name: companyMap[p.id] ?? null,
       is_admin: adminSet.has(p.id),
+      is_banned: !!p.is_banned,
+      banned_reason: p.banned_reason ?? null,
     }));
+  });
+
+export const banUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string; reason?: string }) =>
+    z.object({ userId: z.string().uuid(), reason: z.string().max(500).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId, context.claims);
+    if (data.userId === context.userId) throw new Error("Vous ne pouvez pas vous bannir vous-même");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await supabaseAdmin
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+    if (isAdmin) throw new Error("Impossible de bannir un super admin");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        is_banned: true,
+        banned_at: new Date().toISOString(),
+        banned_reason: data.reason ?? null,
+      })
+      .eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    try {
+      await supabaseAdmin.auth.admin.signOut(data.userId, "global");
+    } catch {}
+    await logAction(context.userId, "user.ban", "user", data.userId, { reason: data.reason });
+    return { ok: true };
+  });
+
+export const unbanUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string }) => z.object({ userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId, context.claims);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ is_banned: false, banned_at: null, banned_reason: null })
+      .eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    await logAction(context.userId, "user.unban", "user", data.userId);
+    return { ok: true };
+  });
+
+export const deleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string }) => z.object({ userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId, context.claims);
+    if (data.userId === context.userId) throw new Error("Vous ne pouvez pas supprimer votre propre compte");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await supabaseAdmin
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+    if (isAdmin) throw new Error("Impossible de supprimer un super admin. Retirez-le d'abord des super admins.");
+    const { data: prof } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", data.userId)
+      .maybeSingle();
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error(error.message);
+    await logAction(context.userId, "user.delete", "user", data.userId, { email: prof?.email });
+    return { ok: true };
   });
 
 // ----------- Audit log -----------
