@@ -1,100 +1,84 @@
 ## Objectif
 
-Ajouter un vrai KYC (Know Your Customer) au flux de vérification d'entreprise afin qu'un super admin puisse prouver que la personne qui demande un nom réservé est bien celle qu'elle prétend être — pas juste vérifier un Kbis.
+Rendre l'app identifiable (nom + logo + favicon) et rendre la **vérification d'identité** accessible sans devoir passer par l'erreur « nom réservé ». Afficher l'avatar de l'utilisateur en haut à droite partout dans l'espace connecté.
 
-## Aujourd'hui (état confirmé par lecture du code)
+## 1. Identité de marque
 
-- `RequestVerificationDialog` demande **1 seul fichier** (justificatif d'entreprise) + un message libre.
-- Stockage : bucket privé `company-proofs`, chemin unique par utilisateur.
-- Table `company_verification_requests` (12 colonnes) — un seul chemin de fichier.
-- Aucune vérification d'identité personnelle, aucun selfie, aucune correspondance nom-profil-justificatif.
+- **Nom** : **DailyBrief** — sous-titre : *Team reports, made simple*.
+- **Palette** (verrouillée) : `#0F172A` (slate 900), `#3B82F6` (blue 500), `#F8FAFC` (slate 50).
+- **Logo** : monogramme géométrique « DB » minimal moderne — carré arrondi bleu (#3B82F6) sur fond slate, monogramme en blanc. Généré via `imagegen--generate_image` (transparent PNG) → `src/assets/logo-dailybrief.png`.
+- **Favicon** : version carrée du monogramme → `public/favicon-dailybrief.png`, référencé dans `src/routes/__root.tsx` (et suppression de `public/favicon.ico` par défaut).
+- Mise à jour de `head()` du root : `title`, `og:title`, `og:description`, `twitter:*` avec « DailyBrief — Team reports made simple ».
 
-## Ce que le plan ajoute
+## 2. Barre de navigation globale (`AppTopBar`)
 
-### 1. Base de données (migration)
+Nouveau composant `src/components/AppTopBar.tsx`, monté dans `src/routes/_authenticated/route.tsx` juste avant `<Outlet />` (donc visible partout dans l'espace connecté, jamais sur `/auth` ni sur les pages publiques de partage).
 
-Ajouter à `company_verification_requests` :
-- `identity_document_path text` — pièce d'identité (CNI / passeport / permis)
-- `identity_document_type text` — enum contrôlé côté app : `id_card` | `passport` | `driving_license`
-- `selfie_path text` — selfie tenant la pièce d'identité
-- `full_legal_name text` — nom légal saisi par le demandeur (pour comparaison OCR)
-- `ai_check_status text` — `pending` | `passed` | `flagged` | `skipped`
-- `ai_check_report jsonb` — résultat du contrôle IA (score, incohérences détectées)
+Contenu :
+- **Gauche** : logo + wordmark « DailyBrief », `<Link to="/reports">`.
+- **Centre** (desktop) : liens rapides Rapports · Entreprise · PV · Administration (uniquement si admin).
+- **Droite** : 
+  - Avatar de l'utilisateur (photo depuis `profiles.avatar_url`, sinon initiales).
+  - Menu déroulant (shadcn `DropdownMenu`) :
+    - En-tête : nom + email
+    - **Mon profil** → `/profile`
+    - **Vérifier mon identité / entreprise** → ouvre `RequestVerificationDialog` (voir §3)
+    - **Mes demandes de vérification** → nouvel écran (voir §4)
+    - Séparateur
+    - **Se déconnecter**
 
-Aucune donnée existante n'est perdue (colonnes nullables, valeurs par défaut).
+Récupération avatar via un petit `useQuery(["me-profile"])` qui appelle une nouvelle server fn `getMyProfileMini` (retourne `{ full_name, email, avatar_url, is_admin }`). Signed URL pour l'avatar si stocké en bucket privé.
 
-### 2. Contrôle automatique par IA (Lovable AI Gateway)
+## 3. Ouverture directe du KYC depuis le menu
 
-Nouvelle fonction serveur `runKycAiCheck` qui, à la soumission :
-- Charge les 3 fichiers depuis `company-proofs` en signed URL.
-- Envoie à `google/gemini-3.5-flash` (vision multimodale) :
-  - Le justificatif d'entreprise
-  - La pièce d'identité
-  - Le selfie
-  - Le `full_legal_name` saisi et le nom du profil
-- Demande un JSON structuré :
-  - Le visage du selfie correspond-il à la pièce d'identité ? (score)
-  - Le nom sur la pièce d'identité correspond-il au nom saisi ?
-  - La personne apparaît-elle sur le justificatif d'entreprise (mandat, extrait, statuts) ?
-  - Documents lisibles / non altérés ?
-  - `overall`: `passed` | `flagged` + motifs
-- Stocke le rapport dans `ai_check_report` et met à jour `ai_check_status`.
+Aujourd'hui `RequestVerificationDialog` exige un `companyName`. On ajoute un petit dialogue préalable **« Choisir le nom à vérifier »** :
+- Champ texte pré-rempli avec le nom de l'entreprise actuelle si l'utilisateur en a une (via `getMyCompany`), sinon vide.
+- Bouton **Continuer** → ouvre le dialogue KYC 3 étapes existant avec ce nom.
 
-L'IA est **assistante**, pas décisionnaire : un admin humain valide toujours. Un statut `flagged` ne bloque pas — il alerte visuellement le super admin dans `/admin`.
+Ainsi la vérification est déclenchable **avant même de tenter de créer une entreprise** avec un nom réservé.
 
-### 3. UI côté utilisateur — `RequestVerificationDialog`
+## 4. Section « Vérification d'identité » dans `/profile`
 
-Passage à un dialogue en 3 étapes claires :
+Nouveau bloc en bas de `src/routes/_authenticated/profile.tsx` :
+- Explication courte : « Pour utiliser un nom d'entreprise protégé (marque connue, entité officielle), une vérification KYC est requise. »
+- Liste des demandes existantes de l'utilisateur (via `getMyVerificationRequests` déjà présente) : nom demandé, statut (badge `pending` / `approved` / `rejected`), date, note admin éventuelle, statut du contrôle IA.
+- Bouton **« Nouvelle demande de vérification »** → même mini-dialogue qu'au §3.
 
-```text
-Étape 1 — Justificatif d'entreprise (existant)
-Étape 2 — Pièce d'identité officielle (nouveau)
-          └─ Type: CNI / Passeport / Permis
-          └─ Upload recto (obligatoire)
-          └─ Nom légal complet tel qu'inscrit sur la pièce
-Étape 3 — Selfie avec la pièce d'identité (nouveau)
-          └─ Bouton "Prendre une photo" (getUserMedia) OU upload
-          └─ Instructions visuelles: pièce visible et lisible à côté du visage
-Récapitulatif + envoi
-```
+Aucun changement de schéma DB nécessaire — toutes les fonctions existent déjà.
 
-Validation `zod` : type MIME, taille max 5 Mo par fichier, nom légal 2-120 caractères.
+## 5. Avatar : correctifs d'affichage
 
-Composants : réutilise `Dialog`, `Tabs` (ou stepper simple), `Button`, `Input`, `Label` déjà présents. Nouveau petit composant `CameraCapture` pour le selfie via `navigator.mediaDevices`.
+Sur `/profile` (déjà présent) : garder tel quel, mais harmoniser (fallback initiales avec la même palette).
 
-### 4. UI côté super admin — `/admin`
+Nouveaux points d'affichage :
+- `AppTopBar` (§2)
+- Cartes de rapport dans `/reports` (auteur) : afficher un mini `Avatar` à côté du nom d'auteur.
+- Vue publique de partage (`/share/$token`) : afficher l'avatar de l'auteur à côté de son nom pour crédibilité — via l'URL signée déjà retournée côté serveur si dispo, sinon fallback initiales (aucune fuite de PII).
 
-Ajouter à la vue de revue d'une demande :
-- Galerie des 3 documents (lightbox déjà présente dans le projet).
-- Bandeau du rapport IA : score, points verts/rouges, résumé lisible.
-- Boutons approuver / rejeter avec motif (déjà existant).
+## 6. Détails techniques
 
-### 5. Sécurité et RLS
+**Server function nouvelle** : `src/lib/profile.functions.ts` → `getMyProfileMini` (auth requise, retourne `full_name`, `email`, signed URL avatar 1h, flag `is_admin` via `platform_admins`).
 
-- Bucket `company-proofs` : chemins isolés par `uid` (déjà en place). Politique inchangée — le demandeur écrit dans son dossier, seuls lui et les super admins peuvent lire.
-- Table `company_verification_requests` : politiques existantes couvrent déjà les nouvelles colonnes.
-- Les fichiers ne sont **jamais** exposés en public — signed URLs à la volée uniquement pour l'IA et l'admin.
-- Le `full_legal_name` est stocké chiffré au niveau de la base ? Non — colonne texte simple, protégée par RLS (idem que les autres PII du projet). À noter comme limite si tu veux du chiffrement applicatif plus tard.
+**Aucune migration DB.** Aucun nouveau bucket. Aucun secret ajouté.
 
-## Ce qui n'est PAS touché
+**TypeScript & lint** : vérification via `bunx tsgo --noEmit` en fin de chantier.
 
-- Tes rapports, images, partages actuels : intacts.
-- Le flux d'onboarding entreprise pour les noms **non réservés** : inchangé.
-- Google auth, structure Supabase, `.env` : inchangés.
-- Les demandes de vérification déjà envoyées : conservées, colonnes vides pour l'ancien historique.
+## Fichiers touchés
 
-## Détails techniques
-
-- **IA** : Lovable AI Gateway, modèle `google/gemini-3.5-flash` (multimodal image + texte, économique). Réponse en JSON strict via `Output.object` de l'AI SDK.
-- **Fichiers** : côté client, validation MIME + `file-type` (déjà installé). Selfie capturé en JPEG 1280x720 max.
-- **Serveur** : nouvelle server function `submitVerificationRequestKyc` (remplace `requestCompanyVerification` ou l'étend en gardant la signature actuelle pour compat), + `runKycAiCheck` appelée en post-insert asynchrone.
-- **Migration** : `ALTER TABLE ADD COLUMN` uniquement, tout en nullable. Aucun `DROP`.
+- `src/routes/__root.tsx` — meta/title/favicon
+- `src/routes/_authenticated/route.tsx` — insertion `<AppTopBar />`
+- `src/routes/_authenticated/profile.tsx` — section vérifications + refonte carte
+- `src/routes/_authenticated/reports.index.tsx` — mini avatar auteur (optionnel léger)
+- `src/routes/share.$token.tsx` — mini avatar auteur (optionnel léger)
+- `src/components/AppTopBar.tsx` *(nouveau)*
+- `src/components/StartVerificationDialog.tsx` *(nouveau : sélection du nom puis lancement KYC)*
+- `src/lib/profile.functions.ts` *(nouveau : `getMyProfileMini`)*
+- `src/assets/logo-dailybrief.png` *(nouveau, généré)*
+- `public/favicon-dailybrief.png` *(nouveau, généré)*
+- `public/favicon.ico` — supprimé
 
 ## Résultat attendu
 
-Quand un utilisateur saisit "Jumia" :
-1. Il voit maintenant un flux en 3 étapes clair.
-2. Il envoie justificatif + pièce d'identité + selfie + son nom légal.
-3. L'IA analyse automatiquement et pré-qualifie.
-4. Le super admin voit tout dans `/admin` avec un rapport IA lisible et décide.
-5. Beaucoup plus difficile d'usurper une marque protégée avec un simple faux PDF.
+1. Bandeau haut identifiable avec logo bleu **DailyBrief** + avatar rond en haut à droite.
+2. Un clic sur l'avatar → menu contenant explicitement **« Vérifier mon identité / entreprise »**.
+3. Page **Profil** : encadré listant les demandes de vérification + bouton pour en lancer une, sans devoir passer par l'échec de création d'entreprise.
