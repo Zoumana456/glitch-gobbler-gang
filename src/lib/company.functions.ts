@@ -171,8 +171,8 @@ export const createCompany = createServerFn({ method: "POST" })
     // AI-backed impersonation gate (Côte d'Ivoire and known brands)
     if (slug) {
       try {
-        const { checkCompanyNameRisk } = await import("./company-risk.functions");
-        const risk = await checkCompanyNameRisk({ data: { name: data.name } });
+        const { computeCompanyNameRisk } = await import("./company-risk.functions");
+        const risk = await computeCompanyNameRisk(data.name);
         if (risk.risk_level === "high") {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { data: approved } = await supabaseAdmin
