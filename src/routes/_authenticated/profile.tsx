@@ -2,20 +2,23 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyProfile, updateMyProfile } from "@/lib/reports.functions";
+import { listMyVerificationRequests } from "@/lib/reserved-names.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { RequestVerificationDialog } from "@/components/RequestVerificationDialog";
 import { toast } from "sonner";
-import { Loader2, LogOut } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "Profil — Lovable Rapports" },
+      { title: "Profil — DailyBrief" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -28,8 +31,12 @@ function ProfilePage() {
   const fetchProfile = useServerFn(getMyProfile);
   const updateProfile = useServerFn(updateMyProfile);
   const q = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
+  const listVerif = useServerFn(listMyVerificationRequests);
+  const verif = useQuery({ queryKey: ["my-verification-requests"], queryFn: () => listVerif() });
   const [fullName, setFullName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [verifCompany, setVerifCompany] = useState("");
+  const [verifOpen, setVerifOpen] = useState(false);
 
   useEffect(() => {
     if (q.data) setFullName(q.data.full_name ?? "");
@@ -128,6 +135,74 @@ function ProfilePage() {
           </Button>
         </CardContent>
       </Card>
+      <Card id="verification">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            Vérification d'identité
+          </CardTitle>
+          <CardDescription>
+            Ouvrez une demande KYC (pièce d'identité + selfie + justificatif d'entreprise) pour utiliser un nom d'entreprise protégé.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="Nom de l'entreprise à vérifier"
+              value={verifCompany}
+              onChange={(e) => setVerifCompany(e.target.value)}
+            />
+            <Button
+              onClick={() => {
+                if (!verifCompany.trim()) {
+                  toast.error("Saisissez un nom d'entreprise");
+                  return;
+                }
+                setVerifOpen(true);
+              }}
+            >
+              Démarrer la vérification
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Mes demandes</div>
+            {verif.isLoading && <div className="text-sm text-muted-foreground">Chargement…</div>}
+            {!verif.isLoading && (verif.data ?? []).length === 0 && (
+              <div className="text-sm text-muted-foreground">Aucune demande pour le moment.</div>
+            )}
+            <ul className="space-y-2">
+              {(verif.data ?? []).map((r) => (
+                <li key={r.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{r.requested_name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString()}
+                      {r.ai_check_status ? ` · IA: ${r.ai_check_status}` : ""}
+                    </div>
+                  </div>
+                  <Badge
+                    variant={
+                      r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"
+                    }
+                  >
+                    {r.status === "approved" ? "Approuvée" : r.status === "rejected" ? "Refusée" : "En attente"}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+      <RequestVerificationDialog
+        open={verifOpen}
+        onOpenChange={setVerifOpen}
+        companyName={verifCompany}
+        onSubmitted={() => {
+          setVerifOpen(false);
+          setVerifCompany("");
+          queryClient.invalidateQueries({ queryKey: ["my-verification-requests"] });
+        }}
+      />
       <Card>
         <CardContent className="py-5 flex items-center justify-between">
           <div>

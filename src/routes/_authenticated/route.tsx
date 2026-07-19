@@ -19,14 +19,18 @@ import {
   X,
   Building2,
   ShieldAlert,
+  ShieldCheck,
   FileSignature,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { CommandPalette } from "@/components/CommandPalette";
+import logoDailyBrief from "@/assets/logo-dailybrief.png";
+import { getMyProfile } from "@/lib/reports.functions";
 
 
 export const Route = createFileRoute("/_authenticated")({
@@ -156,8 +160,8 @@ function AuthenticatedLayout() {
             <Menu className="h-5 w-5" />
           </Button>
           <Link to="/reports" className="flex items-center gap-2 font-semibold">
-            <FileText className="h-5 w-5 text-primary" />
-            Lovable Rapports
+            <img src={logoDailyBrief} alt="DailyBrief" className="h-6 w-6 rounded" />
+            DailyBrief
           </Link>
         </header>
         <main className="flex-1 min-w-0">
@@ -184,11 +188,20 @@ function SidebarInner({
   const router = useRouter();
   const pathname = router.state.location.pathname;
   const checkFn = useServerFn(checkIsPlatformAdmin);
+  const profileFn = useServerFn(getMyProfile);
   const { data: isAdmin } = useQuery({
     queryKey: ["is-platform-admin"],
     queryFn: () => checkFn(),
     staleTime: 60_000,
   });
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => profileFn(),
+    staleTime: 60_000,
+  });
+  const avatarUrl = profile?.avatar_url ?? undefined;
+  const displayName = profile?.full_name ?? email;
+  const initials = (profile?.full_name ?? email ?? "?").slice(0, 2).toUpperCase();
   const navItems = [
     ...NAV,
     ...(isAdmin
@@ -206,11 +219,13 @@ function SidebarInner({
         <Link
           to="/reports"
           className="flex items-center gap-2 min-w-0"
-          title="Lovable Rapports"
+          title="DailyBrief"
         >
-          <div className="h-9 w-9 shrink-0 rounded-lg bg-primary text-primary-foreground grid place-items-center">
-            <FileText className="h-5 w-5" />
-          </div>
+          <img
+            src={logoDailyBrief}
+            alt="DailyBrief"
+            className="h-9 w-9 shrink-0 rounded-lg object-cover"
+          />
           <div
             className={cn(
               "min-w-0 transition-[opacity,max-width,transform] duration-300 ease-out overflow-hidden",
@@ -220,9 +235,9 @@ function SidebarInner({
             )}
             aria-hidden={collapsed}
           >
-            <div className="font-semibold leading-tight truncate">Lovable</div>
+            <div className="font-semibold leading-tight truncate">DailyBrief</div>
             <div className="text-xs text-muted-foreground leading-tight truncate">
-              Rapports d'équipe
+              Team reports made simple
             </div>
           </div>
         </Link>
@@ -319,11 +334,37 @@ function SidebarInner({
           collapsed ? "p-2" : "p-3",
         )}
       >
-        {!collapsed && (
-          <div className="px-2 text-xs text-muted-foreground truncate animate-fade-in" title={email}>
-            {email}
-          </div>
-        )}
+        <Link
+          to="/profile"
+          className={cn(
+            "flex items-center rounded-md hover:bg-sidebar-accent/60 transition-colors",
+            collapsed ? "justify-center p-1" : "gap-2 px-2 py-1.5",
+          )}
+          title={collapsed ? displayName : "Voir mon profil"}
+        >
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarImage src={avatarUrl} alt={displayName} />
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <div className="min-w-0 flex-1 animate-fade-in">
+              <div className="text-sm font-medium truncate leading-tight">{displayName}</div>
+              <div className="text-xs text-muted-foreground truncate leading-tight" title={email}>{email}</div>
+            </div>
+          )}
+        </Link>
+        <Link
+          to="/profile"
+          hash="verification"
+          className={cn(
+            "flex items-center rounded-md text-sm transition-colors hover:bg-sidebar-accent/60",
+            collapsed ? "justify-center h-9 w-9 mx-auto" : "gap-2 px-2 py-1.5",
+          )}
+          title={collapsed ? "Vérifier mon identité" : undefined}
+        >
+          <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+          {!collapsed && <span className="truncate">Vérifier mon identité</span>}
+        </Link>
         <Button
           variant="ghost"
           size={collapsed ? "icon" : "sm"}
