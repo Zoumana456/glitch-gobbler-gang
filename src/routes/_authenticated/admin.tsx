@@ -4,12 +4,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import {
   checkIsPlatformAdmin,
+  getAdminAccessStatus,
   listCompaniesAdmin,
   updateSeatLimit,
   listPlatformAdmins,
   addPlatformAdmin,
   removePlatformAdmin,
 } from "@/lib/platform.functions";
+import { MfaGate } from "@/components/admin/MfaGate";
+import { supabase } from "@/integrations/supabase/client";
 import {
   listReservedNames,
   addReservedName,
