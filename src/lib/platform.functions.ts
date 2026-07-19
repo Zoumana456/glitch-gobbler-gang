@@ -187,3 +187,38 @@ export const removePlatformAdmin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * Récupération d'urgence : désenrôle tous les facteurs 2FA de l'utilisateur connecté.
+ * Utilisé quand un admin a perdu son appareil TOTP mais peut encore prouver son identité
+ * via l'email (lien de récupération de mot de passe → session aal1 sur /reset-password).
+ * Nécessite une session Supabase valide (aal1 suffit).
+ */
+export const emergencyResetMyMfa = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.auth.admin.mfa.listFactors({
+      userId: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    const factors = data?.factors ?? [];
+    for (const f of factors) {
+      const { error: delErr } = await supabaseAdmin.auth.admin.mfa.deleteFactor({
+        userId: context.userId,
+        id: f.id,
+      });
+      if (delErr) throw new Error(delErr.message);
+    }
+    // Journaliser si le compte est platform admin
+    if (await isPlatformAdmin(context.userId)) {
+      await supabaseAdmin.from("admin_audit_log").insert({
+        actor_id: context.userId,
+        action: "mfa.emergency_reset",
+        entity_type: "user",
+        entity_id: context.userId,
+        metadata: { factors_removed: factors.length },
+      });
+    }
+    return { ok: true, factorsRemoved: factors.length };
+  });

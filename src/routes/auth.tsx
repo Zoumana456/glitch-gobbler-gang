@@ -230,6 +230,17 @@ function AuthPage() {
                 Nouveau ? Cliquez sur « Créer un compte » en bas.
               </p>
             )}
+            {mode === "forgot" && (
+              <p className="text-center text-xs text-muted-foreground pt-1">
+                Entrez l'email de votre compte. Vous recevrez un lien de récupération valable
+                1 heure pour définir un nouveau mot de passe.
+                <br />
+                <span className="text-muted-foreground/80">
+                  Admin ayant perdu son authentificateur 2FA : connectez-vous d'abord, puis
+                  utilisez « Je n'ai plus mon authentificateur » sur l'écran 2FA.
+                </span>
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {mode !== "forgot" && (
@@ -450,16 +461,26 @@ function AuthPage() {
                 {mode === "forgot" && "Envoyer le lien"}
               </Button>
             </form>
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-sm text-muted-foreground space-y-2">
               {mode === "signin" ? (
                 <>
-                  Pas encore de compte ?{" "}
-                  <button
-                    onClick={() => setMode("signup")}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    Créer un compte
-                  </button>
+                  <div>
+                    Pas encore de compte ?{" "}
+                    <button
+                      onClick={() => setMode("signup")}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Créer un compte
+                    </button>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => setMode("forgot")}
+                      className="text-xs text-muted-foreground hover:text-primary underline underline-offset-2"
+                    >
+                      J'ai perdu l'accès à mon compte
+                    </button>
+                  </div>
                 </>
               ) : (
                 <button

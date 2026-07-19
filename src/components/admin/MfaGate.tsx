@@ -247,6 +247,32 @@ export function MfaGate({ onVerified }: Props) {
             </Button>
           )}
         </div>
+        <div className="pt-3 border-t">
+          <button
+            type="button"
+            onClick={async () => {
+              const { data: userData } = await supabase.auth.getUser();
+              const email = userData.user?.email;
+              if (!email) {
+                toast.error("Session introuvable, reconnectez-vous.");
+                return;
+              }
+              const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password?mfa_reset=1`,
+              });
+              if (error) {
+                toast.error(error.message);
+                return;
+              }
+              toast.success(
+                `Email de récupération envoyé à ${email}. Suivez le lien pour réinitialiser votre 2FA.`,
+              );
+            }}
+            className="text-xs text-muted-foreground hover:text-primary underline underline-offset-2"
+          >
+            Je n'ai plus mon authentificateur — envoyer un lien de récupération
+          </button>
+        </div>
       </CardContent>
     </Card>
   );

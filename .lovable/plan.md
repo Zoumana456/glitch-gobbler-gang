@@ -1,61 +1,47 @@
-## Objectifs
+# Parcours de récupération de compte
 
-1. Retirer la vérification KYC de l'espace super-admin.
-2. Ajouter un espace « Plans » côté entreprise (après connexion) pour consulter et choisir un plan.
-3. Retirer la barre de recherche de l'onglet Utilisateurs de l'admin et ajouter une recherche globale dans l'onglet Dashboard.
-4. Permettre au super-admin de supprimer ou bannir un utilisateur (compte + accès) depuis l'onglet Utilisateurs.
+Aujourd'hui vous avez déjà un lien « Mot de passe oublié » sur `/auth` et une page `/reset-password`, mais le parcours est minimal : pas de détection de session recovery, pas de confirmation du nouveau mot de passe, et surtout **aucune issue si vous perdez votre appareil 2FA admin** (vous êtes définitivement bloqué à l'étape MfaGate).
 
-## 1. Retirer KYC de /admin
+Ce plan couvre les deux cas de blocage :
 
-`src/routes/_authenticated/admin.tsx` :
-- Supprimer l'onglet `verifications` (TabsTrigger + TabsContent) et la fonction `VerificationsPanel`.
-- Retirer les imports `listVerificationRequests`, `reviewVerificationRequest`, `ShieldCheck` (si plus utilisé), et `RequestVerificationDialog` associés.
-- Retirer la carte « Vérifications en attente » de `DashboardPanel.tsx` (rester sur 5 KPI).
+## 1. Mot de passe oublié (utilisateur et admin)
 
-Note : on garde en base la table `company_verification_requests` et les fonctions serveur (utilisées ailleurs pour débloquer un nom réservé) — on ne supprime que l'onglet admin.
+- Page `/auth` : mode « Mot de passe oublié » déjà présent — je le laisse tel quel, avec juste un message plus clair sur ce qui va se passer (« Vous recevrez un email avec un lien valide 1h »).
+- Refonte de `/reset-password` :
+  - Détection du `PASSWORD_RECOVERY` event Supabase pour valider que la page a été ouverte depuis un lien de récupération légitime.
+  - Message clair si arrivé sur la page sans lien recovery (avec CTA « Demander un nouveau lien »).
+  - Champ « nouveau mot de passe » + « confirmation » + toggle œil (comme sur `/auth`).
+  - Longueur mini 8 caractères, messages d'erreur alignés (HIBP, credentials, etc.).
+  - Après succès : redirection vers `/reports` (ou `/admin` si compte admin_only).
 
-## 2. Espace Plans pour l'entreprise
+## 2. Perte de l'appareil 2FA (super admin)
 
-Nouvelle route `src/routes/_authenticated/plans.tsx` :
-- Liste les plans actifs via `listPlans` (déjà existant, renvoie uniquement `is_active=true` pour non-admins).
-- Affiche prix mensuel/annuel, sièges inclus, fonctionnalités, badge « Plan actuel » pour le plan lié à l'entreprise du user.
-- Bouton « Choisir ce plan » qui appelle une nouvelle server fn `requestPlanChange` (crée une entrée dans un journal simple ou passe `pending_plan_id` sur la company — voir « Détails techniques »).
+Cas critique : l'admin peut se connecter (email + mot de passe → session `aal1`) mais reste bloqué sur `MfaGate` sans code TOTP.
 
-Nouvelle server fn `requestPlanChange({ planId, billingCycle })` dans `src/lib/company.functions.ts` :
-- Vérifie que l'utilisateur est propriétaire (`owner_id`) de la company.
-- Met à jour `companies.pending_plan_id`, `pending_billing_cycle`, `pending_requested_at`.
-- Le super-admin approuve ensuite via l'onglet Entreprises existant (bouton « Assigner plan » à ajouter, utilise `assignCompanyPlan`).
+- **Bouton « Je n'ai plus mon authentificateur »** ajouté sur l'écran MfaGate (uniquement visible quand un facteur vérifié existe).
+- Au clic : envoi d'un email de récupération à l'adresse du compte via `resetPasswordForEmail` (redirect vers `/reset-password?mfa_reset=1`).
+- Sur `/reset-password`, si `mfa_reset=1` est présent et la session est bien en recovery, en plus de changer le mot de passe on appelle une nouvelle fonction serveur `emergencyResetMyMfa` qui désenrôle **tous les facteurs 2FA du compte connecté** (via `supabaseAdmin.auth.admin.mfa.deleteFactor`, autorisée uniquement pour l'utilisateur lui-même).
+- Après la réinitialisation, retour à l'écran MfaGate qui affichera « Activer la 2FA » (enrôlement d'un nouveau QR code).
 
-Migration SQL : ajout des 3 colonnes `pending_plan_id / pending_billing_cycle / pending_requested_at` sur `companies` (colonnes optionnelles, ne casse rien).
+Sécurité : la réinitialisation exige possession de l'email + connaissance du mot de passe (ou reset via email). L'attaquant devrait donc compromettre les deux facteurs pour contourner la 2FA — équivalent au niveau de sécurité d'une connexion classique.
 
-Menu latéral (`src/routes/_authenticated/route.tsx`) : ajouter l'entrée « Plans » (icône `Package`), visible pour tout compte non `admin_only`.
+## 3. Point d'entrée « J'ai perdu l'accès à mon compte »
 
-## 3. Recherche : sortir de l'onglet Utilisateurs, entrer dans Dashboard
-
-`src/components/admin/UsersPanel.tsx` : retirer complètement l'input de recherche et l'état `q/debouncedQ`. La liste reste triée par date d'inscription (500 dernières).
-
-`src/components/admin/DashboardPanel.tsx` : ajouter en haut un champ de recherche qui utilise la fn existante `globalSearch` (rapports / PV / employés / entreprises). Résultats groupés affichés sous les KPI. C'est la même recherche que la palette Cmd+K, mais visible et découvrable dans le dashboard admin.
-
-## 4. Bannir / supprimer un utilisateur
-
-Migration SQL :
-- Ajouter `profiles.is_banned boolean not null default false` et `profiles.banned_at timestamptz`.
-- Ajouter policy / trigger : un profil banni ne peut plus INSERT/UPDATE sur `reports`, `report_minutes`, `companies` (réutilise l'esprit du trigger `block_admin_only_writes`).
-
-Nouvelles server fns dans `src/lib/admin.functions.ts` :
-- `banUser({ userId, reason })` : marque `is_banned=true`, log audit, révoque toutes les sessions Auth (`supabaseAdmin.auth.admin.signOut(userId, "global")`).
-- `unbanUser({ userId })` : remet `is_banned=false`.
-- `deleteUser({ userId })` : `supabaseAdmin.auth.admin.deleteUser(userId)` — les FK `ON DELETE CASCADE` (profils, membres) prennent le relais. Refuse si `userId` est dans `platform_admins`.
-
-`src/components/admin/UsersPanel.tsx` :
-- Nouvelle colonne « Statut » (Actif / Banni).
-- Menu d'actions par ligne (`⋯`) : « Bannir » / « Réactiver » / « Supprimer » avec confirmation (`AlertDialog`), champ raison pour le ban.
-- Un super-admin ne peut ni se bannir ni se supprimer.
+Sur `/auth` (mode connexion), ajout d'un petit lien discret « J'ai perdu l'accès à mon compte » qui bascule sur le mode « Mot de passe oublié » avec un texte explicatif couvrant les deux cas (mot de passe oublié et 2FA perdue).
 
 ## Détails techniques
 
-- Toutes les fns admin passent par `assertAdmin(context.userId, context.claims)` (déjà en place, exige 2FA).
-- La suppression Auth cascade via `on delete cascade` sur `profiles.id → auth.users.id` (déjà en place). Vérifier que `companies.owner_id` a bien `on delete` défini ; sinon migration pour ajouter `on delete set null` ou empêcher la suppression si le user est owner d'une company avec des membres.
-- `is_banned` est lu par un trigger `assert_not_banned(user_id)` similaire à `assert_not_admin_only`, câblé sur les mêmes tables (`companies`, `company_members`, `reports`, `report_minutes`).
-- Pas de changement à `_authenticated/route.tsx` niveau gate : la révocation de session Auth fait que le user banni est déconnecté au prochain refresh de token.
-- Aucune donnée existante n'est supprimée par cette évolution.
+- Nouveau server fn `emergencyResetMyMfa` dans `src/lib/platform.functions.ts` :
+  - Middleware `requireSupabaseAuth`.
+  - `supabaseAdmin.auth.admin.mfa.listFactors(userId)` puis `deleteFactor` pour chaque facteur.
+  - Journalisation optionnelle dans `admin_audit_log` si le compte est platform_admin.
+- Aucune migration SQL nécessaire.
+- Aucun changement de configuration Supabase Auth.
+- Aucune modification de la route `_authenticated` gate.
+
+## Fichiers touchés
+
+- `src/routes/reset-password.tsx` — refonte complète.
+- `src/routes/auth.tsx` — petit texte d'aide en mode « forgot » + lien d'entrée récupération.
+- `src/components/admin/MfaGate.tsx` — bouton « Je n'ai plus mon authentificateur ».
+- `src/lib/platform.functions.ts` — ajout de `emergencyResetMyMfa`.
