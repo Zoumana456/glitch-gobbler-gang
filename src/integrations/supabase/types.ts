@@ -58,6 +58,9 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          pending_billing_cycle: string | null
+          pending_plan_id: string | null
+          pending_requested_at: string | null
           plan_id: string | null
           seat_limit: number
           stripe_customer_id: string | null
@@ -72,6 +75,9 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
+          pending_billing_cycle?: string | null
+          pending_plan_id?: string | null
+          pending_requested_at?: string | null
           plan_id?: string | null
           seat_limit?: number
           stripe_customer_id?: string | null
@@ -86,6 +92,9 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          pending_billing_cycle?: string | null
+          pending_plan_id?: string | null
+          pending_requested_at?: string | null
           plan_id?: string | null
           seat_limit?: number
           stripe_customer_id?: string | null
@@ -94,6 +103,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "companies_pending_plan_id_fkey"
+            columns: ["pending_plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "companies_plan_id_fkey"
             columns: ["plan_id"]
@@ -323,28 +339,37 @@ export type Database = {
         Row: {
           admin_only: boolean
           avatar_url: string | null
+          banned_at: string | null
+          banned_reason: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          is_banned: boolean
           updated_at: string
         }
         Insert: {
           admin_only?: boolean
           avatar_url?: string | null
+          banned_at?: string | null
+          banned_reason?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
+          is_banned?: boolean
           updated_at?: string
         }
         Update: {
           admin_only?: boolean
           avatar_url?: string | null
+          banned_at?: string | null
+          banned_reason?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          is_banned?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -838,6 +863,7 @@ export type Database = {
     }
     Functions: {
       assert_not_admin_only: { Args: { _user_id: string }; Returns: undefined }
+      assert_not_banned: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

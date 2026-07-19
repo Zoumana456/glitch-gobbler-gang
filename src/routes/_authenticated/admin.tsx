@@ -16,14 +16,11 @@ import {
   listReservedNames,
   addReservedName,
   removeReservedName,
-  listVerificationRequests,
-  reviewVerificationRequest,
 } from "@/lib/reserved-names.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -34,7 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Shield, ShieldAlert, ShieldCheck, Trash2, Plus, Users, Lock, ExternalLink, LayoutDashboard, Package, Receipt, ScrollText, UserCog } from "lucide-react";
+import { Shield, ShieldAlert, Trash2, Plus, Users, Lock, LayoutDashboard, Package, Receipt, ScrollText, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { formatLongDate } from "@/lib/date-utils";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
@@ -103,7 +100,7 @@ function AdminPage() {
           <TabsTrigger value="users"><UserCog className="h-4 w-4 mr-1" />Utilisateurs</TabsTrigger>
           <TabsTrigger value="plans"><Package className="h-4 w-4 mr-1" />Plans</TabsTrigger>
           <TabsTrigger value="invoices"><Receipt className="h-4 w-4 mr-1" />Factures</TabsTrigger>
-          <TabsTrigger value="verifications"><ShieldCheck className="h-4 w-4 mr-1" />Vérifications</TabsTrigger>
+          
           <TabsTrigger value="reserved"><Lock className="h-4 w-4 mr-1" />Noms réservés</TabsTrigger>
           <TabsTrigger value="admins"><Shield className="h-4 w-4 mr-1" />Super admins</TabsTrigger>
           <TabsTrigger value="audit"><ScrollText className="h-4 w-4 mr-1" />Audit</TabsTrigger>
@@ -113,7 +110,7 @@ function AdminPage() {
         <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
         <TabsContent value="plans" className="mt-4"><PlansPanel /></TabsContent>
         <TabsContent value="invoices" className="mt-4"><InvoicesPanel /></TabsContent>
-        <TabsContent value="verifications" className="mt-4"><VerificationsPanel /></TabsContent>
+        
         <TabsContent value="reserved" className="mt-4"><ReservedNamesPanel /></TabsContent>
         <TabsContent value="admins" className="mt-4"><AdminsPanel /></TabsContent>
         <TabsContent value="audit" className="mt-4"><AuditPanel /></TabsContent>
@@ -458,172 +455,6 @@ function ReservedNamesPanel() {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function VerificationsPanel() {
-  const qc = useQueryClient();
-  const listFn = useServerFn(listVerificationRequests);
-  const reviewFn = useServerFn(reviewVerificationRequest);
-  const { data: rows = [] } = useQuery({
-    queryKey: ["verification-requests"],
-    queryFn: () => listFn(),
-  });
-
-  const [noteById, setNoteById] = useState<Record<string, string>>({});
-
-  const reviewMut = useMutation({
-    mutationFn: (p: { id: string; approve: boolean; note?: string }) =>
-      reviewFn({ data: p }),
-    onSuccess: () => {
-      toast.success("Demande traitée");
-      qc.invalidateQueries({ queryKey: ["verification-requests"] });
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Erreur"),
-  });
-
-  const pending = rows.filter((r) => r.status === "pending");
-  const others = rows.filter((r) => r.status !== "pending");
-  const ordered = [...pending, ...others];
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5" /> Demandes de vérification ({rows.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {ordered.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune demande.</p>
-        ) : (
-          <div className="space-y-3">
-            {ordered.map((r) => (
-              <div key={r.id} className="rounded border p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div>
-                    <div className="font-medium">
-                      « {r.requested_name} »{" "}
-                      <Badge
-                        variant={
-                          r.status === "approved"
-                            ? "default"
-                            : r.status === "rejected"
-                              ? "destructive"
-                              : "secondary"
-                        }
-                      >
-                        {r.status}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {r.user_name || "—"} · {r.user_email} ·{" "}
-                      {formatLongDate(r.created_at)}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {r.proof_url && (
-                    <Button asChild size="sm" variant="outline">
-                      <a href={r.proof_url} target="_blank" rel="noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-1.5" /> Justificatif entreprise
-                      </a>
-                    </Button>
-                  )}
-                  {r.identity_document_url && (
-                    <Button asChild size="sm" variant="outline">
-                      <a href={r.identity_document_url} target="_blank" rel="noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-1.5" /> Pièce d'identité
-                        {r.identity_document_type ? ` (${r.identity_document_type})` : ""}
-                      </a>
-                    </Button>
-                  )}
-                  {r.selfie_url && (
-                    <Button asChild size="sm" variant="outline">
-                      <a href={r.selfie_url} target="_blank" rel="noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-1.5" /> Selfie
-                      </a>
-                    </Button>
-                  )}
-                </div>
-                {r.full_legal_name && (
-                  <div className="text-xs">
-                    <span className="text-muted-foreground">Nom légal déclaré : </span>
-                    <span className="font-medium">{r.full_legal_name}</span>
-                  </div>
-                )}
-                {r.ai_check_status && r.ai_check_status !== "pending" && (
-                  <div
-                    className={`text-xs rounded p-2 border ${
-                      r.ai_check_status === "passed"
-                        ? "border-green-500/30 bg-green-500/10"
-                        : "border-orange-500/30 bg-orange-500/10"
-                    }`}
-                  >
-                    <div className="font-medium mb-1">
-                      Contrôle IA :{" "}
-                      {r.ai_check_status === "passed" ? "✅ passé" : "⚠️ à vérifier"}
-                    </div>
-                    <pre className="whitespace-pre-wrap text-[11px] font-mono max-h-40 overflow-auto">
-                      {JSON.stringify(r.ai_check_report, null, 2)}
-                    </pre>
-                  </div>
-                )}
-                {r.message && (
-                  <div className="text-sm rounded bg-muted/40 p-2">{r.message}</div>
-                )}
-                {r.admin_note && (
-                  <div className="text-xs text-muted-foreground">
-                    Note admin : {r.admin_note}
-                  </div>
-                )}
-                {r.status === "pending" && (
-                  <div className="space-y-2 pt-1">
-                    <Textarea
-                      value={noteById[r.id] ?? ""}
-                      onChange={(e) =>
-                        setNoteById((m) => ({ ...m, [r.id]: e.target.value }))
-                      }
-                      placeholder="Note interne (optionnel)"
-                      rows={2}
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          reviewMut.mutate({
-                            id: r.id,
-                            approve: true,
-                            note: noteById[r.id],
-                          })
-                        }
-                        disabled={reviewMut.isPending}
-                      >
-                        Approuver
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          reviewMut.mutate({
-                            id: r.id,
-                            approve: false,
-                            note: noteById[r.id],
-                          })
-                        }
-                        disabled={reviewMut.isPending}
-                      >
-                        Refuser
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
