@@ -12,7 +12,6 @@ import {
   removePlatformAdmin,
 } from "@/lib/platform.functions";
 import { MfaGate } from "@/components/admin/MfaGate";
-import { supabase } from "@/integrations/supabase/client";
 import {
   listReservedNames,
   addReservedName,
