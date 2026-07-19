@@ -287,25 +287,28 @@ function SidebarInner({
           </Button>
         </div>
       )}
-      <div className={cn("mb-2", collapsed ? "px-2" : "px-3")}>
-        <button
-          type="button"
-          onClick={() => {
-            window.dispatchEvent(
-              new KeyboardEvent("keydown", { key: "k", metaKey: true }),
-            );
-          }}
-          title="Rechercher (⌘K)"
-          className={cn(
-            "flex items-center rounded-md text-sm text-muted-foreground border border-border/60 bg-background/50 hover:bg-sidebar-accent/60 transition-colors w-full",
-            collapsed ? "justify-center h-9" : "gap-2 px-3 py-1.5",
-          )}
-        >
-          <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <span className={cn("truncate flex-1 text-left transition-[opacity,max-width] duration-300 overflow-hidden", collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full")}>Rechercher…</span>
-          <kbd className={cn("text-xs bg-muted px-1.5 rounded transition-[opacity,max-width] duration-300 overflow-hidden", collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full")}>⌘K</kbd>
-        </button>
-      </div>
+      {!adminOnly && (
+        <div className={cn("mb-2", collapsed ? "px-2" : "px-3")}>
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+              );
+            }}
+            title="Rechercher (⌘K)"
+            className={cn(
+              "flex items-center rounded-md text-sm text-muted-foreground border border-border/60 bg-background/50 hover:bg-sidebar-accent/60 transition-colors w-full",
+              collapsed ? "justify-center h-9" : "gap-2 px-3 py-1.5",
+            )}
+          >
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <span className={cn("truncate flex-1 text-left transition-[opacity,max-width] duration-300 overflow-hidden", collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full")}>Rechercher…</span>
+            <kbd className={cn("text-xs bg-muted px-1.5 rounded transition-[opacity,max-width] duration-300 overflow-hidden", collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full")}>⌘K</kbd>
+          </button>
+        </div>
+      )}
+
       <nav className={cn("space-y-1 flex-1", collapsed ? "px-2" : "px-3")}>
 
         {navItems.map((item) => {
@@ -371,18 +374,20 @@ function SidebarInner({
             </div>
           )}
         </Link>
-        <Link
-          to="/profile"
-          hash="verification"
-          className={cn(
-            "flex items-center rounded-md text-sm transition-colors hover:bg-sidebar-accent/60",
-            collapsed ? "justify-center h-9 w-9 mx-auto" : "gap-2 px-2 py-1.5",
-          )}
-          title={collapsed ? "Vérifier mon identité" : undefined}
-        >
-          <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
-          {!collapsed && <span className="truncate">Vérifier mon identité</span>}
-        </Link>
+        {!adminOnly && (
+          <Link
+            to="/profile"
+            hash="verification"
+            className={cn(
+              "flex items-center rounded-md text-sm transition-colors hover:bg-sidebar-accent/60",
+              collapsed ? "justify-center h-9 w-9 mx-auto" : "gap-2 px-2 py-1.5",
+            )}
+            title={collapsed ? "Vérifier mon identité" : undefined}
+          >
+            <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+            {!collapsed && <span className="truncate">Vérifier mon identité</span>}
+          </Link>
+        )}
         <Button
           variant="ghost"
           size={collapsed ? "icon" : "sm"}
