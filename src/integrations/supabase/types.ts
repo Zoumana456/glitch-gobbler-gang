@@ -632,7 +632,7 @@ export type Database = {
       }
     }
     Functions: {
-      unaccent: { Args: { "": string }; Returns: string }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
