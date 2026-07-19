@@ -67,9 +67,15 @@ function ProfilePage() {
   }
 
   async function handleAvatarPick(file: File) {
+    const { validateUpload, buildSafeStoragePath } = await import("@/lib/upload-validation");
+    const check = await validateUpload(file, "report-images");
+    if (!check.ok) {
+      toast.error(check.reason);
+      return;
+    }
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id ?? "";
-    const path = `${uid}/avatar-${Date.now()}.${file.name.split(".").pop() || "jpg"}`;
+    const path = buildSafeStoragePath(uid, check.sanitizedExt);
     const { error } = await supabase.storage
       .from("report-images")
       .upload(path, file, { contentType: file.type, upsert: false });
