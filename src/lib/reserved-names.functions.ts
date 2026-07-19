@@ -83,14 +83,15 @@ export const checkNameReserved = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const slug = normalize(data.name);
     if (!slug) return { reserved: false, alreadyApproved: false, displayName: null as string | null };
-    const { supabase, userId } = context;
-    const { data: row } = await supabase
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
       .from("reserved_company_names")
       .select("slug, display_name")
       .eq("slug", slug)
       .maybeSingle();
     if (!row) return { reserved: false, alreadyApproved: false, displayName: null };
-    const { data: approved } = await supabase
+    const { data: approved } = await supabaseAdmin
       .from("company_verification_requests")
       .select("id")
       .eq("user_id", userId)
