@@ -100,6 +100,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Lovable — Rapports d'équipe" },
       { name: "twitter:description", content: "Créez, partagez et consultez les rapports d'activités quotidiens de votre équipe." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/11a4d890-016c-4ba1-beac-f527c8144628/id-preview-8dfba7c7--db096027-fe28-45c5-b4fe-d62ff910e03a.lovable.app-1784457080995.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/11a4d890-016c-4ba1-beac-f527c8144628/id-preview-8dfba7c7--db096027-fe28-45c5-b4fe-d62ff910e03a.lovable.app-1784457080995.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

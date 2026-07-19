@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { upsertReport } from "@/lib/reports.functions";
 import { extractReportFromPdf } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { validateUpload, buildSafeStoragePath } from "@/lib/upload-validation";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +15,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { DictationButton } from "./DictationButton";
+import {
+  AttachmentsList,
+  uploadAttachment,
+  ATTACHMENT_MAX_BYTES,
+  type FormAttachment,
+} from "./AttachmentUploader";
 import { Lightbox } from "./Lightbox";
 import { AIAssistantPanel, type AIStyle } from "./AIAssistantPanel";
 import type { ExtractedReport } from "@/lib/ai.functions";
@@ -49,6 +57,7 @@ type FormSection = {
   description: string;
   bullets: FormBullet[];
   images: FormImage[];
+  attachments: FormAttachment[];
 };
 
 type FormState = {
@@ -59,6 +68,7 @@ type FormState = {
   conclusion: string;
   sections: FormSection[];
   general_images: FormImage[];
+  general_attachments: FormAttachment[];
 };
 
 let keyCounter = 0;
@@ -82,12 +92,28 @@ function fromReport(r: LoadedReport): FormState {
         url: i.url,
         caption: i.caption ?? "",
       })),
+      attachments: s.attachments.map((a) => ({
+        key: nextKey(),
+        storage_path: a.storage_path,
+        url: a.url,
+        file_name: a.file_name,
+        mime_type: a.mime_type,
+        size_bytes: a.size_bytes,
+      })),
     })),
     general_images: r.general_images.map((i) => ({
       key: nextKey(),
       storage_path: i.storage_path,
       url: i.url,
       caption: i.caption ?? "",
+    })),
+    general_attachments: r.general_attachments.map((a) => ({
+      key: nextKey(),
+      storage_path: a.storage_path,
+      url: a.url,
+      file_name: a.file_name,
+      mime_type: a.mime_type,
+      size_bytes: a.size_bytes,
     })),
   };
 }
@@ -106,9 +132,11 @@ function emptyForm(): FormState {
         description: "",
         bullets: [],
         images: [],
+        attachments: [],
       },
     ],
     general_images: [],
+    general_attachments: [],
   };
 }
 
@@ -156,6 +184,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
               description: s.description,
               bullets: s.bullets.map((c) => ({ key: nextKey(), content: c })),
               images: [],
+              attachments: [],
             }))
           : prev.sections,
     }));
@@ -195,6 +224,30 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
               section_index: null as number | null,
               position: pos,
               caption: img.caption ?? "",
+            })),
+        ],
+        attachments: [
+          ...form.sections.flatMap((s, sIdx) =>
+            s.attachments
+              .filter((a) => !!a.storage_path && !a.uploading)
+              .map((att, pos) => ({
+                storage_path: att.storage_path,
+                section_index: sIdx,
+                position: pos,
+                file_name: att.file_name,
+                mime_type: att.mime_type,
+                size_bytes: att.size_bytes,
+              })),
+          ),
+          ...form.general_attachments
+            .filter((a) => !!a.storage_path && !a.uploading)
+            .map((att, pos) => ({
+              storage_path: att.storage_path,
+              section_index: null as number | null,
+              position: pos,
+              file_name: att.file_name,
+              mime_type: att.mime_type,
+              size_bytes: att.size_bytes,
             })),
         ],
       };
@@ -239,6 +292,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
                 description: s.description,
                 bullets: s.bullets.map((c) => ({ key: nextKey(), content: c })),
                 images: [],
+                attachments: [],
               }))
             : prev.sections,
       }));
@@ -251,10 +305,14 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
   }
 
   async function uploadImage(file: File): Promise<{ storage_path: string; url: string } | null> {
+    const check = await validateUpload(file, "report-images");
+    if (!check.ok) {
+      toast.error(check.reason);
+      return null;
+    }
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id ?? "anon";
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `${uid}/${crypto.randomUUID()}.${ext}`;
+    const path = buildSafeStoragePath(uid, check.sanitizedExt);
     const { error } = await supabase.storage
       .from("report-images")
       .upload(path, file, { contentType: file.type, upsert: false });
@@ -264,9 +322,10 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
     }
     const { data: signed } = await supabase.storage
       .from("report-images")
-      .createSignedUrl(path, 3600);
+      .createSignedUrl(path, 5 * 60); // 5 min
     return { storage_path: path, url: signed?.signedUrl ?? "" };
   }
+
 
   async function handleAddImages(files: FileList, sectionIdx: number | null) {
     const arr = Array.from(files);
@@ -357,6 +416,73 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
       return { ...prev, sections };
     });
   }
+  async function handleAddAttachments(files: FileList, sectionIdx: number | null) {
+    const arr = Array.from(files).filter((f) => {
+      if (f.size > ATTACHMENT_MAX_BYTES) {
+        toast.error(`${f.name} dépasse 5 Mo`);
+        return false;
+      }
+      return true;
+    });
+    if (arr.length === 0) return;
+    const optimistic: FormAttachment[] = arr.map((f) => ({
+      key: nextKey(),
+      storage_path: "",
+      url: "",
+      file_name: f.name,
+      mime_type: f.type || "application/octet-stream",
+      size_bytes: f.size,
+      uploading: true,
+    }));
+    setForm((prev) => {
+      if (sectionIdx === null) {
+        return { ...prev, general_attachments: [...prev.general_attachments, ...optimistic] };
+      }
+      const sections = prev.sections.map((s, idx) =>
+        idx === sectionIdx ? { ...s, attachments: [...s.attachments, ...optimistic] } : s,
+      );
+      return { ...prev, sections };
+    });
+    for (let i = 0; i < arr.length; i++) {
+      const res = await uploadAttachment(arr[i]);
+      const opt = optimistic[i];
+      setForm((prev) => {
+        const patch = (list: FormAttachment[]) =>
+          list
+            .map((a) =>
+              a.key === opt.key
+                ? res
+                  ? { ...a, storage_path: res.storage_path, url: res.url, uploading: false }
+                  : null
+                : a,
+            )
+            .filter(Boolean) as FormAttachment[];
+        if (sectionIdx === null) {
+          return { ...prev, general_attachments: patch(prev.general_attachments) };
+        }
+        const sections = prev.sections.map((s, idx) =>
+          idx === sectionIdx ? { ...s, attachments: patch(s.attachments) } : s,
+        );
+        return { ...prev, sections };
+      });
+    }
+  }
+
+  function removeAttachment(sectionIdx: number | null, key: string) {
+    setForm((prev) => {
+      if (sectionIdx === null) {
+        return {
+          ...prev,
+          general_attachments: prev.general_attachments.filter((a) => a.key !== key),
+        };
+      }
+      const sections = prev.sections.map((s, idx) =>
+        idx === sectionIdx ? { ...s, attachments: s.attachments.filter((a) => a.key !== key) } : s,
+      );
+      return { ...prev, sections };
+    });
+  }
+
 
 
 
@@ -371,6 +497,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
           description: "",
           bullets: [],
           images: [],
+          attachments: [],
         },
       ],
     }));
@@ -642,6 +769,12 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
                 onView={(idx) => setLightbox({ images: section.images, index: idx })}
                 onCaptionChange={(k, c) => updateImageCaption(sIdx, k, c)}
               />
+
+              <AttachmentsList
+                attachments={section.attachments}
+                onAdd={(files) => handleAddAttachments(files, sIdx)}
+                onRemove={(k) => removeAttachment(sIdx, k)}
+              />
             </CardContent>
           </Card>
         ))}
@@ -692,6 +825,18 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
             onRemove={(k) => removeImage(null, k)}
             onView={(idx) => setLightbox({ images: form.general_images, index: idx })}
             onCaptionChange={(k, c) => updateImageCaption(null, k, c)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* General attachments */}
+      <Card>
+        <CardContent className="py-5 space-y-3">
+          <Label className="text-base">Pièces jointes générales</Label>
+          <AttachmentsList
+            attachments={form.general_attachments}
+            onAdd={(files) => handleAddAttachments(files, null)}
+            onRemove={(k) => removeAttachment(null, k)}
           />
         </CardContent>
       </Card>

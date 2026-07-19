@@ -7,11 +7,27 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
-import { FileText, FilePlus2, UserCircle2, LogOut, Menu, X } from "lucide-react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { checkIsPlatformAdmin } from "@/lib/platform.functions";
+import {
+  FileText,
+  FilePlus2,
+  UserCircle2,
+  LogOut,
+  Menu,
+  X,
+  Building2,
+  ShieldAlert,
+  FileSignature,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { CommandPalette } from "@/components/CommandPalette";
+
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -28,18 +44,40 @@ export const Route = createFileRoute("/_authenticated")({
 const NAV = [
   { to: "/reports", label: "Rapports", icon: FileText },
   { to: "/reports/new", label: "Nouveau rapport", icon: FilePlus2 },
+  { to: "/minutes", label: "Procès-verbaux", icon: FileSignature },
+  { to: "/company", label: "Entreprise", icon: Building2 },
   { to: "/profile", label: "Profil", icon: UserCircle2 },
 ] as const;
+
+const COLLAPSE_KEY = "sidebar:collapsed";
 
 function AuthenticatedLayout() {
   const { user } = Route.useRouteContext();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(COLLAPSE_KEY);
+      if (v === "1") setCollapsed(true);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [router.state.location.pathname]);
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }
 
   async function handleSignOut() {
     try {
@@ -54,20 +92,32 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 flex">
-      {/* Sidebar desktop */}
-      <aside className="hidden md:flex md:w-64 shrink-0 border-r border-border bg-sidebar text-sidebar-foreground flex-col">
-        <SidebarInner email={user.email ?? ""} onSignOut={handleSignOut} />
+    <div className="min-h-screen bg-muted/30">
+      {/* Sidebar desktop — fixed */}
+      <aside
+        className={cn(
+          "hidden md:flex fixed inset-y-0 left-0 z-30 flex-col border-r border-border bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] overflow-hidden",
+          collapsed ? "w-16" : "w-64",
+        )}
+
+      >
+        <SidebarInner
+          email={user.email ?? ""}
+          onSignOut={handleSignOut}
+          collapsed={collapsed}
+          onToggleCollapsed={toggleCollapsed}
+        />
       </aside>
 
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/40 animate-fade-in"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 w-72 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col shadow-xl">
+          <aside className="absolute inset-y-0 left-0 w-72 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col shadow-xl animate-fade-in">
+
             <div className="flex items-center justify-between px-4 py-3">
               <span className="font-semibold">Menu</span>
               <Button
@@ -79,12 +129,22 @@ function AuthenticatedLayout() {
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            <SidebarInner email={user.email ?? ""} onSignOut={handleSignOut} />
+            <SidebarInner
+              email={user.email ?? ""}
+              onSignOut={handleSignOut}
+              collapsed={false}
+            />
           </aside>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div
+        className={cn(
+          "flex flex-col min-h-screen min-w-0 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          collapsed ? "md:pl-16" : "md:pl-64",
+        )}
+
+      >
         {/* Mobile top bar */}
         <header className="md:hidden sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-4 py-3">
           <Button
@@ -103,29 +163,119 @@ function AuthenticatedLayout() {
         <main className="flex-1 min-w-0">
           <Outlet />
         </main>
+        <CommandPalette />
       </div>
+
     </div>
   );
 }
 
-function SidebarInner({ email, onSignOut }: { email: string; onSignOut: () => void }) {
+function SidebarInner({
+  email,
+  onSignOut,
+  collapsed,
+  onToggleCollapsed,
+}: {
+  email: string;
+  onSignOut: () => void;
+  collapsed: boolean;
+  onToggleCollapsed?: () => void;
+}) {
   const router = useRouter();
   const pathname = router.state.location.pathname;
+  const checkFn = useServerFn(checkIsPlatformAdmin);
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-platform-admin"],
+    queryFn: () => checkFn(),
+    staleTime: 60_000,
+  });
+  const navItems = [
+    ...NAV,
+    ...(isAdmin
+      ? ([{ to: "/admin", label: "Admin plateforme", icon: ShieldAlert }] as const)
+      : []),
+  ];
   return (
     <>
-      <div className="px-5 pt-6 pb-4">
-        <Link to="/reports" className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground grid place-items-center">
+      <div
+        className={cn(
+          "flex items-center pt-4 pb-3",
+          collapsed ? "px-2 justify-center" : "px-4 justify-between gap-2",
+        )}
+      >
+        <Link
+          to="/reports"
+          className="flex items-center gap-2 min-w-0"
+          title="Lovable Rapports"
+        >
+          <div className="h-9 w-9 shrink-0 rounded-lg bg-primary text-primary-foreground grid place-items-center">
             <FileText className="h-5 w-5" />
           </div>
-          <div>
-            <div className="font-semibold leading-tight">Lovable</div>
-            <div className="text-xs text-muted-foreground leading-tight">Rapports d'équipe</div>
+          <div
+            className={cn(
+              "min-w-0 transition-[opacity,max-width,transform] duration-300 ease-out overflow-hidden",
+              collapsed
+                ? "opacity-0 -translate-x-1 max-w-0"
+                : "opacity-100 translate-x-0 max-w-[10rem]",
+            )}
+            aria-hidden={collapsed}
+          >
+            <div className="font-semibold leading-tight truncate">Lovable</div>
+            <div className="text-xs text-muted-foreground leading-tight truncate">
+              Rapports d'équipe
+            </div>
           </div>
         </Link>
+        {onToggleCollapsed && !collapsed && (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 shrink-0"
+            onClick={onToggleCollapsed}
+            aria-label="Réduire le menu"
+            title="Réduire le menu"
+          >
+            <ChevronsLeft className="h-4 w-4 transition-transform duration-300" />
+          </Button>
+        )}
+
       </div>
-      <nav className="px-3 space-y-1 flex-1">
-        {NAV.map((item) => {
+      {onToggleCollapsed && collapsed && (
+        <div className="px-2 pb-2 flex justify-center">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8"
+            onClick={onToggleCollapsed}
+            aria-label="Agrandir le menu"
+            title="Agrandir le menu"
+          >
+            <ChevronsRight className="h-4 w-4 transition-transform duration-300" />
+          </Button>
+        </div>
+      )}
+      <div className={cn("mb-2", collapsed ? "px-2" : "px-3")}>
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+            );
+          }}
+          title="Rechercher (⌘K)"
+          className={cn(
+            "flex items-center rounded-md text-sm text-muted-foreground border border-border/60 bg-background/50 hover:bg-sidebar-accent/60 transition-colors w-full",
+            collapsed ? "justify-center h-9" : "gap-2 px-3 py-1.5",
+          )}
+        >
+          <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <span className={cn("truncate flex-1 text-left transition-[opacity,max-width] duration-300 overflow-hidden", collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full")}>Rechercher…</span>
+          <kbd className={cn("text-xs bg-muted px-1.5 rounded transition-[opacity,max-width] duration-300 overflow-hidden", collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full")}>⌘K</kbd>
+        </button>
+      </div>
+      <nav className={cn("space-y-1 flex-1", collapsed ? "px-2" : "px-3")}>
+
+        {navItems.map((item) => {
           const active =
             item.to === "/reports"
               ? pathname === "/reports"
@@ -135,32 +285,65 @@ function SidebarInner({ email, onSignOut }: { email: string; onSignOut: () => vo
             <Link
               key={item.to}
               to={item.to}
+              title={collapsed ? item.label : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                "flex items-center rounded-md text-sm transition-colors",
+                collapsed
+                  ? "justify-center h-10 w-10 mx-auto"
+                  : "gap-3 px-3 py-2",
                 active
                   ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                   : "hover:bg-sidebar-accent/60",
               )}
             >
-              <Icon className="h-4 w-4" />
-              {item.label}
+              <Icon className="h-4 w-4 shrink-0" />
+              <span
+                className={cn(
+                  "truncate transition-[opacity,max-width,transform] duration-300 ease-out overflow-hidden",
+                  collapsed
+                    ? "opacity-0 -translate-x-1 max-w-0"
+                    : "opacity-100 translate-x-0 max-w-[10rem]",
+                )}
+                aria-hidden={collapsed}
+              >
+                {item.label}
+              </span>
+
             </Link>
           );
         })}
       </nav>
-      <div className="border-t border-sidebar-border p-3 space-y-2">
-        <div className="px-2 text-xs text-muted-foreground truncate" title={email}>
-          {email}
-        </div>
+      <div
+        className={cn(
+          "border-t border-sidebar-border space-y-2",
+          collapsed ? "p-2" : "p-3",
+        )}
+      >
+        {!collapsed && (
+          <div className="px-2 text-xs text-muted-foreground truncate animate-fade-in" title={email}>
+            {email}
+          </div>
+        )}
         <Button
           variant="ghost"
-          size="sm"
-          className="w-full justify-start"
+          size={collapsed ? "icon" : "sm"}
+          className={cn(collapsed ? "mx-auto flex" : "w-full justify-start")}
           onClick={onSignOut}
+          title={collapsed ? "Se déconnecter" : undefined}
+          aria-label="Se déconnecter"
         >
-          <LogOut className="h-4 w-4 mr-2" />
-          Se déconnecter
+          <LogOut className={cn("h-4 w-4 shrink-0", !collapsed && "mr-2")} />
+          <span
+            className={cn(
+              "transition-[opacity,max-width] duration-300 ease-out overflow-hidden whitespace-nowrap",
+              collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[10rem]",
+            )}
+            aria-hidden={collapsed}
+          >
+            Se déconnecter
+          </span>
         </Button>
+
       </div>
     </>
   );

@@ -2,13 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import type {
+  LoadedAttachment,
   LoadedImage,
   LoadedReport,
   LoadedSection,
   ReportListItem,
 } from "./reports.types";
 
-const IMAGE_URL_TTL = 60 * 60; // 1 hour
+const IMAGE_URL_TTL = 5 * 60; // 5 min — URL courte, régénérée à chaque affichage
+const ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_SHARE_DAYS = 30; // durée max d'un lien de partage public
+
 
 const bulletSchema = z.object({
   content: z.string().default(""),
@@ -19,6 +23,14 @@ const imageSchema = z.object({
   section_index: z.number().int().nullable().default(null),
   position: z.number().int().default(0),
   caption: z.string().default(""),
+});
+const attachmentSchema = z.object({
+  storage_path: z.string().min(1),
+  section_index: z.number().int().nullable().default(null),
+  position: z.number().int().default(0),
+  file_name: z.string().min(1).max(255),
+  mime_type: z.string().min(1).max(120),
+  size_bytes: z.number().int().nonnegative().max(ATTACHMENT_MAX_BYTES),
 });
 const sectionSchema = z.object({
   title: z.string().default(""),
@@ -34,17 +46,19 @@ const reportInputSchema = z.object({
   conclusion: z.string().default(""),
   sections: z.array(sectionSchema).default([]),
   images: z.array(imageSchema).default([]),
+  attachments: z.array(attachmentSchema).default([]),
 });
 
 type ReportInput = z.infer<typeof reportInputSchema>;
 
-async function signImages(
+async function signBucket(
   supabase: any,
+  bucket: string,
   paths: string[],
 ): Promise<Record<string, string>> {
   if (paths.length === 0) return {};
   const { data, error } = await supabase.storage
-    .from("report-images")
+    .from(bucket)
     .createSignedUrls(paths, IMAGE_URL_TTL);
   if (error || !data) return {};
   const map: Record<string, string> = {};
@@ -52,6 +66,13 @@ async function signImages(
     if (entry.path && entry.signedUrl) map[entry.path] = entry.signedUrl;
   });
   return map;
+}
+
+async function signImages(supabase: any, paths: string[]) {
+  return signBucket(supabase, "report-images", paths);
+}
+async function signAttachments(supabase: any, paths: string[]) {
+  return signBucket(supabase, "report-attachments", paths);
 }
 
 export const listReports = createServerFn({ method: "GET" })
@@ -92,7 +113,7 @@ export const getReport = createServerFn({ method: "GET" })
   .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<LoadedReport> => {
     const { supabase } = context;
-    const [{ data: report, error: e1 }, { data: sections }, { data: images }] =
+    const [{ data: report, error: e1 }, { data: sections }, { data: images }, { data: attachments }] =
       await Promise.all([
         supabase.from("reports").select("*").eq("id", data.id).maybeSingle(),
         supabase
@@ -103,6 +124,11 @@ export const getReport = createServerFn({ method: "GET" })
         supabase
           .from("report_images")
           .select("id, storage_path, section_id, position, caption")
+          .eq("report_id", data.id)
+          .order("position", { ascending: true }),
+        supabase
+          .from("report_attachments")
+          .select("id, storage_path, section_id, position, file_name, mime_type, size_bytes")
           .eq("report_id", data.id)
           .order("position", { ascending: true }),
       ]);
@@ -127,6 +153,8 @@ export const getReport = createServerFn({ method: "GET" })
 
     const paths = (images ?? []).map((i: any) => i.storage_path);
     const urls = await signImages(supabase, paths);
+    const attPaths = (attachments ?? []).map((a: any) => a.storage_path);
+    const attUrls = await signAttachments(supabase, attPaths);
 
     const bulletsBySection: Record<string, any[]> = {};
     (bullets ?? []).forEach((b: any) => {
@@ -146,6 +174,22 @@ export const getReport = createServerFn({ method: "GET" })
       if (img.section_id) (imagesBySection[img.section_id] ??= []).push(li);
       else generalImages.push(li);
     });
+    const attsBySection: Record<string, LoadedAttachment[]> = {};
+    const generalAttachments: LoadedAttachment[] = [];
+    (attachments ?? []).forEach((att: any) => {
+      const la: LoadedAttachment = {
+        id: att.id,
+        storage_path: att.storage_path,
+        section_id: att.section_id,
+        position: att.position,
+        file_name: att.file_name,
+        mime_type: att.mime_type,
+        size_bytes: Number(att.size_bytes),
+        url: attUrls[att.storage_path] ?? "",
+      };
+      if (att.section_id) (attsBySection[att.section_id] ??= []).push(la);
+      else generalAttachments.push(la);
+    });
 
     const loadedSections: LoadedSection[] = (sections ?? []).map((s: any) => ({
       id: s.id,
@@ -158,6 +202,7 @@ export const getReport = createServerFn({ method: "GET" })
         position: b.position,
       })),
       images: imagesBySection[s.id] ?? [],
+      attachments: attsBySection[s.id] ?? [],
     }));
 
     return {
@@ -173,6 +218,7 @@ export const getReport = createServerFn({ method: "GET" })
       updated_at: report.updated_at,
       sections: loadedSections,
       general_images: generalImages,
+      general_attachments: generalAttachments,
     };
   });
 
@@ -184,6 +230,7 @@ async function persistChildren(
   // Wipe children (RLS ensures only own report)
   await supabase.from("report_sections").delete().eq("report_id", reportId);
   await supabase.from("report_images").delete().eq("report_id", reportId);
+  await supabase.from("report_attachments").delete().eq("report_id", reportId);
 
   // Insert sections and gather created IDs (ordered by position)
   const sectionInserts = input.sections.map((s, idx) => ({
@@ -227,6 +274,21 @@ async function persistChildren(
   }));
   if (imageInserts.length > 0) {
     const { error } = await supabase.from("report_images").insert(imageInserts);
+    if (error) throw new Error(error.message);
+  }
+
+  const attachmentInserts = input.attachments.map((att, idx) => ({
+    report_id: reportId,
+    section_id:
+      att.section_index !== null ? insertedSections[att.section_index]?.id ?? null : null,
+    storage_path: att.storage_path,
+    file_name: att.file_name,
+    mime_type: att.mime_type,
+    size_bytes: att.size_bytes,
+    position: idx,
+  }));
+  if (attachmentInserts.length > 0) {
+    const { error } = await supabase.from("report_attachments").insert(attachmentInserts);
     if (error) throw new Error(error.message);
   }
 }
@@ -487,7 +549,7 @@ export const enableShare = createServerFn({ method: "POST" })
             .number()
             .int()
             .min(1)
-            .max(3650)
+            .max(MAX_SHARE_DAYS)
             .nullable()
             .optional(),
         })
@@ -632,7 +694,7 @@ export const getSharedReport = createServerFn({ method: "GET" })
       throw new Error("Lien expiré");
     }
 
-    const [{ data: sections }, { data: images }, { data: profile }] =
+    const [{ data: sections }, { data: images }, { data: attachments }, { data: profile }] =
       await Promise.all([
         supabaseAdmin
           .from("report_sections")
@@ -642,6 +704,11 @@ export const getSharedReport = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("report_images")
           .select("id, storage_path, section_id, position, caption")
+          .eq("report_id", report.id)
+          .order("position", { ascending: true }),
+        supabaseAdmin
+          .from("report_attachments")
+          .select("id, storage_path, section_id, position, file_name, mime_type, size_bytes")
           .eq("report_id", report.id)
           .order("position", { ascending: true }),
         supabaseAdmin
@@ -662,6 +729,8 @@ export const getSharedReport = createServerFn({ method: "GET" })
 
     const paths = (images ?? []).map((i: any) => i.storage_path);
     const urls = await signImages(supabaseAdmin, paths);
+    const attPaths = (attachments ?? []).map((a: any) => a.storage_path);
+    const attUrls = await signAttachments(supabaseAdmin, attPaths);
 
     const bulletsBySection: Record<string, any[]> = {};
     (bullets ?? []).forEach((b: any) => {
@@ -681,6 +750,22 @@ export const getSharedReport = createServerFn({ method: "GET" })
       if (img.section_id) (imagesBySection[img.section_id] ??= []).push(li);
       else generalImages.push(li);
     });
+    const attsBySection: Record<string, LoadedAttachment[]> = {};
+    const generalAttachments: LoadedAttachment[] = [];
+    (attachments ?? []).forEach((att: any) => {
+      const la: LoadedAttachment = {
+        id: att.id,
+        storage_path: att.storage_path,
+        section_id: att.section_id,
+        position: att.position,
+        file_name: att.file_name,
+        mime_type: att.mime_type,
+        size_bytes: Number(att.size_bytes),
+        url: attUrls[att.storage_path] ?? "",
+      };
+      if (att.section_id) (attsBySection[att.section_id] ??= []).push(la);
+      else generalAttachments.push(la);
+    });
 
     const loadedSections: LoadedSection[] = (sections ?? []).map((s: any) => ({
       id: s.id,
@@ -693,6 +778,7 @@ export const getSharedReport = createServerFn({ method: "GET" })
         position: b.position,
       })),
       images: imagesBySection[s.id] ?? [],
+      attachments: attsBySection[s.id] ?? [],
     }));
 
     const meta = await getRequestMeta();
@@ -711,6 +797,7 @@ export const getSharedReport = createServerFn({ method: "GET" })
       updated_at: report.updated_at,
       sections: loadedSections,
       general_images: generalImages,
+      general_attachments: generalAttachments,
       share_expires_at: (report.share_expires_at as string | null) ?? null,
     } as LoadedReport;
   });

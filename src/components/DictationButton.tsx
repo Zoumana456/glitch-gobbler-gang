@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 type Props = {
   onTranscript: (text: string) => void;
   label?: string;
+  /** Change this value to programmatically trigger start(). */
+  autoStartTrigger?: number | null;
 };
 
 function floatsToWav(samples: Float32Array, sampleRate: number): Blob {
@@ -49,8 +51,11 @@ function downsample(input: Float32Array, inRate: number, outRate: number): Float
   return out;
 }
 
-export function DictationButton({ onTranscript, label = "Dicter" }: Props) {
+export function DictationButton({ onTranscript, label = "Dicter", autoStartTrigger = null }: Props) {
   const [state, setState] = useState<"idle" | "recording" | "processing">("idle");
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+  const lastTriggerRef = useRef<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const chunksRef = useRef<Float32Array[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -65,6 +70,16 @@ export function DictationButton({ onTranscript, label = "Dicter" }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (autoStartTrigger == null) return;
+    if (lastTriggerRef.current === autoStartTrigger) return;
+    lastTriggerRef.current = autoStartTrigger;
+    if (stateRef.current === "idle") {
+      void start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartTrigger]);
 
   function cleanup() {
     if (timerRef.current) clearInterval(timerRef.current);
