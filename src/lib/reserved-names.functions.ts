@@ -255,6 +255,7 @@ export const listReservedNames = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ReservedName[]> => {
     if (!(await isPlatformAdmin(context.userId))) throw new Error("Réservé aux super admins");
+    if ((context.claims as any)?.aal !== "aal2") throw new Error("2FA requise (super admin doit valider un code TOTP)");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("reserved_company_names")
@@ -270,6 +271,7 @@ export const addReservedName = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     if (!(await isPlatformAdmin(context.userId))) throw new Error("Réservé aux super admins");
+    if ((context.claims as any)?.aal !== "aal2") throw new Error("2FA requise (super admin doit valider un code TOTP)");
     const slug = normalize(data.name);
     if (!slug) throw new Error("Nom invalide");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -288,6 +290,7 @@ export const removeReservedName = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     if (!(await isPlatformAdmin(context.userId))) throw new Error("Réservé aux super admins");
+    if ((context.claims as any)?.aal !== "aal2") throw new Error("2FA requise (super admin doit valider un code TOTP)");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("reserved_company_names")
@@ -301,6 +304,7 @@ export const listVerificationRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminVerificationRequest[]> => {
     if (!(await isPlatformAdmin(context.userId))) throw new Error("Réservé aux super admins");
+    if ((context.claims as any)?.aal !== "aal2") throw new Error("2FA requise (super admin doit valider un code TOTP)");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows } = await supabaseAdmin
       .from("company_verification_requests")
@@ -367,6 +371,7 @@ export const reviewVerificationRequest = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     if (!(await isPlatformAdmin(context.userId))) throw new Error("Réservé aux super admins");
+    if ((context.claims as any)?.aal !== "aal2") throw new Error("2FA requise (super admin doit valider un code TOTP)");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("company_verification_requests")
