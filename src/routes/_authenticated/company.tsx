@@ -97,6 +97,7 @@ function CompanyPage() {
 
   const [newCompanyName, setNewCompanyName] = useState("");
   const [verifyOpen, setVerifyOpen] = useState(false);
+  const [protectedReason, setProtectedReason] = useState<string | null>(null);
   const [activityFilter, setActivityFilter] = useState<"all" | "active" | "inactive">("all");
 
   function changeThreshold(v: 3 | 4) {
