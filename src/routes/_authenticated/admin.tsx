@@ -490,6 +490,7 @@ function VerificationsPanel() {
                       {formatLongDate(r.created_at)}
                     </div>
                   </div>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {r.proof_url && (
                     <Button asChild size="sm" variant="outline">
