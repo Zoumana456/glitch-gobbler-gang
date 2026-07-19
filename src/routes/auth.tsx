@@ -90,6 +90,7 @@ function AuthPage() {
   const [companyName, setCompanyName] = useState("");
   const [joinCompanyId, setJoinCompanyId] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { data: companies } = useQuery({
     queryKey: ["companies-directory"],
