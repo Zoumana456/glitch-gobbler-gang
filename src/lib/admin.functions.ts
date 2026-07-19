@@ -12,8 +12,11 @@ async function isPlatformAdmin(userId: string): Promise<boolean> {
   return !!data;
 }
 
-async function assertAdmin(userId: string) {
+async function assertAdmin(userId: string, claims?: any) {
   if (!(await isPlatformAdmin(userId))) throw new Error("Réservé aux super admins");
+  if (claims !== undefined && claims?.aal !== "aal2") {
+    throw new Error("2FA requise (super admin doit valider un code TOTP)");
+  }
 }
 
 async function logAction(
