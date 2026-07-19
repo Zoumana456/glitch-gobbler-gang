@@ -48,7 +48,6 @@ export type AdminDashboard = {
   usersCount: number;
   reportsThisMonth: number;
   revenueMtdCents: number;
-  pendingVerifications: number;
   activePlans: number;
 };
 
@@ -60,12 +59,11 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    const [companies, users, reports, revenue, verif, plans] = await Promise.all([
+    const [companies, users, reports, revenue, plans] = await Promise.all([
       supabaseAdmin.from("companies").select("id", { count: "exact", head: true }),
       supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
       supabaseAdmin.from("reports").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
       supabaseAdmin.from("company_invoices").select("amount_cents").eq("status", "paid").gte("paid_at", monthStart),
-      supabaseAdmin.from("company_verification_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabaseAdmin.from("subscription_plans").select("id", { count: "exact", head: true }).eq("is_active", true),
     ]);
 
@@ -75,7 +73,6 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
       usersCount: users.count ?? 0,
       reportsThisMonth: reports.count ?? 0,
       revenueMtdCents,
-      pendingVerifications: verif.count ?? 0,
       activePlans: plans.count ?? 0,
     };
   });
