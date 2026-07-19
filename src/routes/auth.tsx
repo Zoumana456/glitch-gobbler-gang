@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, FileText, Building2, User, Users, Check, ShieldAlert } from "lucide-react";
+import { Loader2, FileText, Building2, User, Users, Check, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
@@ -90,6 +90,7 @@ function AuthPage() {
   const [companyName, setCompanyName] = useState("");
   const [joinCompanyId, setJoinCompanyId] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { data: companies } = useQuery({
     queryKey: ["companies-directory"],
@@ -222,6 +223,13 @@ function AuthPage() {
               {mode === "signup" && "Créer un compte"}
               {mode === "forgot" && "Mot de passe oublié"}
             </CardTitle>
+            {mode === "signin" && (
+              <p className="text-center text-xs text-muted-foreground pt-1">
+                Déjà un compte ? Entrez votre email et mot de passe, ou utilisez Google.
+                <br />
+                Nouveau ? Cliquez sur « Créer un compte » en bas.
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {mode !== "forgot" && (
@@ -406,15 +414,28 @@ function AuthPage() {
                       </button>
                     )}
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                    required
-                    minLength={mode === "signup" ? 8 : 6}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                      required
+                      minLength={mode === "signup" ? 8 : 6}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                      aria-pressed={showPassword}
+                      tabIndex={-1}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {mode === "signup" && (
                     <p className="text-xs text-muted-foreground">
                       Utilisez un mot de passe unique d'au moins 8 caractères. Les mots de passe déjà exposés dans des fuites sont refusés.
