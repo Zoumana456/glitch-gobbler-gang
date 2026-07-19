@@ -1,16 +1,36 @@
-## Problème
+## Plan de correction
 
-Le compte `yapi401@gmail.com` existe bien (créé le 19/07, email confirmé, mot de passe présent) mais aucune connexion n'a jamais abouti (`last_sign_in_at = null`) et le log auth montre `400: Invalid login credentials`.
+Le problème visible est toujours : **Email ou mot de passe incorrect** pour le compte admin dédié. Je vais corriger ça sans toucher à vos rapports ni aux données existantes.
 
-Le mot de passe stocké lors de la création via l'API Admin ne correspond pas à `ZOUM3011####` (probablement rejeté silencieusement ou hashé sur une valeur différente lors du `curl` initial).
+### Étapes prévues
 
-## Correction
+1. **Vérifier le compte admin**
+   - Confirmer que `yapi401@gmail.com` existe bien dans l’authentification.
+   - Vérifier qu’il est marqué comme compte admin dédié dans le profil.
+   - Vérifier qu’il est bien présent dans la liste des administrateurs plateforme.
 
-1. Réinitialiser le mot de passe du compte `yapi401@gmail.com` à `ZOUM3011####` via l'API Auth Admin (`PUT /auth/v1/admin/users/{id}` avec `{ "password": "ZOUM3011####", "email_confirm": true }`).
-2. Vérifier immédiatement en base que `updated_at` a bougé.
-3. Confirmer à l'utilisateur les identifiants de connexion sur `/auth` :
-   - Email : `yapi401@gmail.com`
-   - Mot de passe : `ZOUM3011####`
-4. Rappeler qu'à la première connexion réussie, `/admin` demandera l'activation de la 2FA (scan QR + code à 6 chiffres).
+2. **Réinitialiser proprement l’accès**
+   - Définir un nouveau mot de passe temporaire fiable pour ce compte.
+   - Marquer l’email comme confirmé si nécessaire, pour éviter un blocage de connexion.
+   - Garder ce compte isolé : admin uniquement, sans accès création de rapports/entreprises.
 
-Aucun changement de code ni de schéma DB — juste une réinitialisation de credential côté Auth.
+3. **Tester la connexion comme un utilisateur réel**
+   - Ouvrir `/auth`.
+   - Tester la connexion email/mot de passe.
+   - Vérifier la redirection vers `/admin`.
+   - Vérifier que la protection 2FA s’affiche ensuite normalement.
+
+4. **Ajouter une issue de secours si le login direct échoue encore**
+   - Ajouter/valider un bouton ou flux “Mot de passe oublié” utilisable sur `/auth`.
+   - Prévoir une page `/reset-password` si elle manque, pour que vous puissiez définir vous-même un nouveau mot de passe sans dépendre d’une modification manuelle.
+
+### Ce qui ne sera pas modifié
+
+- Vos rapports existants.
+- Vos entreprises existantes.
+- Les comptes utilisateurs normaux.
+- Les données de production déjà enregistrées.
+
+### Résultat attendu
+
+Vous pourrez vous connecter depuis `/auth` avec le compte admin dédié, puis accéder à `/admin` après validation/activation de la 2FA.
