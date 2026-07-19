@@ -19,14 +19,18 @@ import {
   X,
   Building2,
   ShieldAlert,
+  ShieldCheck,
   FileSignature,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { CommandPalette } from "@/components/CommandPalette";
+import logoDailyBrief from "@/assets/logo-dailybrief.png";
+import { getMyProfile } from "@/lib/reports.functions";
 
 
 export const Route = createFileRoute("/_authenticated")({
