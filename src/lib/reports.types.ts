@@ -6,6 +6,16 @@ export type ReportImagePayload = {
   caption: string;
 };
 
+export type ReportAttachmentPayload = {
+  id?: string;
+  storage_path: string;
+  section_id: string | null;
+  position: number;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+};
+
 export type ReportBulletPayload = {
   id?: string;
   content: string;
@@ -27,6 +37,7 @@ export type ReportPayload = {
   conclusion: string;
   sections: ReportSectionPayload[];
   images: ReportImagePayload[];
+  attachments: ReportAttachmentPayload[];
 };
 
 export type LoadedImage = {
@@ -38,6 +49,17 @@ export type LoadedImage = {
   url: string;
 };
 
+export type LoadedAttachment = {
+  id: string;
+  storage_path: string;
+  section_id: string | null;
+  position: number;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  url: string;
+};
+
 export type LoadedSection = {
   id: string;
   title: string;
@@ -45,6 +67,7 @@ export type LoadedSection = {
   position: number;
   bullets: { id: string; content: string; position: number }[];
   images: LoadedImage[];
+  attachments: LoadedAttachment[];
 };
 
 export type LoadedReport = {
@@ -60,6 +83,7 @@ export type LoadedReport = {
   updated_at: string;
   sections: LoadedSection[];
   general_images: LoadedImage[];
+  general_attachments: LoadedAttachment[];
   share_expires_at?: string | null;
 };
 

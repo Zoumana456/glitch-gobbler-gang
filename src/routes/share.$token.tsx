@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Download, Loader2, Clock, FileText } from "lucide-react";
 import { formatLongDate } from "@/lib/date-utils";
 import { Lightbox } from "@/components/Lightbox";
+import { AttachmentsView } from "@/components/AttachmentUploader";
 import { useMemo, useState } from "react";
 import { downloadReportPdf } from "@/lib/pdf-utils";
 import { toast } from "sonner";
@@ -243,7 +244,7 @@ function SharedReportPage() {
           {r.sections.map((s, i) => {
             const anchor = sectionAnchors[i]?.anchor ?? `sec-${i}`;
             const empty =
-              !s.description && s.bullets.length === 0 && s.images.length === 0;
+              !s.description && s.bullets.length === 0 && s.images.length === 0 && (s.attachments?.length ?? 0) === 0;
             return (
               <section
                 key={s.id}
@@ -294,6 +295,9 @@ function SharedReportPage() {
                       </figure>
                     ))}
                   </div>
+                )}
+                {s.attachments && s.attachments.length > 0 && (
+                  <AttachmentsView attachments={s.attachments} title="" />
                 )}
                 {empty && (
                   <p className="text-sm text-muted-foreground italic">
@@ -346,6 +350,13 @@ function SharedReportPage() {
               </div>
             </section>
           )}
+
+          {r.general_attachments && r.general_attachments.length > 0 && (
+            <section id="attachments" className="scroll-mt-24">
+              <AttachmentsView attachments={r.general_attachments} />
+            </section>
+          )}
+
 
           {lightbox && (
             <Lightbox

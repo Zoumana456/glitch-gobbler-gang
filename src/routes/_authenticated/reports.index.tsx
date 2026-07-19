@@ -18,6 +18,7 @@ import {
   Trash2,
   Eye,
   Search,
+  
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -364,7 +365,9 @@ function ReportsListPage() {
                       </p>
                     )}
                     <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
-                      Par <span className="font-medium text-foreground">{r.author_name}</span>
+                      <div>
+                        Par <span className="font-medium text-foreground">{r.author_name}</span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

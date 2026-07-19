@@ -11,6 +11,8 @@ import {
   logShareCopy,
   getShareAuditLog,
 } from "@/lib/reports.functions";
+import { getMyShareForReport } from "@/lib/shares.functions";
+import { SharePeopleDialog } from "@/components/SharePeopleDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,13 +25,18 @@ import {
   Loader2,
   Copy,
   Link as LinkIcon,
+  Users,
   Check,
   RefreshCcw,
   Clock,
   History,
+  
 } from "lucide-react";
 import { formatLongDate } from "@/lib/date-utils";
 import { Lightbox } from "@/components/Lightbox";
+import { AttachmentsView } from "@/components/AttachmentUploader";
+import { ReportNotes } from "@/components/ReportNotes";
+
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { downloadReportPdf, shareReportPdf } from "@/lib/pdf-utils";
@@ -149,6 +156,13 @@ function ReportDetailPage() {
   const [copied, setCopied] = useState(false);
   const [expirationChoice, setExpirationChoice] = useState<string>("7");
   const [showAudit, setShowAudit] = useState(false);
+  const [peopleShareOpen, setPeopleShareOpen] = useState(false);
+
+  const fetchMyShare = useServerFn(getMyShareForReport);
+  const myShareQuery = useQuery({
+    queryKey: ["my-share", id],
+    queryFn: () => fetchMyShare({ data: { reportId: id } }),
+  });
 
   const shareUrl =
     shareToken && typeof window !== "undefined"
@@ -178,6 +192,7 @@ function ReportDetailPage() {
     queryFn: () => fetchAudit({ data: { id } }),
     enabled: shareOpen && showAudit,
   });
+
 
   const deleteMut = useMutation({
     mutationFn: () => del({ data: { id } }),
@@ -306,6 +321,9 @@ function ReportDetailPage() {
 
   const r = query.data;
   const isMine = r.author_id === user.id;
+  const myShare = myShareQuery.data ?? null;
+  const canEdit = isMine || myShare?.permission === "edit";
+  
 
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-10">
@@ -349,6 +367,18 @@ function ReportDetailPage() {
             )}
             Dupliquer
           </Button>
+          <Button variant="outline" onClick={() => setPeopleShareOpen(true)}>
+            <Users className="h-4 w-4 mr-2" />
+            Partager à une personne
+          </Button>
+          {canEdit && !isMine && (
+            <Button variant="outline" asChild>
+              <Link to="/reports/$id/edit" params={{ id: r.id }}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Modifier
+              </Link>
+            </Button>
+          )}
           {isMine && (
             <>
               <Button variant="outline" asChild>
@@ -379,6 +409,7 @@ function ReportDetailPage() {
           Par <span className="font-medium text-foreground">{r.author_name}</span>
         </div>
       </div>
+
 
       {r.intro && (
         <section>
@@ -432,6 +463,9 @@ function ReportDetailPage() {
               ))}
             </div>
           )}
+          {s.attachments && s.attachments.length > 0 && (
+            <AttachmentsView attachments={s.attachments} title="" />
+          )}
         </section>
       ))}
 
@@ -477,6 +511,27 @@ function ReportDetailPage() {
           </div>
         </section>
       )}
+
+      {r.general_attachments && r.general_attachments.length > 0 && (
+        <AttachmentsView attachments={r.general_attachments} />
+      )}
+
+      <ReportNotes
+        reportId={r.id}
+        currentUserId={user.id}
+        reportAuthorId={r.author_id}
+        canWrite={!isMine}
+      />
+
+      <SharePeopleDialog
+        reportId={r.id}
+        open={peopleShareOpen}
+        onOpenChange={setPeopleShareOpen}
+      />
+
+
+
+
 
       {lightbox && (
         <Lightbox

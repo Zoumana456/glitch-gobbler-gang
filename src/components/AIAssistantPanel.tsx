@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,11 @@ import {
   Wand2,
   AlertTriangle,
   ListChecks,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
+import { DictationButton } from "./DictationButton";
+import { SpeakButton } from "./SpeakButton";
 import { toast } from "sonner";
 import {
   aiChat,
@@ -112,11 +116,18 @@ export function AIAssistantPanel({
   const [issues, setIssues] = useState<
     { type: string; message: string; location: string }[] | null
   >(null);
+  const [voiceMode, setVoiceMode] = useState(false);
+  // Autoplay key per assistant message index (only the latest, when voiceMode is on).
+  const [autoPlayIndex, setAutoPlayIndex] = useState<number | null>(null);
+  // Bumping this triggers the DictationButton to auto-start (after TTS ends).
+  const [micTrigger, setMicTrigger] = useState<number | null>(null);
+  const voiceModeRef = useRef(voiceMode);
+  useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
 
-  async function send() {
-    const msg = input.trim();
+  async function send(overrideText?: string) {
+    const msg = (overrideText ?? input).trim();
     if (!msg || busy) return;
-    setInput("");
+    if (!overrideText) setInput("");
     const nextHist: Message[] = [...history, { role: "user", content: msg }];
     setHistory(nextHist);
     setBusy(true);
@@ -129,7 +140,10 @@ export function AIAssistantPanel({
           style: style === "free" ? undefined : style,
         },
       });
-      setHistory([...nextHist, { role: "assistant", content: res.reply || "…" }]);
+      const reply = res.reply || "…";
+      const newIndex = nextHist.length; // index of the assistant message we're about to push
+      setHistory([...nextHist, { role: "assistant", content: reply }]);
+      if (voiceModeRef.current) setAutoPlayIndex(newIndex);
       if (res.updatedDraft) {
         applyDraft(res.updatedDraft);
         toast.success("Brouillon mis à jour");
@@ -142,6 +156,22 @@ export function AIAssistantPanel({
       ]);
     } finally {
       setBusy(false);
+    }
+  }
+
+  function handleDictated(text: string) {
+    if (voiceModeRef.current) {
+      // Send directly in conversation mode
+      void send(text);
+    } else {
+      setInput((v) => (v ? v + " " : "") + text);
+    }
+  }
+
+  function handleTtsEnded() {
+    // In conversation mode, re-open the mic for a natural turn-taking flow
+    if (voiceModeRef.current) {
+      setMicTrigger((v) => (v ?? 0) + 1);
     }
   }
 
@@ -241,10 +271,23 @@ export function AIAssistantPanel({
           <Sparkles className="h-4 w-4 text-primary" />
           <div className="font-semibold">Assistant IA</div>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant={voiceMode ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setVoiceMode((v) => !v)}
+            title={voiceMode ? "Désactiver le mode conversation vocale" : "Activer le mode conversation vocale"}
+            className="h-8"
+          >
+            {voiceMode ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            <span className="ml-1.5 text-xs">Vocal</span>
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+
 
       <div className="px-4 py-3 border-b border-border space-y-2">
         <div className="flex items-center gap-2">
@@ -358,11 +401,20 @@ export function AIAssistantPanel({
             className={
               m.role === "user"
                 ? "ml-6 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 text-sm"
-                : "mr-6 rounded-lg bg-muted px-3 py-2 text-sm prose prose-sm max-w-none dark:prose-invert"
+                : "mr-6 rounded-lg bg-muted px-3 py-2 text-sm"
             }
           >
             {m.role === "assistant" ? (
-              <ReactMarkdown>{m.content}</ReactMarkdown>
+              <div className="flex items-start gap-2">
+                <div className="prose prose-sm max-w-none dark:prose-invert flex-1">
+                  <ReactMarkdown>{m.content}</ReactMarkdown>
+                </div>
+                <SpeakButton
+                  text={m.content}
+                  autoPlayKey={autoPlayIndex === i ? i : null}
+                  onEnded={autoPlayIndex === i ? handleTtsEnded : undefined}
+                />
+              </div>
             ) : (
               <div className="whitespace-pre-wrap">{m.content}</div>
             )}
@@ -378,18 +430,23 @@ export function AIAssistantPanel({
       <div className="border-t border-border p-3 space-y-2">
         <Textarea
           rows={2}
-          placeholder="Décrivez votre activité, une question, un ajout…"
+          placeholder={voiceMode ? "Mode conversation actif — parlez ou tapez…" : "Décrivez votre activité, une question, un ajout…"}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              send();
+              void send();
             }
           }}
         />
-        <div className="flex justify-end">
-          <Button size="sm" disabled={busy || !input.trim()} onClick={send}>
+        <div className="flex justify-between items-center gap-2">
+          <DictationButton
+            onTranscript={handleDictated}
+            label={voiceMode ? "Parler" : "Dicter"}
+            autoStartTrigger={micTrigger}
+          />
+          <Button size="sm" disabled={busy || !input.trim()} onClick={() => void send()}>
             <Send className="h-3.5 w-3.5 mr-1.5" />
             Envoyer
           </Button>
