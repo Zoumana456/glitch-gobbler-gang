@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatLongDate } from "@/lib/date-utils";
+import { RequestVerificationDialog } from "@/components/RequestVerificationDialog";
 
 function todayISO(): string {
   const d = new Date();
@@ -94,6 +95,7 @@ function CompanyPage() {
   });
 
   const [newCompanyName, setNewCompanyName] = useState("");
+  const [verifyOpen, setVerifyOpen] = useState(false);
   const [activityFilter, setActivityFilter] = useState<"all" | "active" | "inactive">("all");
 
   function changeThreshold(v: 3 | 4) {
@@ -118,7 +120,15 @@ function CompanyPage() {
       toast.success("Entreprise créée");
       queryClient.invalidateQueries({ queryKey: ["my-company"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Erreur"),
+    onError: (e: any) => {
+      const msg = String(e?.message ?? "Erreur");
+      if (msg.includes("protégé") || msg.toLowerCase().includes("vérification")) {
+        setVerifyOpen(true);
+        toast.info("Ce nom est réservé — ouvrez une demande de vérification.");
+        return;
+      }
+      toast.error(msg);
+    },
   });
 
   if (isLoading) return <div className="p-8">Chargement...</div>;
@@ -154,6 +164,11 @@ function CompanyPage() {
             </Button>
           </CardContent>
         </Card>
+        <RequestVerificationDialog
+          open={verifyOpen}
+          onOpenChange={setVerifyOpen}
+          companyName={newCompanyName.trim()}
+        />
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Rejoindre une entreprise</CardTitle>
