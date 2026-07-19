@@ -116,7 +116,12 @@ function CompanyPage() {
 
   const createMut = useMutation({
     mutationFn: (name: string) => createCompanyFn({ data: { name } }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res?.needsVerification) {
+        setVerifyOpen(true);
+        toast.info(res.reason ?? "Nom réservé — vérification requise.");
+        return;
+      }
       toast.success("Entreprise créée");
       queryClient.invalidateQueries({ queryKey: ["my-company"] });
     },
