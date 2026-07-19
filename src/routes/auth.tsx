@@ -223,6 +223,13 @@ function AuthPage() {
               {mode === "signup" && "Créer un compte"}
               {mode === "forgot" && "Mot de passe oublié"}
             </CardTitle>
+            {mode === "signin" && (
+              <p className="text-center text-xs text-muted-foreground pt-1">
+                Déjà un compte ? Entrez votre email et mot de passe, ou utilisez Google.
+                <br />
+                Nouveau ? Cliquez sur « Créer un compte » en bas.
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {mode !== "forgot" && (
