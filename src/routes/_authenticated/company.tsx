@@ -95,6 +95,7 @@ function CompanyPage() {
   });
 
   const [newCompanyName, setNewCompanyName] = useState("");
+  const [verifyOpen, setVerifyOpen] = useState(false);
   const [activityFilter, setActivityFilter] = useState<"all" | "active" | "inactive">("all");
 
   function changeThreshold(v: 3 | 4) {
