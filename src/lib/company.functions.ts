@@ -168,6 +168,33 @@ export const createCompany = createServerFn({ method: "POST" })
       }
     }
 
+    // AI-backed impersonation gate (Côte d'Ivoire and known brands)
+    if (slug) {
+      try {
+        const { computeCompanyNameRisk } = await import("./company-risk.functions");
+        const risk = await computeCompanyNameRisk(data.name);
+        if (risk.risk_level === "high") {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { data: approved } = await supabaseAdmin
+            .from("company_verification_requests")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("slug", slug)
+            .eq("status", "approved")
+            .maybeSingle();
+          if (!approved) {
+            return {
+              id: null,
+              needsVerification: true as const,
+              reason: `Ce nom semble correspondre à « ${risk.matched_entity ?? "une entité reconnue"} ». Ouvrez une demande de vérification (KYC) pour l'utiliser.`,
+            };
+          }
+        }
+      } catch (e) {
+        console.error("[createCompany] risk check failed:", e);
+      }
+    }
+
     const { data: company, error } = await supabase
       .from("companies")
       .insert({ name: data.name, owner_id: userId })

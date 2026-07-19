@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import {
@@ -15,6 +15,7 @@ import {
   getCompanyDashboard,
   getCompanyDailyStatus,
 } from "@/lib/company.functions";
+import { checkCompanyNameRisk, type CompanyNameRisk } from "@/lib/company-risk.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ import {
   CircleCheck,
   CircleAlert,
   ShieldAlert,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatLongDate } from "@/lib/date-utils";
@@ -99,6 +101,30 @@ function CompanyPage() {
   const [verifyOpen, setVerifyOpen] = useState(false);
   const [protectedReason, setProtectedReason] = useState<string | null>(null);
   const [activityFilter, setActivityFilter] = useState<"all" | "active" | "inactive">("all");
+  const [riskInfo, setRiskInfo] = useState<CompanyNameRisk | null>(null);
+  const [riskLoading, setRiskLoading] = useState(false);
+  const checkRiskFn = useServerFn(checkCompanyNameRisk);
+
+  useEffect(() => {
+    const name = newCompanyName.trim();
+    if (name.length < 3) {
+      setRiskInfo(null);
+      setRiskLoading(false);
+      return;
+    }
+    setRiskLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await checkRiskFn({ data: { name } });
+        setRiskInfo(r);
+      } catch {
+        setRiskInfo(null);
+      } finally {
+        setRiskLoading(false);
+      }
+    }, 700);
+    return () => clearTimeout(t);
+  }, [newCompanyName, checkRiskFn]);
 
   function changeThreshold(v: 3 | 4) {
     setThresholdDays(v);
@@ -176,6 +202,31 @@ function CompanyPage() {
                 }}
                 placeholder="Ma société"
               />
+              {riskLoading && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Vérification du nom en cours…
+                </p>
+              )}
+              {!riskLoading && riskInfo && riskInfo.risk_level === "high" && (
+                <p className="text-xs text-destructive flex items-start gap-1.5">
+                  <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>
+                    Ce nom correspond à <b>{riskInfo.matched_entity ?? "une entité reconnue"}</b>. Une vérification KYC sera exigée.
+                  </span>
+                </p>
+              )}
+              {!riskLoading && riskInfo && riskInfo.risk_level === "medium" && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5">
+                  <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>Ressemblance forte avec {riskInfo.matched_entity ?? "une marque connue"}. Vérifiez l'orthographe.</span>
+                </p>
+              )}
+              {!riskLoading && riskInfo && riskInfo.risk_level === "none" && newCompanyName.trim().length >= 3 && (
+                <p className="text-xs text-emerald-600 flex items-center gap-1.5">
+                  <CircleCheck className="h-3.5 w-3.5" /> Nom disponible
+                </p>
+              )}
             </div>
             {protectedReason && (
               <div className="rounded-md border border-amber-500/60 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3">

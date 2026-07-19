@@ -257,6 +257,33 @@ export type Database = {
           },
         ]
       }
+      company_name_risk_cache: {
+        Row: {
+          checked_at: string
+          evidence: string | null
+          matched_entity: string | null
+          original_name: string
+          risk_level: string
+          slug: string
+        }
+        Insert: {
+          checked_at?: string
+          evidence?: string | null
+          matched_entity?: string | null
+          original_name: string
+          risk_level: string
+          slug: string
+        }
+        Update: {
+          checked_at?: string
+          evidence?: string | null
+          matched_entity?: string | null
+          original_name?: string
+          risk_level?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       company_verification_requests: {
         Row: {
           admin_note: string | null
