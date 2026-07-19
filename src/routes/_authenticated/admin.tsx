@@ -100,7 +100,7 @@ function AdminPage() {
           <TabsTrigger value="users"><UserCog className="h-4 w-4 mr-1" />Utilisateurs</TabsTrigger>
           <TabsTrigger value="plans"><Package className="h-4 w-4 mr-1" />Plans</TabsTrigger>
           <TabsTrigger value="invoices"><Receipt className="h-4 w-4 mr-1" />Factures</TabsTrigger>
-          <TabsTrigger value="verifications"><ShieldCheck className="h-4 w-4 mr-1" />Vérifications</TabsTrigger>
+          
           <TabsTrigger value="reserved"><Lock className="h-4 w-4 mr-1" />Noms réservés</TabsTrigger>
           <TabsTrigger value="admins"><Shield className="h-4 w-4 mr-1" />Super admins</TabsTrigger>
           <TabsTrigger value="audit"><ScrollText className="h-4 w-4 mr-1" />Audit</TabsTrigger>
