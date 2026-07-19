@@ -236,15 +236,6 @@ async function runKycAiCheck(
 }
 
 
-  });
-
-export const listMyVerificationRequests = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<MyVerificationRequest[]> => {
-    const { data } = await context.supabase
-      .from("company_verification_requests")
-      .select("id, requested_name, slug, status, proof_path, message, admin_note, created_at, reviewed_at")
-      .order("created_at", { ascending: false });
 
 export const listMyVerificationRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
