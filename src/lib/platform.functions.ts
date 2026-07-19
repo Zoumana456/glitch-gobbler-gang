@@ -12,14 +12,35 @@ async function isPlatformAdmin(userId: string): Promise<boolean> {
   return !!data;
 }
 
-async function assertPlatformAdmin(_supabase: any, userId: string) {
+function hasAal2(claims: any): boolean {
+  return claims?.aal === "aal2";
+}
+
+async function assertPlatformAdmin(_supabase: any, userId: string, claims?: any) {
   if (!(await isPlatformAdmin(userId))) throw new Error("Réservé aux super admins");
+  if (claims !== undefined && !hasAal2(claims)) {
+    throw new Error("2FA requise (super admin doit valider un code TOTP)");
+  }
 }
 
 export const checkIsPlatformAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<boolean> => {
     return isPlatformAdmin(context.userId);
+  });
+
+export type AdminAccessStatus = {
+  isAdmin: boolean;
+  aal: string | null;
+  mfaVerified: boolean;
+};
+
+export const getAdminAccessStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminAccessStatus> => {
+    const isAdmin = await isPlatformAdmin(context.userId);
+    const aal = (context.claims as any)?.aal ?? null;
+    return { isAdmin, aal, mfaVerified: aal === "aal2" };
   });
 
 
