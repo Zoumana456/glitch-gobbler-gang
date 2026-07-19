@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -223,6 +224,43 @@ function AuthPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {mode !== "forgot" && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={loading}
+                  onClick={async () => {
+                    try {
+                      const res = await lovable.auth.signInWithOAuth("google", {
+                        redirect_uri: window.location.origin,
+                      });
+                      if (res.error) {
+                        toast.error(res.error.message ?? "Connexion Google impossible");
+                        return;
+                      }
+                      if (res.redirected) return;
+                      toast.success("Connecté");
+                      navigate({ to: redirect ?? "/reports", replace: true });
+                    } catch (e: any) {
+                      toast.error(e?.message ?? "Connexion Google impossible");
+                    }
+                  }}
+                >
+                  <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4-5.5 4-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.9 1.5l2.6-2.5C16.9 3.4 14.7 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12S6.7 21.6 12 21.6c6.9 0 9.5-4.8 9.5-9.2 0-.6-.1-1.1-.2-1.6L12 10.2z"/>
+                  </svg>
+                  Continuer avec Google
+                </Button>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">ou</span>
+                  </div>
+                </div>
+              </>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === "signup" && (
                 <>
