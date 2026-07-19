@@ -14,32 +14,94 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip: string | null
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip?: string | null
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip?: string | null
+          metadata?: Json
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
+          billing_cycle: string
           created_at: string
+          custom_seat_price_cents: number | null
           id: string
           name: string
           owner_id: string
+          plan_id: string | null
           seat_limit: number
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string | null
           updated_at: string
         }
         Insert: {
+          billing_cycle?: string
           created_at?: string
+          custom_seat_price_cents?: number | null
           id?: string
           name: string
           owner_id: string
+          plan_id?: string | null
           seat_limit?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           updated_at?: string
         }
         Update: {
+          billing_cycle?: string
           created_at?: string
+          custom_seat_price_cents?: number | null
           id?: string
           name?: string
           owner_id?: string
+          plan_id?: string | null
           seat_limit?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "companies_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_invitations: {
         Row: {
@@ -75,6 +137,71 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "company_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_invoices: {
+        Row: {
+          amount_cents: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          number: string
+          paid_at: string | null
+          pdf_url: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          stripe_invoice_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          number: string
+          paid_at?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          number?: string
+          paid_at?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_invoices_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -627,6 +754,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          monthly_price_cents: number
+          name: string
+          price_per_extra_seat_cents: number
+          seat_limit: number
+          sort_order: number
+          stripe_price_monthly_id: string | null
+          stripe_price_yearly_id: string | null
+          stripe_product_id: string | null
+          updated_at: string
+          yearly_price_cents: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          monthly_price_cents?: number
+          name: string
+          price_per_extra_seat_cents?: number
+          seat_limit?: number
+          sort_order?: number
+          stripe_price_monthly_id?: string | null
+          stripe_price_yearly_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+          yearly_price_cents?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          monthly_price_cents?: number
+          name?: string
+          price_per_extra_seat_cents?: number
+          seat_limit?: number
+          sort_order?: number
+          stripe_price_monthly_id?: string | null
+          stripe_price_yearly_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+          yearly_price_cents?: number
+        }
+        Relationships: []
       }
     }
     Views: {
