@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatLongDate } from "@/lib/date-utils";
+import { RequestVerificationDialog } from "@/components/RequestVerificationDialog";
 
 function todayISO(): string {
   const d = new Date();
