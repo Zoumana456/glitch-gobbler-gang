@@ -490,14 +490,54 @@ function VerificationsPanel() {
                       {formatLongDate(r.created_at)}
                     </div>
                   </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {r.proof_url && (
                     <Button asChild size="sm" variant="outline">
                       <a href={r.proof_url} target="_blank" rel="noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-1.5" /> Justificatif
+                        <ExternalLink className="h-4 w-4 mr-1.5" /> Justificatif entreprise
+                      </a>
+                    </Button>
+                  )}
+                  {r.identity_document_url && (
+                    <Button asChild size="sm" variant="outline">
+                      <a href={r.identity_document_url} target="_blank" rel="noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-1.5" /> Pièce d'identité
+                        {r.identity_document_type ? ` (${r.identity_document_type})` : ""}
+                      </a>
+                    </Button>
+                  )}
+                  {r.selfie_url && (
+                    <Button asChild size="sm" variant="outline">
+                      <a href={r.selfie_url} target="_blank" rel="noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-1.5" /> Selfie
                       </a>
                     </Button>
                   )}
                 </div>
+                {r.full_legal_name && (
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Nom légal déclaré : </span>
+                    <span className="font-medium">{r.full_legal_name}</span>
+                  </div>
+                )}
+                {r.ai_check_status && r.ai_check_status !== "pending" && (
+                  <div
+                    className={`text-xs rounded p-2 border ${
+                      r.ai_check_status === "passed"
+                        ? "border-green-500/30 bg-green-500/10"
+                        : "border-orange-500/30 bg-orange-500/10"
+                    }`}
+                  >
+                    <div className="font-medium mb-1">
+                      Contrôle IA :{" "}
+                      {r.ai_check_status === "passed" ? "✅ passé" : "⚠️ à vérifier"}
+                    </div>
+                    <pre className="whitespace-pre-wrap text-[11px] font-mono max-h-40 overflow-auto">
+                      {JSON.stringify(r.ai_check_report, null, 2)}
+                    </pre>
+                  </div>
+                )}
                 {r.message && (
                   <div className="text-sm rounded bg-muted/40 p-2">{r.message}</div>
                 )}
