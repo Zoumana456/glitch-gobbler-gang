@@ -188,11 +188,20 @@ function SidebarInner({
   const router = useRouter();
   const pathname = router.state.location.pathname;
   const checkFn = useServerFn(checkIsPlatformAdmin);
+  const profileFn = useServerFn(getMyProfile);
   const { data: isAdmin } = useQuery({
     queryKey: ["is-platform-admin"],
     queryFn: () => checkFn(),
     staleTime: 60_000,
   });
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => profileFn(),
+    staleTime: 60_000,
+  });
+  const avatarUrl = profile?.avatar_url ?? undefined;
+  const displayName = profile?.full_name ?? email;
+  const initials = (profile?.full_name ?? email ?? "?").slice(0, 2).toUpperCase();
   const navItems = [
     ...NAV,
     ...(isAdmin
