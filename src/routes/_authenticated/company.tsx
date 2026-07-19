@@ -116,12 +116,24 @@ function CompanyPage() {
     }, 50);
   }
 
+  function triggerProtectedFlow(reason: string) {
+    setProtectedReason(reason);
+    setVerifyOpen(true);
+    toast.warning("Nom d'entreprise protégé", {
+      description: `${reason} Une vérification d'identité (KYC) est nécessaire pour l'utiliser.`,
+      duration: 10000,
+      action: {
+        label: "Vérifier mon identité",
+        onClick: () => setVerifyOpen(true),
+      },
+    });
+  }
+
   const createMut = useMutation({
     mutationFn: (name: string) => createCompanyFn({ data: { name } }),
     onSuccess: (res) => {
       if (res?.needsVerification) {
-        setVerifyOpen(true);
-        toast.info(res.reason ?? "Nom réservé — vérification requise.");
+        triggerProtectedFlow(res.reason ?? "Ce nom d'entreprise est réservé.");
         return;
       }
       toast.success("Entreprise créée");
@@ -130,8 +142,7 @@ function CompanyPage() {
     onError: (e: any) => {
       const msg = String(e?.message ?? "Erreur");
       if (msg.includes("protégé") || msg.toLowerCase().includes("vérification")) {
-        setVerifyOpen(true);
-        toast.info("Ce nom est réservé — ouvrez une demande de vérification.");
+        triggerProtectedFlow("Ce nom d'entreprise est réservé.");
         return;
       }
       toast.error(msg);
