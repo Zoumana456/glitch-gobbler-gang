@@ -202,6 +202,31 @@ function CompanyPage() {
                 }}
                 placeholder="Ma société"
               />
+              {riskLoading && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Vérification du nom en cours…
+                </p>
+              )}
+              {!riskLoading && riskInfo && riskInfo.risk_level === "high" && (
+                <p className="text-xs text-destructive flex items-start gap-1.5">
+                  <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>
+                    Ce nom correspond à <b>{riskInfo.matched_entity ?? "une entité reconnue"}</b>. Une vérification KYC sera exigée.
+                  </span>
+                </p>
+              )}
+              {!riskLoading && riskInfo && riskInfo.risk_level === "medium" && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5">
+                  <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>Ressemblance forte avec {riskInfo.matched_entity ?? "une marque connue"}. Vérifiez l'orthographe.</span>
+                </p>
+              )}
+              {!riskLoading && riskInfo && riskInfo.risk_level === "none" && newCompanyName.trim().length >= 3 && (
+                <p className="text-xs text-emerald-600 flex items-center gap-1.5">
+                  <CircleCheck className="h-3.5 w-3.5" /> Nom disponible
+                </p>
+              )}
             </div>
             {protectedReason && (
               <div className="rounded-md border border-amber-500/60 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3">
