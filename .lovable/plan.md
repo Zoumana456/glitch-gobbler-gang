@@ -1,36 +1,39 @@
-## Plan de correction
+## Objectif
 
-Le problème visible est toujours : **Email ou mot de passe incorrect** pour le compte admin dédié. Je vais corriger ça sans toucher à vos rapports ni aux données existantes.
+Rendre la page de connexion évidente à trouver et ajouter un bouton « afficher/masquer » sur le champ mot de passe.
 
-### Étapes prévues
+## Où vous connecter aujourd'hui
 
-1. **Vérifier le compte admin**
-   - Confirmer que `yapi401@gmail.com` existe bien dans l’authentification.
-   - Vérifier qu’il est marqué comme compte admin dédié dans le profil.
-   - Vérifier qu’il est bien présent dans la liste des administrateurs plateforme.
+L'écran de connexion existe déjà à l'adresse `/auth` (page `src/routes/auth.tsx`). Le lien direct depuis votre site publié :
 
-2. **Réinitialiser proprement l’accès**
-   - Définir un nouveau mot de passe temporaire fiable pour ce compte.
-   - Marquer l’email comme confirmé si nécessaire, pour éviter un blocage de connexion.
-   - Garder ce compte isolé : admin uniquement, sans accès création de rapports/entreprises.
+```
+https://rapport-journaliere.lovable.app/auth
+```
 
-3. **Tester la connexion comme un utilisateur réel**
-   - Ouvrir `/auth`.
-   - Tester la connexion email/mot de passe.
-   - Vérifier la redirection vers `/admin`.
-   - Vérifier que la protection 2FA s’affiche ensuite normalement.
+Sur cet écran vous avez :
+- « Continuer avec Google » (le bouton que vous utilisez habituellement)
+- ou email + mot de passe (mode « Connexion » par défaut)
 
-4. **Ajouter une issue de secours si le login direct échoue encore**
-   - Ajouter/valider un bouton ou flux “Mot de passe oublié” utilisable sur `/auth`.
-   - Prévoir une page `/reset-password` si elle manque, pour que vous puissiez définir vous-même un nouveau mot de passe sans dépendre d’une modification manuelle.
+Le lien « Créer un compte » n'est utile que si vous n'avez pas encore de compte — sinon restez sur « Connexion ».
 
-### Ce qui ne sera pas modifié
+## Modifications à faire
 
-- Vos rapports existants.
-- Vos entreprises existantes.
-- Les comptes utilisateurs normaux.
-- Les données de production déjà enregistrées.
+1. **Ajouter un bouton œil (afficher/masquer) dans le champ mot de passe**
+   - Fichier : `src/routes/auth.tsx`
+   - Sur le champ `#password` (mode signin et signup) : passer le `type` de `password` à `text` selon un nouvel état `showPassword`.
+   - Icône `Eye` / `EyeOff` de `lucide-react`, positionnée à droite dans l'input (bouton `type="button"` pour ne pas soumettre le formulaire).
+   - `aria-label` dynamique « Afficher le mot de passe » / « Masquer le mot de passe ».
 
-### Résultat attendu
+2. **Mieux signaler « où me connecter »**
+   - Sur la page d'accueil `/` (`src/routes/index.tsx`) : s'assurer qu'un bouton « Se connecter » bien visible pointe vers `/auth`. Si un utilisateur déjà connecté arrive, le rediriger vers `/reports` (déjà géré par `/auth`).
+   - Ajouter une petite mention sous le titre de la carte : « Déjà un compte ? Utilisez « Connexion ». Nouveau ? Cliquez sur « Créer un compte » en bas. » pour lever l'ambiguïté.
 
-Vous pourrez vous connecter depuis `/auth` avec le compte admin dédié, puis accéder à `/admin` après validation/activation de la 2FA.
+3. (Optionnel, si vous le souhaitez) Ajouter le même bouton œil sur la page `/reset-password`.
+
+## Détail technique
+
+- Nouvel état local dans `AuthPage` : `const [showPassword, setShowPassword] = useState(false);`
+- Champ mot de passe entouré d'un `<div className="relative">` avec l'`Input` (padding-right augmenté) et un `<button>` absolu à droite qui bascule `showPassword`.
+- Aucun changement backend, aucun changement de base de données, aucun impact sur les rapports existants.
+
+Confirmez-vous que je peux appliquer ces changements ?
