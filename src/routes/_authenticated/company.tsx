@@ -39,6 +39,7 @@ import {
   CalendarCheck2,
   CircleCheck,
   CircleAlert,
+  ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatLongDate } from "@/lib/date-utils";
