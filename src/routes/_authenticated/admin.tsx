@@ -16,14 +16,11 @@ import {
   listReservedNames,
   addReservedName,
   removeReservedName,
-  listVerificationRequests,
-  reviewVerificationRequest,
 } from "@/lib/reserved-names.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -34,7 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Shield, ShieldAlert, ShieldCheck, Trash2, Plus, Users, Lock, ExternalLink, LayoutDashboard, Package, Receipt, ScrollText, UserCog } from "lucide-react";
+import { Shield, ShieldAlert, Trash2, Plus, Users, Lock, LayoutDashboard, Package, Receipt, ScrollText, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { formatLongDate } from "@/lib/date-utils";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
