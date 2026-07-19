@@ -72,7 +72,8 @@ export function RequestVerificationDialog({
     }
   }, [open]);
 
-  async function uploadFile(file: File, bucket = "company-proofs"): Promise<string> {
+  async function uploadFile(file: File): Promise<string> {
+    const bucket = "company-proofs" as const;
     const { validateUpload, buildSafeStoragePath } = await import(
       "@/lib/upload-validation"
     );
