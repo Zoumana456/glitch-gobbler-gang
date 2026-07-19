@@ -210,11 +210,13 @@ function SidebarInner({
         <Link
           to="/reports"
           className="flex items-center gap-2 min-w-0"
-          title="Lovable Rapports"
+          title="DailyBrief"
         >
-          <div className="h-9 w-9 shrink-0 rounded-lg bg-primary text-primary-foreground grid place-items-center">
-            <FileText className="h-5 w-5" />
-          </div>
+          <img
+            src={logoDailyBrief}
+            alt="DailyBrief"
+            className="h-9 w-9 shrink-0 rounded-lg object-cover"
+          />
           <div
             className={cn(
               "min-w-0 transition-[opacity,max-width,transform] duration-300 ease-out overflow-hidden",
@@ -224,9 +226,9 @@ function SidebarInner({
             )}
             aria-hidden={collapsed}
           >
-            <div className="font-semibold leading-tight truncate">Lovable</div>
+            <div className="font-semibold leading-tight truncate">DailyBrief</div>
             <div className="text-xs text-muted-foreground leading-tight truncate">
-              Rapports d'équipe
+              Team reports made simple
             </div>
           </div>
         </Link>
