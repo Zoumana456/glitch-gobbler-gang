@@ -24,6 +24,12 @@ export type MyVerificationRequest = {
   slug: string;
   status: "pending" | "approved" | "rejected";
   proof_path: string | null;
+  identity_document_path: string | null;
+  identity_document_type: string | null;
+  selfie_path: string | null;
+  full_legal_name: string | null;
+  ai_check_status: string | null;
+  ai_check_report: Record<string, unknown> | null;
   message: string | null;
   admin_note: string | null;
   created_at: string;
@@ -35,6 +41,8 @@ export type AdminVerificationRequest = MyVerificationRequest & {
   user_email: string;
   user_name: string;
   proof_url: string | null;
+  identity_document_url: string | null;
+  selfie_url: string | null;
 };
 
 async function isPlatformAdmin(userId: string) {
