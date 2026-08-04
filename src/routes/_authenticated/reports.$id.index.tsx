@@ -36,6 +36,8 @@ import { formatLongDate } from "@/lib/date-utils";
 import { Lightbox } from "@/components/Lightbox";
 import { AttachmentsView } from "@/components/AttachmentUploader";
 import { ReportNotes } from "@/components/ReportNotes";
+import { ReportWorkflowCard, ReportStatusBadge } from "@/components/ReportWorkflowCard";
+
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
