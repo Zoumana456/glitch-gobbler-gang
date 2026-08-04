@@ -1,68 +1,94 @@
-# Feuille de route DailyBrief → production-ready
+# Suivi des rapports par hiérarchie d'entreprise
 
-Audit rapide de l'app (rapports, entreprises, KYC, admin, IA, partage). Voici ce qui manque ou peut être renforcé, classé par priorité.
+Objectif : structurer l'entreprise en niveaux hiérarchiques, faire remonter les rapports par validation en cascade, et donner à chaque niveau un tableau de bord de suivi.
 
-## 1. Fiabilité & sécurité (P0 — à faire en premier)
+## 1. Niveaux hiérarchiques fixes
 
-- **Rate-limiting IA** : le check de nom d'entreprise et l'assistant Gemini sont appelés par utilisateur authentifié sans limite → un utilisateur peut vider les crédits Lovable AI. Ajouter un compteur par `user_id` + fenêtre glissante (table `ai_usage_log`) et retour `429` propre.
-- **Modération des uploads** : `report-images`, `report-attachments`, `company-proofs` acceptent tout MIME/taille. Imposer taille max (5 Mo images, 10 Mo PDF), whitelist MIME, et scan basique.
-- **Audit log unifié** : `admin_audit_log` et `share_audit_log` existent, mais rien ne trace les actions dangereuses (ban, suppression user, reset MFA d'urgence, changement de plan). Étendre la journalisation.
-- **Session 2FA** : le `MfaGate` couvre `/admin`, mais un admin qui perd son téléphone n'a que le reset email. Ajouter codes de secours (backup codes chiffrés) à la première activation.
-- **Politiques RLS restantes** : passer un dernier scan (`security--run_security_scan`) et fermer les policies trop larges éventuelles.
+Quatre niveaux, du plus haut au plus bas :
 
-## 2. UX & parcours utilisateur (P1)
+| Niveau | Rôle | Facultatif |
+|---|---|---|
+| 1 | Direction générale (DG / Président) | non — c'est le créateur de l'entreprise |
+| 2 | Direction adjointe (Vice-DG / Vice-président) | oui |
+| 3 | Responsable (chef de service / département) | oui |
+| 4 | Employé | — |
 
-- **Onboarding guidé** : au 1er login, wizard 3 étapes (profil → entreprise ou rejoindre → premier rapport). Aujourd'hui l'utilisateur atterrit sur une page vide.
-- **États vides soignés** : `/reports`, `/minutes`, dashboard entreprise — illustrations + CTA clairs quand aucune donnée.
-- **Notifications in-app** : cloche dans la topbar pour invitations reçues, rapports partagés, KYC approuvé, changement de plan validé.
-- **Recherche globale** : `Cmd+K` (cmdk est déjà dans shadcn) pour naviguer entre rapports, PV, employés, pages.
-- **Mode brouillon explicite** : distinguer visuellement "brouillon" vs "publié" sur les rapports, avec bouton "Publier" séparé de "Enregistrer".
-- **Responsive mobile** : audit rapide — sidebar `/admin` et le formulaire de rapport sont serrés en < 400px.
-- **Dark mode** : les tokens existent (styles.css) mais plusieurs écrans forcent du blanc. Un pass de nettoyage.
+Chaque membre reçoit en plus :
+- un **intitulé de poste** affiché (ex. « Responsable RH »), libre en texte,
+- un **supérieur direct** choisi parmi les membres d'un niveau strictement supérieur,
+- un **département** optionnel (texte) pour regrouper les équipes.
 
-## 3. Fonctionnalités manquantes (P1)
+Règles appliquées côté serveur :
+- un employé ne peut être rattaché qu'à un niveau au-dessus de lui,
+- pas de boucle dans l'organigramme (A → B → A interdit),
+- si un manager est supprimé/banni, ses subordonnés remontent automatiquement à son propre supérieur,
+- seul le DG (et l'administration plateforme) peut changer les niveaux ; un responsable peut seulement rattacher/détacher les membres de sa propre équipe.
 
-- **Notifications email** : Resend (via connector) pour invitations, KYC validé/refusé, rapport partagé, plan expirant. Aujourd'hui tout se joue in-app.
-- **Export bulk** : bouton "Exporter tous mes rapports" (ZIP de PDFs) sur `/reports`.
-- **Statistiques employé** : sur la fiche employé côté DG — nb rapports/mois, taux de complétion, tendance.
-- **Templates de rapports** : le DG définit des modèles réutilisables (sections + questions types) que les employés instancient.
-- **Commentaires sur rapports** : fil de discussion DG ↔ employé sur un rapport (table `report_comments`).
-- **Recherche full-text** dans le contenu des rapports (Postgres `tsvector` + index GIN).
+## 2. Circuit de validation du rapport
 
-## 4. Facturation & business (P2)
+Statuts du rapport : `brouillon` → `soumis` → `validé` (ou `rejeté`).
 
-- **Paiement réel** : les plans sont demandés/approuvés à la main. Intégrer Stripe (via `payments--enable_stripe_payments`) pour paiement mensuel/annuel automatique.
-- **Cycle de vie plan** : dates de début/fin, renouvellement auto, downgrade auto en fin de période, alerte 7j avant expiration.
-- **Factures PDF** : générer un vrai PDF téléchargeable pour chaque `company_invoice`.
-- **Grille tarifaire publique** : page `/pricing` en public route avec SEO propre.
+```text
+Employé rédige (brouillon)
+   -> soumet
+Responsable (N3) : valide ou rejette avec commentaire
+   -> si validé, remonte
+Direction adjointe (N2) : valide ou rejette
+   -> si validé, remonte
+DG (N1) : validation finale
+```
 
-## 5. Performance & qualité technique (P2)
+- Le rapport remonte au **supérieur direct** de l'auteur, puis niveau par niveau jusqu'au DG. S'il manque un niveau (pas de Vice-DG), le rapport passe directement au niveau suivant existant.
+- Un **rejet** renvoie le rapport à l'auteur en statut « à corriger » avec le commentaire du valideur, et l'auteur peut le resoumettre.
+- Chaque étape est journalisée (qui, quand, décision, commentaire) et visible dans un fil de validation sur la page du rapport.
+- Un valideur ne peut jamais valider son propre rapport ; le rapport du DG est auto-validé.
 
-- **Pagination** : liste des rapports, employés, factures, audit — actuellement tout est chargé d'un coup.
-- **Images optimisées** : compresser côté client (browser-image-compression) avant upload, servir en WebP.
-- **Preloading LCP** : hero et logo via `head().links`.
-- **Cache TanStack Query** : ajuster `staleTime` et `gcTime` par type de donnée (données admin longues, dashboard courtes).
-- **Tests E2E** : suite Playwright couvrant les 5 parcours clés (signup, création rapport, invitation, partage, admin ban).
-- **Monitoring** : logger les erreurs serveur (server-function-logs suffisent au début, sinon Sentry).
+## 3. Rapports de synthèse (consolidation)
 
-## 6. SEO & référencement (P3)
+Un responsable ou une direction adjointe peut générer un **rapport de synthèse** (jour ou semaine) qui agrège les rapports validés de son équipe :
+- sélection de la période et des membres inclus,
+- reprise automatique des points clés de chaque rapport, éditables,
+- rédaction assistée par l'IA déjà en place pour produire la synthèse,
+- la synthèse suit ensuite le même circuit de validation vers le niveau supérieur,
+- export PDF avec la liste des rapports sources en annexe.
 
-- Page d'accueil publique + `/pricing` + `/about` + `/legal/*` avec `head()` par route (title, description, OG).
-- `public/llms.txt` + `public/robots.txt` + sitemap.
-- Page `/blog` optionnelle si contenu prévu.
+## 4. Trois vues de suivi
 
-## 7. Conformité (P3)
+**Organigramme** (`/company/hierarchie`) — arbre de l'entreprise. Chaque carte affiche la personne, son poste, son niveau et l'état de son rapport du jour : remis, en retard, en attente de validation, validé. Glisser-déposer réservé au DG pour réorganiser les rattachements.
 
-- Pages **Mentions légales**, **Politique de confidentialité**, **CGU/CGV** — obligatoires en Côte d'Ivoire + RGPD pour utilisateurs UE.
-- Bandeau cookies si analytics ajouté.
-- Export & suppression de compte côté utilisateur (droit RGPD).
+**Mon équipe** (`/reports/equipe`) — pour tout membre ayant des subordonnés : file des rapports à valider (avec actions valider/rejeter), taux de remise de l'équipe, membres en retard et bouton de relance.
 
-## Comment on avance
+**Vue direction** (`/reports/direction`) — pour le DG et les directions adjointes : KPIs consolidés par département et par niveau — taux de remise, nombre de retards, délai moyen de validation, rapports bloqués en attente — avec filtre de période et export.
 
-Je propose d'attaquer par **P0 (sécurité/fiabilité)** puis **P1 (UX + fonctionnalités manquantes)** en lots courts. Dis-moi si tu veux :
+## 5. Impacts sur l'existant
 
-- **(A)** que je démarre par P0 en entier (rate-limit IA + uploads + audit + backup codes 2FA + scan sécurité),
-- **(B)** que je m'attaque à un lot précis parmi la liste (dis lequel),
-- **(C)** un plan resserré "MVP commercial" : notifications email + Stripe + pricing publique + onboarding, pour pouvoir vendre.
+- La liste des rapports affiche désormais un badge de statut et un filtre par statut ; « Nouveau rapport » crée un brouillon.
+- La visibilité des rapports s'élargit : un manager voit les rapports de toute sa branche (subordonnés directs et indirects), en plus des partages nominatifs déjà en place.
+- Les liens de partage publics, les PV de réunion, les plans et l'espace super admin ne changent pas.
+- Les rapports et entreprises existants sont préservés : les rapports déjà créés passent en statut « validé » pour ne pas apparaître comme en attente, et le propriétaire actuel de chaque entreprise devient DG.
 
-Rien n'est encore modifié — c'est un plan à valider.
+## Détails techniques
+
+Base de données (migrations) :
+- `company_members` : ajout de `hierarchy_level` (1-4), `position_title`, `manager_id` (référence `company_members`), `department`. Le rôle actuel `owner`/`employee` est conservé pour la compatibilité ; `owner` est mappé sur le niveau 1.
+- `reports` : ajout de `company_id`, `status` (`draft`/`submitted`/`in_review`/`approved`/`rejected`), `current_approver_id`, `submitted_at`, `approved_at`, `kind` (`individual`/`consolidated`), `period_start`/`period_end` pour les synthèses.
+- Nouvelle table `report_approvals` : `report_id`, `approver_id`, `level`, `decision`, `comment`, `decided_at`.
+- Nouvelle table `report_sources` : lien synthèse → rapports sources.
+- Fonction `security definer` `is_manager_of(_manager uuid, _user uuid)` remontant récursivement la chaîne `manager_id`, utilisée par les policies RLS pour la lecture de branche et le droit de validation. GRANT explicites sur chaque nouvelle table.
+- Trigger de validation empêchant les cycles de rattachement et les niveaux incohérents.
+
+Application :
+- `src/lib/hierarchy.functions.ts` : lecture de l'organigramme, mise à jour niveau/poste/rattachement.
+- `src/lib/reports.functions.ts` : `submitReport`, `approveReport`, `rejectReport`, `listPendingApprovals`, `getBranchReports`, `createConsolidatedReport`.
+- `src/lib/reports.types.ts` : statuts, niveaux et types de l'organigramme.
+- Nouveaux composants : `HierarchyTree`, `ApprovalTimeline`, `ApprovalActions`, `TeamComplianceTable`, `DirectionKpis`.
+- Nouvelles routes sous `_authenticated/` : `company.hierarchie`, `reports.equipe`, `reports.direction`, avec entrées de sidebar affichées selon le niveau du membre.
+- Le PDF reprend le poste et le niveau de l'auteur ainsi que le fil de validation.
+
+## Ordre de livraison suggéré
+
+1. Migration hiérarchie + statuts de rapports + policies, avec reprise des données existantes.
+2. Gestion de la hiérarchie et vue organigramme.
+3. Circuit de validation (soumission, validation, rejet, fil d'historique).
+4. Vue « Mon équipe » et vue direction.
+5. Rapports de synthèse consolidés + export PDF.
