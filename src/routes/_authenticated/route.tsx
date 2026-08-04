@@ -24,6 +24,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Package,
+  Users,
+  Network,
+  BarChart3,
+
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -49,11 +53,15 @@ export const Route = createFileRoute("/_authenticated")({
 const NAV = [
   { to: "/reports", label: "Rapports", icon: FileText },
   { to: "/reports/new", label: "Nouveau rapport", icon: FilePlus2 },
+  { to: "/reports/equipe", label: "Mon équipe", icon: Users },
+  { to: "/reports/direction", label: "Vue direction", icon: BarChart3 },
   { to: "/minutes", label: "Procès-verbaux", icon: FileSignature },
   { to: "/company", label: "Entreprise", icon: Building2 },
+  { to: "/company/hierarchie", label: "Organigramme", icon: Network },
   { to: "/plans", label: "Plans", icon: Package },
   { to: "/profile", label: "Profil", icon: UserCircle2 },
 ] as const;
+
 
 const COLLAPSE_KEY = "sidebar:collapsed";
 

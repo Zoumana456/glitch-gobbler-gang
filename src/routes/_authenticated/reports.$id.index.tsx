@@ -36,6 +36,8 @@ import { formatLongDate } from "@/lib/date-utils";
 import { Lightbox } from "@/components/Lightbox";
 import { AttachmentsView } from "@/components/AttachmentUploader";
 import { ReportNotes } from "@/components/ReportNotes";
+import { ReportWorkflowCard, ReportStatusBadge } from "@/components/ReportWorkflowCard";
+
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -405,10 +407,21 @@ function ReportDetailPage() {
           {formatLongDate(r.report_date)}
         </div>
         <h1 className="text-3xl font-bold tracking-tight mt-1">{r.title}</h1>
-        <div className="text-sm text-muted-foreground mt-2">
-          Par <span className="font-medium text-foreground">{r.author_name}</span>
+        <div className="text-sm text-muted-foreground mt-2 flex flex-wrap items-center gap-2">
+          <span>
+            Par <span className="font-medium text-foreground">{r.author_name}</span>
+          </span>
+          <ReportStatusBadge status={(r as any).status} />
         </div>
       </div>
+
+      <ReportWorkflowCard
+        reportId={r.id}
+        status={((r as any).status ?? "draft") as any}
+        isMine={isMine}
+        isCurrentApprover={(r as any).current_approver_id === user.id}
+      />
+
 
 
       {r.intro && (

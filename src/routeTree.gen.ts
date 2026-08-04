@@ -25,9 +25,12 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedMinutesIndexRouteImport } from './routes/_authenticated/minutes.index'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
+import { Route as AuthenticatedReportsEquipeRouteImport } from './routes/_authenticated/reports.equipe'
+import { Route as AuthenticatedReportsDirectionRouteImport } from './routes/_authenticated/reports.direction'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedMinutesDashboardRouteImport } from './routes/_authenticated/minutes.dashboard'
 import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authenticated/minutes.$id'
+import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
 import { Route as ApiPublicAiTranscribeRouteImport } from './routes/api/public/ai/transcribe'
 import { Route as ApiPublicAiSpeakRouteImport } from './routes/api/public/ai/speak'
@@ -115,6 +118,18 @@ const AuthenticatedReportsNewRoute = AuthenticatedReportsNewRouteImport.update({
   path: '/reports/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReportsEquipeRoute =
+  AuthenticatedReportsEquipeRouteImport.update({
+    id: '/reports/equipe',
+    path: '/reports/equipe',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsDirectionRoute =
+  AuthenticatedReportsDirectionRouteImport.update({
+    id: '/reports/direction',
+    path: '/reports/direction',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsIdRoute = AuthenticatedReportsIdRouteImport.update({
   id: '/reports/$id',
   path: '/reports/$id',
@@ -131,6 +146,12 @@ const AuthenticatedMinutesIdRoute = AuthenticatedMinutesIdRouteImport.update({
   path: '/minutes/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCompanyHierarchieRoute =
+  AuthenticatedCompanyHierarchieRouteImport.update({
+    id: '/hierarchie',
+    path: '/hierarchie',
+    getParentRoute: () => AuthenticatedCompanyRoute,
+  } as any)
 const AuthenticatedReportsIdIndexRoute =
   AuthenticatedReportsIdIndexRouteImport.update({
     id: '/',
@@ -173,9 +194,12 @@ export interface FileRoutesByFullPath {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
+  '/reports/direction': typeof AuthenticatedReportsDirectionRoute
+  '/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
@@ -198,8 +222,11 @@ export interface FileRoutesByTo {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
+  '/reports/direction': typeof AuthenticatedReportsDirectionRoute
+  '/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/minutes': typeof AuthenticatedMinutesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
@@ -224,9 +251,12 @@ export interface FileRoutesById {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/_authenticated/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/_authenticated/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
+  '/_authenticated/reports/direction': typeof AuthenticatedReportsDirectionRoute
+  '/_authenticated/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
   '/_authenticated/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
@@ -251,9 +281,12 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/company/hierarchie'
     | '/minutes/$id'
     | '/minutes/dashboard'
     | '/reports/$id'
+    | '/reports/direction'
+    | '/reports/equipe'
     | '/reports/new'
     | '/minutes/'
     | '/reports/'
@@ -276,8 +309,11 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/company/hierarchie'
     | '/minutes/$id'
     | '/minutes/dashboard'
+    | '/reports/direction'
+    | '/reports/equipe'
     | '/reports/new'
     | '/minutes'
     | '/reports'
@@ -301,9 +337,12 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/_authenticated/company/hierarchie'
     | '/_authenticated/minutes/$id'
     | '/_authenticated/minutes/dashboard'
     | '/_authenticated/reports/$id'
+    | '/_authenticated/reports/direction'
+    | '/_authenticated/reports/equipe'
     | '/_authenticated/reports/new'
     | '/_authenticated/minutes/'
     | '/_authenticated/reports/'
@@ -442,6 +481,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/equipe': {
+      id: '/_authenticated/reports/equipe'
+      path: '/reports/equipe'
+      fullPath: '/reports/equipe'
+      preLoaderRoute: typeof AuthenticatedReportsEquipeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/direction': {
+      id: '/_authenticated/reports/direction'
+      path: '/reports/direction'
+      fullPath: '/reports/direction'
+      preLoaderRoute: typeof AuthenticatedReportsDirectionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/$id': {
       id: '/_authenticated/reports/$id'
       path: '/reports/$id'
@@ -462,6 +515,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/minutes/$id'
       preLoaderRoute: typeof AuthenticatedMinutesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/company/hierarchie': {
+      id: '/_authenticated/company/hierarchie'
+      path: '/hierarchie'
+      fullPath: '/company/hierarchie'
+      preLoaderRoute: typeof AuthenticatedCompanyHierarchieRouteImport
+      parentRoute: typeof AuthenticatedCompanyRoute
     }
     '/_authenticated/reports/$id/': {
       id: '/_authenticated/reports/$id/'
@@ -502,10 +562,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedCompanyRouteChildren {
+  AuthenticatedCompanyHierarchieRoute: typeof AuthenticatedCompanyHierarchieRoute
   AuthenticatedCompanyEmployeesIdRoute: typeof AuthenticatedCompanyEmployeesIdRoute
 }
 
 const AuthenticatedCompanyRouteChildren: AuthenticatedCompanyRouteChildren = {
+  AuthenticatedCompanyHierarchieRoute: AuthenticatedCompanyHierarchieRoute,
   AuthenticatedCompanyEmployeesIdRoute: AuthenticatedCompanyEmployeesIdRoute,
 }
 
@@ -536,6 +598,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMinutesIdRoute: typeof AuthenticatedMinutesIdRoute
   AuthenticatedMinutesDashboardRoute: typeof AuthenticatedMinutesDashboardRoute
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
+  AuthenticatedReportsDirectionRoute: typeof AuthenticatedReportsDirectionRoute
+  AuthenticatedReportsEquipeRoute: typeof AuthenticatedReportsEquipeRoute
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
   AuthenticatedMinutesIndexRoute: typeof AuthenticatedMinutesIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
@@ -549,6 +613,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMinutesIdRoute: AuthenticatedMinutesIdRoute,
   AuthenticatedMinutesDashboardRoute: AuthenticatedMinutesDashboardRoute,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
+  AuthenticatedReportsDirectionRoute: AuthenticatedReportsDirectionRoute,
+  AuthenticatedReportsEquipeRoute: AuthenticatedReportsEquipeRoute,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
   AuthenticatedMinutesIndexRoute: AuthenticatedMinutesIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
@@ -573,13 +639,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
