@@ -116,7 +116,12 @@ export const updateMemberHierarchy = createServerFn({ method: "POST" })
       throw new Error("Le dirigeant ne peut pas être modifié.");
     }
 
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      hierarchy_level?: number;
+      position_title?: string | null;
+      department?: string | null;
+      manager_id?: string | null;
+    } = {};
     if (data.hierarchyLevel !== undefined) {
       if (!isDg) throw new Error("Seule la direction générale peut changer les niveaux.");
       if (target.role === "owner" && data.hierarchyLevel !== 1) {
