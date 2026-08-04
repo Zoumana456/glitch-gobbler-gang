@@ -228,22 +228,34 @@ export type Database = {
       company_members: {
         Row: {
           company_id: string
+          department: string | null
+          hierarchy_level: number
           id: string
           joined_at: string
+          manager_id: string | null
+          position_title: string | null
           role: string
           user_id: string
         }
         Insert: {
           company_id: string
+          department?: string | null
+          hierarchy_level?: number
           id?: string
           joined_at?: string
+          manager_id?: string | null
+          position_title?: string | null
           role: string
           user_id: string
         }
         Update: {
           company_id?: string
+          department?: string | null
+          hierarchy_level?: number
           id?: string
           joined_at?: string
+          manager_id?: string | null
+          position_title?: string | null
           role?: string
           user_id?: string
         }
@@ -253,6 +265,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_members_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "company_members"
             referencedColumns: ["id"]
           },
         ]
@@ -400,6 +419,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      report_approvals: {
+        Row: {
+          approver_id: string
+          comment: string | null
+          decided_at: string
+          decision: string
+          id: string
+          level: number
+          report_id: string
+        }
+        Insert: {
+          approver_id: string
+          comment?: string | null
+          decided_at?: string
+          decision: string
+          id?: string
+          level: number
+          report_id: string
+        }
+        Update: {
+          approver_id?: string
+          comment?: string | null
+          decided_at?: string
+          decision?: string
+          id?: string
+          level?: number
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_approvals_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_attachments: {
         Row: {
@@ -677,44 +734,112 @@ export type Database = {
           },
         ]
       }
-      reports: {
+      report_sources: {
         Row: {
-          author_id: string
-          conclusion: string | null
+          consolidated_report_id: string
           created_at: string
           id: string
+          source_report_id: string
+        }
+        Insert: {
+          consolidated_report_id: string
+          created_at?: string
+          id?: string
+          source_report_id: string
+        }
+        Update: {
+          consolidated_report_id?: string
+          created_at?: string
+          id?: string
+          source_report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_sources_consolidated_report_id_fkey"
+            columns: ["consolidated_report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_sources_source_report_id_fkey"
+            columns: ["source_report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          approved_at: string | null
+          author_id: string
+          company_id: string | null
+          conclusion: string | null
+          created_at: string
+          current_approver_id: string | null
+          id: string
           intro: string | null
+          kind: string
+          period_end: string | null
+          period_start: string | null
           report_date: string
           share_expires_at: string | null
           share_token: string | null
+          status: string
+          submitted_at: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
           author_id: string
+          company_id?: string | null
           conclusion?: string | null
           created_at?: string
+          current_approver_id?: string | null
           id?: string
           intro?: string | null
+          kind?: string
+          period_end?: string | null
+          period_start?: string | null
           report_date: string
           share_expires_at?: string | null
           share_token?: string | null
+          status?: string
+          submitted_at?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
           author_id?: string
+          company_id?: string | null
           conclusion?: string | null
           created_at?: string
+          current_approver_id?: string | null
           id?: string
           intro?: string | null
+          kind?: string
+          period_end?: string | null
+          period_start?: string | null
           report_date?: string
           share_expires_at?: string | null
           share_token?: string | null
+          status?: string
+          submitted_at?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reserved_company_names: {
         Row: {
