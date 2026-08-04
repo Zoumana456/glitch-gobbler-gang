@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.protect_company_billing_fields() FROM PUBLIC, anon, authenticated;
