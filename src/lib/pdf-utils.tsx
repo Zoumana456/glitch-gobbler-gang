@@ -248,16 +248,25 @@ async function inlineReportImages(report: LoadedReport): Promise<LoadedReport> {
   };
 }
 
-export async function generateReportPdfBlob(report: LoadedReport): Promise<Blob> {
+export async function generateReportPdfBlob(
+  report: LoadedReport,
+  approvals?: ApprovalEntry[],
+): Promise<Blob> {
   const prepared = await inlineReportImages(report);
-  return await pdf(<ReportPdfDocument report={prepared} />).toBlob();
+  return await pdf(
+    <ReportPdfDocument report={prepared} approvals={approvals} />,
+  ).toBlob();
 }
 
-export async function downloadReportPdf(report: LoadedReport) {
-  const blob = await generateReportPdfBlob(report);
+export async function downloadReportPdf(
+  report: LoadedReport,
+  approvals?: ApprovalEntry[],
+) {
+  const blob = await generateReportPdfBlob(report, approvals);
   const filename = `${sanitize(report.title)}-${report.report_date}.pdf`;
   triggerDownload(blob, filename);
 }
+
 
 export async function downloadReportsBundle(reports: LoadedReport[]) {
   if (reports.length === 0) return;
