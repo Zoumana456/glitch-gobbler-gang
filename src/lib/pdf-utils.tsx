@@ -117,8 +117,12 @@ function ReportPdfDocument({
         <View style={styles.header}>
           <Text style={styles.date}>{formatLongDate(report.report_date)}</Text>
           <Text style={styles.title}>{report.title}</Text>
-          <Text style={styles.author}>Par {report.author_name}</Text>
+          <Text style={styles.author}>
+            Par {report.author_name}
+            {report.status ? ` — ${REPORT_STATUS_LABEL[report.status]}` : ""}
+          </Text>
         </View>
+
 
         {report.intro && (
           <View style={styles.section}>
