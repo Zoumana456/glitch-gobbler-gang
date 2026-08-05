@@ -316,6 +316,8 @@ function ReportsListPage() {
             </button>
           </h2>
           {isOpen && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
 
             {group.items.map((r) => {
               const isMine = r.author_id === user.id;
@@ -413,9 +415,12 @@ function ReportsListPage() {
                 </Card>
               );
             })}
-          </div>
+            </div>
+          )}
         </section>
-      ))}
+        );
+      })}
+
 
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
