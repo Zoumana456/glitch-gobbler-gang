@@ -37,6 +37,8 @@ import { Lightbox } from "@/components/Lightbox";
 import { AttachmentsView } from "@/components/AttachmentUploader";
 import { ReportNotes } from "@/components/ReportNotes";
 import { ReportWorkflowCard, ReportStatusBadge } from "@/components/ReportWorkflowCard";
+import { getApprovalTimeline } from "@/lib/approvals.functions";
+
 
 
 import { useEffect, useState } from "react";
