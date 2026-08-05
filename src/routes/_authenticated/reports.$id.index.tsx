@@ -210,13 +210,20 @@ function ReportDetailPage() {
     if (!query.data) return;
     setDownloading(true);
     try {
-      await downloadReportPdf(query.data);
+      let approvals: Awaited<ReturnType<typeof fetchTimeline>> | undefined;
+      try {
+        approvals = await fetchTimeline({ data: { reportId: id } });
+      } catch {
+        approvals = undefined;
+      }
+      await downloadReportPdf(query.data, approvals);
     } catch (e: any) {
       toast.error(e?.message ?? "Téléchargement impossible");
     } finally {
       setDownloading(false);
     }
   }
+
   async function handleShare() {
     if (!query.data) return;
     setSharing(true);
