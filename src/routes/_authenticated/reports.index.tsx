@@ -18,6 +18,8 @@ import {
   Trash2,
   Eye,
   Search,
+  ChevronDown,
+
   
 } from "lucide-react";
 import {
@@ -102,6 +104,23 @@ function ReportsListPage() {
       .sort(([a], [b]) => (a < b ? 1 : -1))
       .map(([key, v]) => ({ key, ...v }));
   }, [filtered]);
+
+  const currentMonthKey = format(new Date(), "yyyy-MM");
+  const [openMonths, setOpenMonths] = useState<Set<string>>(
+    () => new Set([currentMonthKey]),
+  );
+  const isSearching = search.trim().length > 0;
+
+  function toggleMonth(key: string) {
+    setOpenMonths((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+
 
 
   const deleteMut = useMutation({
