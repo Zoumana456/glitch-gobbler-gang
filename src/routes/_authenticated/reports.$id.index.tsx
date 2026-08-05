@@ -37,6 +37,8 @@ import { Lightbox } from "@/components/Lightbox";
 import { AttachmentsView } from "@/components/AttachmentUploader";
 import { ReportNotes } from "@/components/ReportNotes";
 import { ReportWorkflowCard, ReportStatusBadge } from "@/components/ReportWorkflowCard";
+import { getApprovalTimeline } from "@/lib/approvals.functions";
+
 
 
 import { useEffect, useState } from "react";
@@ -130,6 +132,8 @@ function ReportDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchOne = useServerFn(getReport);
+  const fetchTimeline = useServerFn(getApprovalTimeline);
+
   const del = useServerFn(deleteReport);
   const dup = useServerFn(duplicateReport);
   const getToken = useServerFn(getShareToken);
@@ -210,13 +214,20 @@ function ReportDetailPage() {
     if (!query.data) return;
     setDownloading(true);
     try {
-      await downloadReportPdf(query.data);
+      let approvals: Awaited<ReturnType<typeof fetchTimeline>> | undefined;
+      try {
+        approvals = await fetchTimeline({ data: { reportId: id } });
+      } catch {
+        approvals = undefined;
+      }
+      await downloadReportPdf(query.data, approvals);
     } catch (e: any) {
       toast.error(e?.message ?? "Téléchargement impossible");
     } finally {
       setDownloading(false);
     }
   }
+
   async function handleShare() {
     if (!query.data) return;
     setSharing(true);

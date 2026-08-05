@@ -85,7 +85,10 @@ export type LoadedReport = {
   general_images: LoadedImage[];
   general_attachments: LoadedAttachment[];
   share_expires_at?: string | null;
+  status?: ReportStatus | null;
+  kind?: ReportKind | null;
 };
+
 
 export type ReportListItem = {
   id: string;

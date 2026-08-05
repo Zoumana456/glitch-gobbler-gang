@@ -8,8 +8,10 @@ import {
   pdf,
 } from "@react-pdf/renderer";
 import { PDFDocument } from "pdf-lib";
-import type { LoadedReport } from "./reports.types";
+import type { ApprovalEntry, LoadedReport } from "./reports.types";
+import { REPORT_STATUS_LABEL, levelLabel } from "./reports.types";
 import type { ReportMinute } from "./minutes.functions";
+
 import { formatLongDate } from "./date-utils";
 
 const styles = StyleSheet.create({
@@ -89,7 +91,14 @@ function Paragraphs({ text }: { text: string }) {
   );
 }
 
-function ReportPdfDocument({ report }: { report: LoadedReport }) {
+function ReportPdfDocument({
+  report,
+  approvals,
+}: {
+  report: LoadedReport;
+  approvals?: ApprovalEntry[];
+}) {
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -108,8 +117,12 @@ function ReportPdfDocument({ report }: { report: LoadedReport }) {
         <View style={styles.header}>
           <Text style={styles.date}>{formatLongDate(report.report_date)}</Text>
           <Text style={styles.title}>{report.title}</Text>
-          <Text style={styles.author}>Par {report.author_name}</Text>
+          <Text style={styles.author}>
+            Par {report.author_name}
+            {report.status ? ` — ${REPORT_STATUS_LABEL[report.status]}` : ""}
+          </Text>
         </View>
+
 
         {report.intro && (
           <View style={styles.section}>
@@ -173,7 +186,20 @@ function ReportPdfDocument({ report }: { report: LoadedReport }) {
             </View>
           </View>
         )}
+        {approvals && approvals.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.h2}>Fil de validation</Text>
+            {approvals.map((a) => (
+              <Text key={a.id} style={styles.para}>
+                {`${formatLongDate(a.decided_at.slice(0, 10))} — ${a.approver_name} (${levelLabel(a.level)}) : ${
+                  a.decision === "approved" ? "validé" : a.decision === "rejected" ? "rejeté" : a.decision
+                }${a.comment ? ` — ${a.comment}` : ""}`}
+              </Text>
+            ))}
+          </View>
+        )}
       </Page>
+
     </Document>
   );
 }
@@ -222,16 +248,25 @@ async function inlineReportImages(report: LoadedReport): Promise<LoadedReport> {
   };
 }
 
-export async function generateReportPdfBlob(report: LoadedReport): Promise<Blob> {
+export async function generateReportPdfBlob(
+  report: LoadedReport,
+  approvals?: ApprovalEntry[],
+): Promise<Blob> {
   const prepared = await inlineReportImages(report);
-  return await pdf(<ReportPdfDocument report={prepared} />).toBlob();
+  return await pdf(
+    <ReportPdfDocument report={prepared} approvals={approvals} />,
+  ).toBlob();
 }
 
-export async function downloadReportPdf(report: LoadedReport) {
-  const blob = await generateReportPdfBlob(report);
+export async function downloadReportPdf(
+  report: LoadedReport,
+  approvals?: ApprovalEntry[],
+) {
+  const blob = await generateReportPdfBlob(report, approvals);
   const filename = `${sanitize(report.title)}-${report.report_date}.pdf`;
   triggerDownload(blob, filename);
 }
+
 
 export async function downloadReportsBundle(reports: LoadedReport[]) {
   if (reports.length === 0) return;
