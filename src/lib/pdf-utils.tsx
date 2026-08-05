@@ -91,7 +91,14 @@ function Paragraphs({ text }: { text: string }) {
   );
 }
 
-function ReportPdfDocument({ report }: { report: LoadedReport }) {
+function ReportPdfDocument({
+  report,
+  approvals,
+}: {
+  report: LoadedReport;
+  approvals?: ApprovalEntry[];
+}) {
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
