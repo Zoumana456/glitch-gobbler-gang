@@ -8,8 +8,10 @@ import {
   pdf,
 } from "@react-pdf/renderer";
 import { PDFDocument } from "pdf-lib";
-import type { LoadedReport } from "./reports.types";
+import type { ApprovalEntry, LoadedReport } from "./reports.types";
+import { REPORT_STATUS_LABEL, levelLabel } from "./reports.types";
 import type { ReportMinute } from "./minutes.functions";
+
 import { formatLongDate } from "./date-utils";
 
 const styles = StyleSheet.create({
