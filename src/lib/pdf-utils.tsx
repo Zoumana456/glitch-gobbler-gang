@@ -186,7 +186,20 @@ function ReportPdfDocument({
             </View>
           </View>
         )}
+        {approvals && approvals.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.h2}>Fil de validation</Text>
+            {approvals.map((a) => (
+              <Text key={a.id} style={styles.para}>
+                {`${formatLongDate(a.decided_at.slice(0, 10))} — ${a.approver_name} (${levelLabel(a.level)}) : ${
+                  a.decision === "approved" ? "validé" : a.decision === "rejected" ? "rejeté" : a.decision
+                }${a.comment ? ` — ${a.comment}` : ""}`}
+              </Text>
+            ))}
+          </View>
+        )}
       </Page>
+
     </Document>
   );
 }
