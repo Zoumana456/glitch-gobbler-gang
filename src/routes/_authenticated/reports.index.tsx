@@ -287,15 +287,36 @@ function ReportsListPage() {
         </Card>
       )}
 
-      {grouped.map((group) => (
+      {grouped.map((group) => {
+        const isOpen = isSearching || openMonths.has(group.key);
+        return (
         <section key={group.key} className="mb-10">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 pb-2 border-b border-border">
-            {group.label}
-            <span className="ml-2 text-xs font-normal normal-case tracking-normal">
-              ({group.items.length})
-            </span>
+          <h2 className="mb-3 pb-2 border-b border-border">
+            <button
+              type="button"
+              onClick={() => toggleMonth(group.key)}
+              aria-expanded={isOpen}
+              className="flex w-full items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  !isOpen && "-rotate-90",
+                )}
+              />
+              {group.label}
+              <span className="text-xs font-normal normal-case tracking-normal">
+                ({group.items.length})
+              </span>
+              {!isOpen && (
+                <span className="ml-auto text-xs font-normal normal-case tracking-normal">
+                  Afficher
+                </span>
+              )}
+            </button>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isOpen && (
+
             {group.items.map((r) => {
               const isMine = r.author_id === user.id;
               const isSel = selected.has(r.id);
