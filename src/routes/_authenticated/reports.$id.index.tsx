@@ -130,6 +130,8 @@ function ReportDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchOne = useServerFn(getReport);
+  const fetchTimeline = useServerFn(getApprovalTimeline);
+
   const del = useServerFn(deleteReport);
   const dup = useServerFn(duplicateReport);
   const getToken = useServerFn(getShareToken);
