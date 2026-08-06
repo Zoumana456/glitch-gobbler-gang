@@ -253,6 +253,26 @@ function ReportsListPage() {
           <p className="text-muted-foreground mt-1">
             Consultez tous les rapports de l'équipe, triés par date.
           </p>
+          {role && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge variant="default" className="gap-1">
+                <ShieldCheck className="h-3 w-3" />
+                {levelLabel(role.my_level)}
+                {role.is_owner ? " · Propriétaire" : ""}
+              </Badge>
+              {roleActions.map((a) => (
+                <Badge key={a} variant="outline">
+                  {a}
+                </Badge>
+              ))}
+              <Link
+                to="/reports/audit-roles"
+                className="text-xs text-muted-foreground underline hover:text-foreground"
+              >
+                Audit des rôles
+              </Link>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {selected.size > 0 && (
@@ -311,6 +331,49 @@ function ReportsListPage() {
             Mes rapports
           </button>
         </div>
+        {monthOptions.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Select value={monthFrom} onValueChange={setMonthFrom}>
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder="Depuis" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Depuis le début</SelectItem>
+                {monthOptions.map((m) => (
+                  <SelectItem key={m.key} value={m.key}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">→</span>
+            <Select value={monthTo} onValueChange={setMonthTo}>
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder="Jusqu'à" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Jusqu'à aujourd'hui</SelectItem>
+                {monthOptions.map((m) => (
+                  <SelectItem key={m.key} value={m.key}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(monthFrom !== "all" || monthTo !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setMonthFrom("all");
+                  setMonthTo("all");
+                }}
+              >
+                Réinitialiser
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {query.isLoading && (
@@ -350,7 +413,7 @@ function ReportsListPage() {
       {query.data && query.data.length > 0 && filtered.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center text-muted-foreground">
-            Aucun rapport ne correspond à « {search} ».
+            Aucun rapport ne correspond aux filtres sélectionnés.
           </CardContent>
         </Card>
       )}
