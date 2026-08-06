@@ -27,6 +27,7 @@ import { Route as AuthenticatedMinutesIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
 import { Route as AuthenticatedReportsEquipeRouteImport } from './routes/_authenticated/reports.equipe'
 import { Route as AuthenticatedReportsDirectionRouteImport } from './routes/_authenticated/reports.direction'
+import { Route as AuthenticatedReportsAuditRolesRouteImport } from './routes/_authenticated/reports.audit-roles'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedMinutesDashboardRouteImport } from './routes/_authenticated/minutes.dashboard'
 import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authenticated/minutes.$id'
@@ -130,6 +131,12 @@ const AuthenticatedReportsDirectionRoute =
     path: '/reports/direction',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsAuditRolesRoute =
+  AuthenticatedReportsAuditRolesRouteImport.update({
+    id: '/reports/audit-roles',
+    path: '/reports/audit-roles',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsIdRoute = AuthenticatedReportsIdRouteImport.update({
   id: '/reports/$id',
   path: '/reports/$id',
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
+  '/reports/audit-roles': typeof AuthenticatedReportsAuditRolesRoute
   '/reports/direction': typeof AuthenticatedReportsDirectionRoute
   '/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
@@ -225,6 +233,7 @@ export interface FileRoutesByTo {
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
+  '/reports/audit-roles': typeof AuthenticatedReportsAuditRolesRoute
   '/reports/direction': typeof AuthenticatedReportsDirectionRoute
   '/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
@@ -255,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/_authenticated/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
+  '/_authenticated/reports/audit-roles': typeof AuthenticatedReportsAuditRolesRoute
   '/_authenticated/reports/direction': typeof AuthenticatedReportsDirectionRoute
   '/_authenticated/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/minutes/$id'
     | '/minutes/dashboard'
     | '/reports/$id'
+    | '/reports/audit-roles'
     | '/reports/direction'
     | '/reports/equipe'
     | '/reports/new'
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/company/hierarchie'
     | '/minutes/$id'
     | '/minutes/dashboard'
+    | '/reports/audit-roles'
     | '/reports/direction'
     | '/reports/equipe'
     | '/reports/new'
@@ -341,6 +353,7 @@ export interface FileRouteTypes {
     | '/_authenticated/minutes/$id'
     | '/_authenticated/minutes/dashboard'
     | '/_authenticated/reports/$id'
+    | '/_authenticated/reports/audit-roles'
     | '/_authenticated/reports/direction'
     | '/_authenticated/reports/equipe'
     | '/_authenticated/reports/new'
@@ -495,6 +508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsDirectionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/audit-roles': {
+      id: '/_authenticated/reports/audit-roles'
+      path: '/reports/audit-roles'
+      fullPath: '/reports/audit-roles'
+      preLoaderRoute: typeof AuthenticatedReportsAuditRolesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/$id': {
       id: '/_authenticated/reports/$id'
       path: '/reports/$id'
@@ -598,6 +618,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMinutesIdRoute: typeof AuthenticatedMinutesIdRoute
   AuthenticatedMinutesDashboardRoute: typeof AuthenticatedMinutesDashboardRoute
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
+  AuthenticatedReportsAuditRolesRoute: typeof AuthenticatedReportsAuditRolesRoute
   AuthenticatedReportsDirectionRoute: typeof AuthenticatedReportsDirectionRoute
   AuthenticatedReportsEquipeRoute: typeof AuthenticatedReportsEquipeRoute
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
@@ -613,6 +634,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMinutesIdRoute: AuthenticatedMinutesIdRoute,
   AuthenticatedMinutesDashboardRoute: AuthenticatedMinutesDashboardRoute,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
+  AuthenticatedReportsAuditRolesRoute: AuthenticatedReportsAuditRolesRoute,
   AuthenticatedReportsDirectionRoute: AuthenticatedReportsDirectionRoute,
   AuthenticatedReportsEquipeRoute: AuthenticatedReportsEquipeRoute,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,

@@ -19,6 +19,7 @@ import {
   Eye,
   Search,
   ChevronDown,
+  ShieldCheck,
 
   
 } from "lucide-react";
@@ -39,9 +40,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getRoleAudit } from "@/lib/role-audit.functions";
+import { levelLabel } from "@/lib/reports.types";
 import { cn } from "@/lib/utils";
 import { parseISO, format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -77,18 +88,51 @@ function ReportsListPage() {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [scope, setScope] = useState<"all" | "mine">("all");
+  const [monthFrom, setMonthFrom] = useState<string>("all");
+  const [monthTo, setMonthTo] = useState<string>("all");
+
+  const auditFn = useServerFn(getRoleAudit);
+  const roleQuery = useQuery({
+    queryKey: ["role-audit"],
+    queryFn: () => auditFn(),
+    staleTime: 60_000,
+  });
+  const role = roleQuery.data ?? null;
+  const roleActions = role
+    ? [
+        "Voir",
+        ...(role.permissions.validate ? ["Valider"] : []),
+        role.permissions.delete_own ? "Supprimer (les miens)" : "",
+      ].filter(Boolean)
+    : [];
+
+  const monthOptions = useMemo(() => {
+    const keys = new Set<string>();
+    (query.data ?? []).forEach((r) => keys.add(r.report_date.slice(0, 7)));
+    return Array.from(keys)
+      .sort((a, b) => (a < b ? 1 : -1))
+      .map((key) => {
+        const label = format(parseISO(`${key}-01`), "LLLL yyyy", { locale: fr });
+        return { key, label: label.charAt(0).toUpperCase() + label.slice(1) };
+      });
+  }, [query.data]);
 
   const filtered = useMemo(() => {
     const rows = query.data ?? [];
     const q = search.trim().toLowerCase();
+    const lo = monthFrom !== "all" && monthTo !== "all" && monthTo < monthFrom ? monthTo : monthFrom;
+    const hi = monthFrom !== "all" && monthTo !== "all" && monthTo < monthFrom ? monthFrom : monthTo;
     return rows.filter((r) => {
+      const m = r.report_date.slice(0, 7);
+      if (lo !== "all" && m < lo) return false;
+      if (hi !== "all" && m > hi) return false;
       if (scope === "mine" && r.author_id !== user.id) return false;
       if (!q) return true;
       return [r.title, r.intro, r.author_name]
         .filter(Boolean)
         .some((s) => s.toLowerCase().includes(q));
     });
-  }, [query.data, search, scope, user.id]);
+  }, [query.data, search, scope, user.id, monthFrom, monthTo]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { label: string; items: typeof filtered }>();
@@ -106,9 +150,33 @@ function ReportsListPage() {
   }, [filtered]);
 
   const currentMonthKey = format(new Date(), "yyyy-MM");
+  const OPEN_MONTHS_KEY = "reports:openMonths";
   const [openMonths, setOpenMonths] = useState<Set<string>>(
     () => new Set([currentMonthKey]),
   );
+  const [monthsRestored, setMonthsRestored] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(OPEN_MONTHS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setOpenMonths(new Set(parsed.filter((k) => typeof k === "string")));
+      }
+    } catch {
+      // préférence illisible : on garde le mois en cours ouvert
+    }
+    setMonthsRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!monthsRestored) return;
+    try {
+      localStorage.setItem(OPEN_MONTHS_KEY, JSON.stringify(Array.from(openMonths)));
+    } catch {
+      // stockage indisponible : la préférence n'est pas persistée
+    }
+  }, [openMonths, monthsRestored]);
   const isSearching = search.trim().length > 0;
 
   function toggleMonth(key: string) {
@@ -185,6 +253,26 @@ function ReportsListPage() {
           <p className="text-muted-foreground mt-1">
             Consultez tous les rapports de l'équipe, triés par date.
           </p>
+          {role && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge variant="default" className="gap-1">
+                <ShieldCheck className="h-3 w-3" />
+                {levelLabel(role.my_level)}
+                {role.is_owner ? " · Propriétaire" : ""}
+              </Badge>
+              {roleActions.map((a) => (
+                <Badge key={a} variant="outline">
+                  {a}
+                </Badge>
+              ))}
+              <Link
+                to="/reports/audit-roles"
+                className="text-xs text-muted-foreground underline hover:text-foreground"
+              >
+                Audit des rôles
+              </Link>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {selected.size > 0 && (
@@ -243,6 +331,49 @@ function ReportsListPage() {
             Mes rapports
           </button>
         </div>
+        {monthOptions.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Select value={monthFrom} onValueChange={setMonthFrom}>
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder="Depuis" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Depuis le début</SelectItem>
+                {monthOptions.map((m) => (
+                  <SelectItem key={m.key} value={m.key}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">→</span>
+            <Select value={monthTo} onValueChange={setMonthTo}>
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder="Jusqu'à" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Jusqu'à aujourd'hui</SelectItem>
+                {monthOptions.map((m) => (
+                  <SelectItem key={m.key} value={m.key}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(monthFrom !== "all" || monthTo !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setMonthFrom("all");
+                  setMonthTo("all");
+                }}
+              >
+                Réinitialiser
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {query.isLoading && (
@@ -282,7 +413,7 @@ function ReportsListPage() {
       {query.data && query.data.length > 0 && filtered.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center text-muted-foreground">
-            Aucun rapport ne correspond à « {search} ».
+            Aucun rapport ne correspond aux filtres sélectionnés.
           </CardContent>
         </Card>
       )}

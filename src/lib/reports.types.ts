@@ -214,3 +214,48 @@ export type DirectionKpis = {
   by_level: { level: number; head_count: number; submitted: number; approved: number }[];
 };
 
+
+export type RoleAuditPermissions = {
+  view_own: boolean;
+  view_team: boolean;
+  view_company: boolean;
+  validate: boolean;
+  delete_own: boolean;
+  delete_others: boolean;
+  manage_hierarchy: boolean;
+  direction_kpis: boolean;
+};
+
+export type RoleAuditScopeRow = {
+  member_id: string;
+  user_id: string;
+  full_name: string;
+  hierarchy_level: number;
+  role: string;
+  position_title: string;
+  department: string;
+  expected_visible: boolean;
+  observed: "ok" | "mismatch" | "no_data";
+  reports_seen: number;
+};
+
+export type RoleAuditPolicyRow = {
+  table: string;
+  policy: string;
+  rule: string;
+  applies_to: string;
+};
+
+export type RoleAudit = {
+  company_id: string;
+  company_name: string;
+  is_owner: boolean;
+  my_level: number;
+  my_role: string;
+  my_role_label: string;
+  my_position: string;
+  permissions: RoleAuditPermissions;
+  scope: RoleAuditScopeRow[];
+  policies: RoleAuditPolicyRow[];
+  mismatches: number;
+};

@@ -58,6 +58,7 @@ const NAV = [
   { to: "/minutes", label: "Procès-verbaux", icon: FileSignature },
   { to: "/company", label: "Entreprise", icon: Building2 },
   { to: "/company/hierarchie", label: "Organigramme", icon: Network },
+  { to: "/reports/audit-roles", label: "Audit des rôles", icon: ShieldCheck },
   { to: "/plans", label: "Plans", icon: Package },
   { to: "/profile", label: "Profil", icon: UserCircle2 },
 ] as const;
