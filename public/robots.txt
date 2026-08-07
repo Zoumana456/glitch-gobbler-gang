@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /reports
+Disallow: /minutes
+Disallow: /company
+Disallow: /profile
+Disallow: /plans
+Disallow: /invite
+Disallow: /share
+Disallow: /api
+
+Sitemap: https://rapport-journaliere.lovable.app/sitemap.xml
