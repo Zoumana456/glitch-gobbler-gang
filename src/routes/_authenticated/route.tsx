@@ -383,6 +383,7 @@ function SidebarInner({
             </div>
           )}
         </Link>
+        {!adminOnly && <NotificationsBell collapsed={collapsed} />}
         {!adminOnly && (
           <Link
             to="/profile"
