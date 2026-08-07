@@ -17,8 +17,27 @@ export const Route = createFileRoute("/share/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Rapport partagé — Lovable Rapports" },
+      { title: "Rapport partagé — DailyBrief" },
       { name: "robots", content: "noindex" },
+      {
+        name: "description",
+        content: "Consultation en lecture seule d'un rapport partagé via DailyBrief.",
+      },
+      { property: "og:title", content: "Rapport partagé — DailyBrief" },
+      {
+        property: "og:description",
+        content: "Consultation en lecture seule d'un rapport partagé via DailyBrief.",
+      },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary_large_image" },
+      {
+        property: "og:image",
+        content: "https://rapport-journaliere.lovable.app/og-dailybrief.jpg",
+      },
+      {
+        name: "twitter:image",
+        content: "https://rapport-journaliere.lovable.app/og-dailybrief.jpg",
+      },
     ],
   }),
   component: SharedReportPage,
