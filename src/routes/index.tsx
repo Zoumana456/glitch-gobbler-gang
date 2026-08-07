@@ -29,6 +29,8 @@ export const Route = createFileRoute("/")({
         content:
           "Créez, partagez et suivez les rapports quotidiens et PV de votre équipe. Assistant IA, KYC, partage sécurisé.",
       },
+      { property: "og:image", content: "https://rapport-journaliere.lovable.app/og-dailybrief.jpg" },
+      { name: "twitter:image", content: "https://rapport-journaliere.lovable.app/og-dailybrief.jpg" },
     ],
   }),
   component: LandingPage,

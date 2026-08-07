@@ -19,6 +19,8 @@ export const Route = createFileRoute("/pricing")({
         property: "og:description",
         content: "Formules DailyBrief pour PME et grandes équipes. Facturation flexible.",
       },
+      { property: "og:image", content: "https://rapport-journaliere.lovable.app/og-dailybrief.jpg" },
+      { name: "twitter:image", content: "https://rapport-journaliere.lovable.app/og-dailybrief.jpg" },
     ],
   }),
   component: PricingPage,
