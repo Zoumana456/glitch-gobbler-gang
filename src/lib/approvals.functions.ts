@@ -15,7 +15,7 @@ export const submitReport = createServerFn({ method: "POST" })
 
     const { data: report } = await supabaseAdmin
       .from("reports")
-      .select("id, author_id, status, company_id")
+      .select("id, author_id, status, company_id, title")
       .eq("id", data.reportId)
       .maybeSingle();
     if (!report) throw new Error("Rapport introuvable.");
@@ -70,6 +70,22 @@ export const submitReport = createServerFn({ method: "POST" })
     }
     await supabaseAdmin.from("report_approvals").insert(log);
 
+    const { notify } = await import("./notifications.server");
+    const { nameMap } = await import("./hierarchy.server");
+    if (approver) {
+      const names = await nameMap([context.userId]);
+      await notify([
+        {
+          user_id: approver.user_id,
+          type: "report_submitted",
+          title: "Un rapport attend votre validation",
+          body: `${names[context.userId] ?? "Un collaborateur"} a soumis « ${report.title} ».`,
+          report_id: report.id,
+          actor_id: context.userId,
+        },
+      ]);
+    }
+
     return {
       ok: true,
       status: patch.status,
@@ -89,7 +105,7 @@ export const approveReport = createServerFn({ method: "POST" })
 
     const { data: report } = await supabaseAdmin
       .from("reports")
-      .select("id, author_id, status, current_approver_id")
+      .select("id, author_id, status, current_approver_id, title")
       .eq("id", data.reportId)
       .maybeSingle();
     if (!report) throw new Error("Rapport introuvable.");
@@ -119,6 +135,36 @@ export const approveReport = createServerFn({ method: "POST" })
       comment: data.comment?.trim() || null,
     });
 
+    const { notify } = await import("./notifications.server");
+    const { nameMap } = await import("./hierarchy.server");
+    const names = await nameMap([context.userId, report.author_id]);
+    const actor = names[context.userId] ?? "Un responsable";
+    const drafts: any[] = [
+      {
+        user_id: report.author_id,
+        type: "report_approved",
+        title: next
+          ? "Votre rapport a été validé et transmis"
+          : "Votre rapport a été validé",
+        body: next
+          ? `${actor} a validé « ${report.title} ». Il est transmis au niveau supérieur.`
+          : `${actor} a validé « ${report.title} ». Le circuit de validation est terminé.`,
+        report_id: report.id,
+        actor_id: context.userId,
+      },
+    ];
+    if (next) {
+      drafts.push({
+        user_id: next.user_id,
+        type: "report_submitted",
+        title: "Un rapport attend votre validation",
+        body: `« ${report.title} » de ${names[report.author_id] ?? "un collaborateur"} vous a été transmis.`,
+        report_id: report.id,
+        actor_id: context.userId,
+      });
+    }
+    await notify(drafts);
+
     return { ok: true, status: patch.status, escalated: !!next };
   });
 
@@ -134,7 +180,7 @@ export const rejectReport = createServerFn({ method: "POST" })
 
     const { data: report } = await supabaseAdmin
       .from("reports")
-      .select("id, current_approver_id")
+      .select("id, current_approver_id, author_id, title")
       .eq("id", data.reportId)
       .maybeSingle();
     if (!report) throw new Error("Rapport introuvable.");
@@ -156,6 +202,20 @@ export const rejectReport = createServerFn({ method: "POST" })
       decision: "rejected",
       comment: data.comment.trim(),
     });
+
+    const { notify } = await import("./notifications.server");
+    const { nameMap } = await import("./hierarchy.server");
+    const names = await nameMap([context.userId]);
+    await notify([
+      {
+        user_id: report.author_id,
+        type: "report_rejected",
+        title: "Votre rapport a été renvoyé",
+        body: `${names[context.userId] ?? "Un responsable"} a demandé des corrections sur « ${report.title} » : ${data.comment.trim()}`,
+        report_id: report.id,
+        actor_id: context.userId,
+      },
+    ]);
     return { ok: true };
   });
 
