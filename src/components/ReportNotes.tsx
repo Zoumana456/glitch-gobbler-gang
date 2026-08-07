@@ -90,10 +90,11 @@ export function ReportNotes({ reportId, currentUserId, canWrite }: Props) {
                         size="icon"
                         variant="ghost"
                         onClick={() => updateMut.mutate({ id: n.id, content: editDraft })}
+                        aria-label="Enregistrer la note"
                       >
                         <Check className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}>
+                      <Button size="icon" variant="ghost" onClick={() => setEditingId(null)} aria-label="Annuler la modification">
                         <X className="h-4 w-4" />
                       </Button>
                     </>
@@ -106,6 +107,7 @@ export function ReportNotes({ reportId, currentUserId, canWrite }: Props) {
                           setEditingId(n.id);
                           setEditDraft(n.content);
                         }}
+                        aria-label="Modifier la note"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -113,6 +115,7 @@ export function ReportNotes({ reportId, currentUserId, canWrite }: Props) {
                         size="icon"
                         variant="ghost"
                         onClick={() => deleteMut.mutate(n.id)}
+                        aria-label="Supprimer la note"
                       >
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>

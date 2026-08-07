@@ -65,6 +65,7 @@ export function PlansPanel() {
                       onClick={() => {
                         if (confirm(`Supprimer le plan « ${p.name} » ?`)) delMut.mutate(p.id);
                       }}
+                      aria-label="Supprimer le plan"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -141,7 +142,7 @@ function PlanDialog({ plan }: { plan?: Plan }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {plan ? (
-          <Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" aria-label="Modifier le plan"><Pencil className="h-4 w-4" /></Button>
         ) : (
           <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Nouveau plan</Button>
         )}
