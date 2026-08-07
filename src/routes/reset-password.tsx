@@ -134,7 +134,7 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted px-4 py-8">
+    <div className="min-h-dvh flex items-center justify-center bg-gradient-to-b from-background to-muted px-4 py-8">
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center justify-center gap-2 mb-6 text-primary">
           <ShieldCheck className="h-6 w-6" />
