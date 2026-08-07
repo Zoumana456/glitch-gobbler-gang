@@ -27,7 +27,8 @@ Bonne nouvelle d'abord : le scan de sécurité de la base ne remonte **aucun pro
 - Correction des hauteurs d'écran pour le mobile.
 - Passe d'accessibilité : libellés sur tous les boutons icône, textes alternatifs sur les images.
 
-### 3. Facturation réelle
+### 3. Facturation réelle — en attente (en cours de développement)
+Reportée : aucune API de paiement n'est encore branchée. Affiché comme « en cours de développement » côté produit.
 - Branchement d'un vrai encaissement (Stripe) sur les plans : abonnement mensuel/annuel, sièges supplémentaires, page de retour, facture consultable.
 - L'admin garde la main pour les cas sur mesure.
 
