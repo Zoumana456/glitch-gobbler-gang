@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { CommandPalette } from "@/components/CommandPalette";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import logoDailyBrief from "@/assets/logo-dailybrief.png";
 import { getMyProfile } from "@/lib/reports.functions";
 
