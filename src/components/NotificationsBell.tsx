@@ -143,8 +143,8 @@ export function NotificationsBell({ collapsed = false }: { collapsed?: boolean }
                   <li key={n.id}>
                     {n.report_id ? (
                       <Link
-                        to="/reports/$reportId"
-                        params={{ reportId: n.report_id }}
+                        to="/reports/$id"
+                        params={{ id: n.report_id }}
                         onClick={() => handleOpenItem(n.id, !!n.read_at)}
                         className="block"
                       >
