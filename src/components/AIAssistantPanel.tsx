@@ -282,7 +282,7 @@ export function AIAssistantPanel({
             {voiceMode ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             <span className="ml-1.5 text-xs">Vocal</span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer l'assistant IA">
             <X className="h-4 w-4" />
           </Button>
         </div>

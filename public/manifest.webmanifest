@@ -1,0 +1,26 @@
+{
+  "name": "DailyBrief — rapports d'équipe",
+  "short_name": "DailyBrief",
+  "description": "Créez, validez et partagez les rapports quotidiens et procès-verbaux de votre entreprise.",
+  "start_url": "/reports",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/favicon-dailybrief.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-dailybrief.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

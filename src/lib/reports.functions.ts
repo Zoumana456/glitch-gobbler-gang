@@ -687,10 +687,8 @@ export const getSharedReport = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!report) throw new Error("Lien de partage invalide");
 
-    if (
-      report.share_expires_at &&
-      new Date(report.share_expires_at).getTime() < Date.now()
-    ) {
+    const { isShareLinkUsable } = await import("./hierarchy-tree");
+    if (!isShareLinkUsable(report as any)) {
       throw new Error("Lien expiré");
     }
 
@@ -816,10 +814,8 @@ export const logSharedExport = createServerFn({ method: "POST" })
       .eq("share_token", data.token)
       .maybeSingle();
     if (!rep) return { ok: false };
-    if (
-      rep.share_expires_at &&
-      new Date(rep.share_expires_at).getTime() < Date.now()
-    ) {
+    const { isShareLinkUsable } = await import("./hierarchy-tree");
+    if (!isShareLinkUsable({ share_token: data.token, share_expires_at: rep.share_expires_at as string | null })) {
       return { ok: false };
     }
     const meta = await getRequestMeta();

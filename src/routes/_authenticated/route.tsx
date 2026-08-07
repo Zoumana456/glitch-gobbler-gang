@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { CommandPalette } from "@/components/CommandPalette";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import logoDailyBrief from "@/assets/logo-dailybrief.png";
 import { getMyProfile } from "@/lib/reports.functions";
 
@@ -107,7 +108,7 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-dvh bg-muted/30">
       {/* Sidebar desktop — fixed */}
       <aside
         className={cn(
@@ -155,7 +156,7 @@ function AuthenticatedLayout() {
 
       <div
         className={cn(
-          "flex flex-col min-h-screen min-w-0 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "flex flex-col min-h-dvh min-w-0 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
           collapsed ? "md:pl-16" : "md:pl-64",
         )}
 
@@ -383,6 +384,7 @@ function SidebarInner({
             </div>
           )}
         </Link>
+        {!adminOnly && <NotificationsBell collapsed={collapsed} />}
         {!adminOnly && (
           <Link
             to="/profile"

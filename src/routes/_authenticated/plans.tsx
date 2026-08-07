@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Check, Sparkles, Clock } from "lucide-react";
+import { Package, Check, Sparkles, Clock, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/plans")({
@@ -72,6 +72,20 @@ function PlansPage() {
           </TabsList>
         </Tabs>
       </header>
+
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="p-4 flex items-start gap-3">
+          <Wrench className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-semibold">Paiement en ligne : en cours de développement</p>
+            <p className="text-muted-foreground">
+              L'encaissement automatique par carte n'est pas encore actif. Votre demande de
+              plan est enregistrée puis validée manuellement par l'administration, sans
+              paiement immédiat.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {mine?.pendingPlanId && (
         <Card className="border-orange-500/40 bg-orange-500/5">

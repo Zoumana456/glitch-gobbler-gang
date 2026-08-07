@@ -123,7 +123,7 @@ export function InvoicesPanel() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button size="icon" variant="ghost"
+                        <Button size="icon" variant="ghost" aria-label="Supprimer la facture"
                           onClick={() => { if (confirm(`Supprimer la facture ${r.number} ?`)) delMut.mutate(r.id); }}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />

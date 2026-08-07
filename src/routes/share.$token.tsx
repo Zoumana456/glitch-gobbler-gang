@@ -17,8 +17,27 @@ export const Route = createFileRoute("/share/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Rapport partagé — Lovable Rapports" },
+      { title: "Rapport partagé — DailyBrief" },
       { name: "robots", content: "noindex" },
+      {
+        name: "description",
+        content: "Consultation en lecture seule d'un rapport partagé via DailyBrief.",
+      },
+      { property: "og:title", content: "Rapport partagé — DailyBrief" },
+      {
+        property: "og:description",
+        content: "Consultation en lecture seule d'un rapport partagé via DailyBrief.",
+      },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary_large_image" },
+      {
+        property: "og:image",
+        content: "https://rapport-journaliere.lovable.app/og-dailybrief.jpg",
+      },
+      {
+        name: "twitter:image",
+        content: "https://rapport-journaliere.lovable.app/og-dailybrief.jpg",
+      },
     ],
   }),
   component: SharedReportPage,
@@ -103,7 +122,7 @@ function SharedReportPage() {
     const msg = (query.error as any)?.message ?? "";
     const expired = /expir/i.test(msg);
     return (
-      <div className="min-h-screen grid place-items-center p-4 bg-muted/30">
+      <div className="min-h-dvh grid place-items-center p-4 bg-muted/30">
         <Card className="max-w-md w-full">
           <CardContent className="py-10 text-center space-y-3">
             <h1 className="text-xl font-semibold">
@@ -132,7 +151,7 @@ function SharedReportPage() {
     r.general_images.length > 0;
 
   return (
-    <div className="min-h-screen bg-muted/30 flex flex-col">
+    <div className="min-h-dvh bg-muted/30 flex flex-col">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-6xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">

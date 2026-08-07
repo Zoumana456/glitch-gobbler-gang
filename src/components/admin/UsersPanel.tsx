@@ -135,7 +135,7 @@ function UserRow({ user, onChanged }: { user: AdminUserRow; onChanged: () => voi
         {canModerate && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost">
+              <Button size="icon" variant="ghost" aria-label="Actions sur l'utilisateur">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

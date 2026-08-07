@@ -191,6 +191,7 @@ export function SharePeopleDialog({
                     size="icon"
                     className="text-destructive"
                     onClick={() => revokeMut.mutate(s.id)}
+                    aria-label="Révoquer ce partage"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

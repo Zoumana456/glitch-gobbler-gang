@@ -692,6 +692,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
                   size="icon"
                   onClick={() => removeSection(sIdx)}
                   title="Supprimer la section"
+                  aria-label="Supprimer la section"
                   className="text-muted-foreground hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -744,6 +745,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
                       variant="ghost"
                       size="icon"
                       onClick={() => removeBullet(sIdx, b.key)}
+                      aria-label="Supprimer ce point"
                       className="text-muted-foreground hover:text-destructive"
                     >
                       <X className="h-4 w-4" />
