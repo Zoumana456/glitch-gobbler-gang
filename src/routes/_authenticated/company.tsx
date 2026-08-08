@@ -305,10 +305,11 @@ function CompanyPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-6">
-      <header className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-primary" /> {company.name}
+      <header className="grid grid-cols-1 gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold flex min-w-0 items-center gap-2">
+            <Building2 className="h-6 w-6 shrink-0 text-primary" />{" "}
+            <span className="truncate">{company.name}</span>
           </h1>
           <p className="text-sm text-muted-foreground">
             {company.seats_used} / {company.seat_limit} sièges utilisés
@@ -346,7 +347,7 @@ function CompanyPage() {
                   <CalendarCheck2 className="h-5 w-5" /> Rapports du{" "}
                   {formatLongDate(date)}
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                   <Button
                     size="sm"
                     variant="outline"
@@ -375,7 +376,7 @@ function CompanyPage() {
                   <Input
                     type="date"
                     value={date}
-                    className="w-auto"
+                    className="w-full sm:w-auto"
                     onChange={(e) =>
                       navigate({
                         to: "/company",
@@ -390,9 +391,9 @@ function CompanyPage() {
               {daily.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Aucun employé.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="text-left text-muted-foreground border-b">
+                <div className="-mx-2 overflow-x-auto px-2">
+                  <table className="w-full min-w-[720px] text-sm">
+                    <thead className="text-left text-muted-foreground border-b [&_th]:whitespace-nowrap">
                       <tr>
                         <th className="py-2">Employé</th>
                         <th className="py-2">Email</th>
@@ -480,9 +481,9 @@ function CompanyPage() {
             </CardHeader>
 
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-muted-foreground border-b">
+              <div className="-mx-2 overflow-x-auto px-2">
+                <table className="w-full min-w-[720px] text-sm">
+                  <thead className="text-left text-muted-foreground border-b [&_th]:whitespace-nowrap">
                     <tr>
                       <th className="py-2">Nom</th>
                       <th className="py-2">Email</th>
