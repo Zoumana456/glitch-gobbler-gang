@@ -346,7 +346,7 @@ function CompanyPage() {
                   <CalendarCheck2 className="h-5 w-5" /> Rapports du{" "}
                   {formatLongDate(date)}
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                   <Button
                     size="sm"
                     variant="outline"
@@ -375,7 +375,7 @@ function CompanyPage() {
                   <Input
                     type="date"
                     value={date}
-                    className="w-auto"
+                    className="w-full sm:w-auto"
                     onChange={(e) =>
                       navigate({
                         to: "/company",
@@ -390,9 +390,9 @@ function CompanyPage() {
               {daily.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Aucun employé.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="text-left text-muted-foreground border-b">
+                <div className="-mx-2 overflow-x-auto px-2">
+                  <table className="w-full min-w-[720px] text-sm">
+                    <thead className="text-left text-muted-foreground border-b [&_th]:whitespace-nowrap">
                       <tr>
                         <th className="py-2">Employé</th>
                         <th className="py-2">Email</th>
@@ -480,9 +480,9 @@ function CompanyPage() {
             </CardHeader>
 
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-muted-foreground border-b">
+              <div className="-mx-2 overflow-x-auto px-2">
+                <table className="w-full min-w-[720px] text-sm">
+                  <thead className="text-left text-muted-foreground border-b [&_th]:whitespace-nowrap">
                     <tr>
                       <th className="py-2">Nom</th>
                       <th className="py-2">Email</th>

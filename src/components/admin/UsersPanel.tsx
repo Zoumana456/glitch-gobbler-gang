@@ -47,9 +47,9 @@ export function UsersPanel() {
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucun utilisateur.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-muted-foreground border-b">
+          <div className="-mx-2 overflow-x-auto px-2">
+            <table className="w-full min-w-[820px] text-sm">
+              <thead className="text-left text-muted-foreground border-b [&_th]:whitespace-nowrap">
                 <tr>
                   <th className="py-2">Nom</th>
                   <th className="py-2">Email</th>
