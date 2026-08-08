@@ -139,8 +139,8 @@ function HierarchyPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">Organigramme</h1>
+      <header className="min-w-0">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Organigramme</h1>
         <p className="text-muted-foreground mt-1">
           {data.company_name} — suivi du rapport du jour par collaborateur.
         </p>
