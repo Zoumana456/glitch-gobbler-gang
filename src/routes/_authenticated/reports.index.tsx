@@ -247,9 +247,9 @@ function ReportsListPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Rapports journaliers</h1>
+      <div className="grid grid-cols-1 gap-4 mb-8 sm:flex sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Rapports journaliers</h1>
           <p className="text-muted-foreground mt-1">
             Consultez tous les rapports de l'équipe, triés par date.
           </p>
@@ -332,9 +332,9 @@ function ReportsListPage() {
           </button>
         </div>
         {monthOptions.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <Select value={monthFrom} onValueChange={setMonthFrom}>
-              <SelectTrigger className="w-[170px]">
+              <SelectTrigger className="w-full sm:w-[170px]">
                 <SelectValue placeholder="Depuis" />
               </SelectTrigger>
               <SelectContent>
@@ -346,9 +346,9 @@ function ReportsListPage() {
                 ))}
               </SelectContent>
             </Select>
-            <span className="text-sm text-muted-foreground">→</span>
+            <span className="hidden text-sm text-muted-foreground sm:inline">→</span>
             <Select value={monthTo} onValueChange={setMonthTo}>
-              <SelectTrigger className="w-[170px]">
+              <SelectTrigger className="w-full sm:w-[170px]">
                 <SelectValue placeholder="Jusqu'à" />
               </SelectTrigger>
               <SelectContent>
