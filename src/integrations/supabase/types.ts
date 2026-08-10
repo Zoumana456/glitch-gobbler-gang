@@ -276,6 +276,38 @@ export type Database = {
           },
         ]
       }
+      company_modules: {
+        Row: {
+          company_id: string
+          enabled: boolean
+          enabled_at: string
+          module_code: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          enabled?: boolean
+          enabled_at?: string
+          module_code: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          enabled?: boolean
+          enabled_at?: string
+          module_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_modules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_name_risk_cache: {
         Row: {
           checked_at: string
@@ -1038,6 +1070,101 @@ export type Database = {
           yearly_price_cents?: number
         }
         Relationships: []
+      }
+      task_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assignee_id: string | null
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          report_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          report_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          report_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -11,23 +11,15 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { checkIsPlatformAdmin } from "@/lib/platform.functions";
 import {
-  FileText,
-  FilePlus2,
   UserCircle2,
   LogOut,
   Menu,
   X,
-  Building2,
   ShieldAlert,
   ShieldCheck,
-  FileSignature,
   ChevronsLeft,
   ChevronsRight,
-  Package,
-  Users,
-  Network,
-  BarChart3,
-
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -37,6 +29,8 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import logoDailyBrief from "@/assets/logo-dailybrief.png";
 import { getMyProfile } from "@/lib/reports.functions";
+import { getMyModules } from "@/lib/modules.functions";
+import { moduleForPath, visibleModules } from "@/lib/modules/registry";
 
 
 export const Route = createFileRoute("/_authenticated")({
@@ -51,18 +45,12 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
-const NAV = [
-  { to: "/reports", label: "Rapports", icon: FileText },
-  { to: "/reports/new", label: "Nouveau rapport", icon: FilePlus2 },
-  { to: "/reports/equipe", label: "Mon équipe", icon: Users },
-  { to: "/reports/direction", label: "Vue direction", icon: BarChart3 },
-  { to: "/minutes", label: "Procès-verbaux", icon: FileSignature },
-  { to: "/company", label: "Entreprise", icon: Building2 },
-  { to: "/company/hierarchie", label: "Organigramme", icon: Network },
-  { to: "/reports/audit-roles", label: "Audit des rôles", icon: ShieldCheck },
-  { to: "/plans", label: "Plans", icon: Package },
-  { to: "/profile", label: "Profil", icon: UserCircle2 },
-] as const;
+const LAUNCHER_ITEM = {
+  to: "/apps",
+  label: "Applications",
+  icon: LayoutGrid,
+} as const;
+
 
 
 const COLLAPSE_KEY = "sidebar:collapsed";
@@ -171,7 +159,7 @@ function AuthenticatedLayout() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <Link to="/reports" className="flex items-center gap-2 font-semibold">
+          <Link to="/apps" className="flex items-center gap-2 font-semibold">
             <img src={logoDailyBrief} alt="DailyBrief" className="h-6 w-6 rounded" />
             DailyBrief
           </Link>
@@ -212,6 +200,12 @@ function SidebarInner({
     staleTime: 60_000,
   });
   const adminOnly = (profile as any)?.admin_only === true;
+  const modulesFn = useServerFn(getMyModules);
+  const { data: moduleState } = useQuery({
+    queryKey: ["my-modules"],
+    queryFn: () => modulesFn(),
+    staleTime: 60_000,
+  });
 
   // Redirect admin-only accounts to /admin (allow /admin and /profile)
   useEffect(() => {
@@ -224,17 +218,25 @@ function SidebarInner({
   const avatarUrl = profile?.avatar_url ?? undefined;
   const displayName = profile?.full_name ?? email;
   const initials = (profile?.full_name ?? email ?? "?").slice(0, 2).toUpperCase();
-  const navItems = adminOnly
-    ? ([
-        { to: "/admin", label: "Admin plateforme", icon: ShieldAlert },
-        { to: "/profile", label: "Profil", icon: UserCircle2 },
-      ] as const)
-    : [
-        ...NAV,
-        ...(isAdmin
-          ? ([{ to: "/admin", label: "Admin plateforme", icon: ShieldAlert }] as const)
-          : []),
-      ];
+  const mods = visibleModules(moduleState?.disabled);
+  const current =
+    mods.find((m) => m.code === moduleForPath(pathname)?.code) ?? mods[0];
+  const moduleScreens = (current?.screens ?? []).filter(
+    (s) => s.to !== "/company/applications" || moduleState?.isOwner,
+  );
+  const navItems: { to: string; label: string; icon: typeof UserCircle2 }[] =
+    adminOnly
+      ? [
+          { to: "/admin", label: "Admin plateforme", icon: ShieldAlert },
+          { to: "/profile", label: "Profil", icon: UserCircle2 },
+        ]
+      : [
+          { ...LAUNCHER_ITEM },
+          ...moduleScreens,
+          ...(isAdmin
+            ? [{ to: "/admin", label: "Admin plateforme", icon: ShieldAlert }]
+            : []),
+        ];
 
   return (
     <>
@@ -245,7 +247,7 @@ function SidebarInner({
         )}
       >
         <Link
-          to="/reports"
+          to="/apps"
           className="flex items-center gap-2 min-w-0"
           title="DailyBrief"
         >

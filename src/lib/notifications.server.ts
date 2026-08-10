@@ -2,7 +2,9 @@ export type NotificationType =
   | "report_submitted"
   | "report_approved"
   | "report_rejected"
-  | "report_reminder";
+  | "report_reminder"
+  | "task_assigned"
+  | "task_completed";
 
 export type NotificationDraft = {
   user_id: string;

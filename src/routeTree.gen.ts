@@ -21,9 +21,13 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated/plans'
 import { Route as AuthenticatedCompanyRouteImport } from './routes/_authenticated/company'
+import { Route as AuthenticatedAppsRouteImport } from './routes/_authenticated/apps'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks.index'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedMinutesIndexRouteImport } from './routes/_authenticated/minutes.index'
+import { Route as AuthenticatedTasksNewRouteImport } from './routes/_authenticated/tasks.new'
+import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
 import { Route as AuthenticatedReportsEquipeRouteImport } from './routes/_authenticated/reports.equipe'
 import { Route as AuthenticatedReportsDirectionRouteImport } from './routes/_authenticated/reports.direction'
@@ -32,6 +36,7 @@ import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMinutesDashboardRouteImport } from './routes/_authenticated/minutes.dashboard'
 import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authenticated/minutes.$id'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
+import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
 import { Route as ApiPublicAiTranscribeRouteImport } from './routes/api/public/ai/transcribe'
 import { Route as ApiPublicAiSpeakRouteImport } from './routes/api/public/ai/speak'
@@ -97,9 +102,19 @@ const AuthenticatedCompanyRoute = AuthenticatedCompanyRouteImport.update({
   path: '/company',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppsRoute = AuthenticatedAppsRouteImport.update({
+  id: '/apps',
+  path: '/apps',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedReportsIndexRoute =
@@ -114,6 +129,16 @@ const AuthenticatedMinutesIndexRoute =
     path: '/minutes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTasksNewRoute = AuthenticatedTasksNewRouteImport.update({
+  id: '/tasks/new',
+  path: '/tasks/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTasksIdRoute = AuthenticatedTasksIdRouteImport.update({
+  id: '/tasks/$id',
+  path: '/tasks/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReportsNewRoute = AuthenticatedReportsNewRouteImport.update({
   id: '/reports/new',
   path: '/reports/new',
@@ -159,6 +184,12 @@ const AuthenticatedCompanyHierarchieRoute =
     path: '/hierarchie',
     getParentRoute: () => AuthenticatedCompanyRoute,
   } as any)
+const AuthenticatedCompanyApplicationsRoute =
+  AuthenticatedCompanyApplicationsRouteImport.update({
+    id: '/applications',
+    path: '/applications',
+    getParentRoute: () => AuthenticatedCompanyRoute,
+  } as any)
 const AuthenticatedReportsIdIndexRoute =
   AuthenticatedReportsIdIndexRouteImport.update({
     id: '/',
@@ -194,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/apps': typeof AuthenticatedAppsRoute
   '/company': typeof AuthenticatedCompanyRouteWithChildren
   '/plans': typeof AuthenticatedPlansRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -201,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -209,8 +242,11 @@ export interface FileRoutesByFullPath {
   '/reports/direction': typeof AuthenticatedReportsDirectionRoute
   '/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/tasks/$id': typeof AuthenticatedTasksIdRoute
+  '/tasks/new': typeof AuthenticatedTasksNewRoute
   '/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
+  '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/company/employees/$id': typeof AuthenticatedCompanyEmployeesIdRoute
   '/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
   '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
@@ -223,6 +259,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/apps': typeof AuthenticatedAppsRoute
   '/company': typeof AuthenticatedCompanyRouteWithChildren
   '/plans': typeof AuthenticatedPlansRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -230,6 +267,7 @@ export interface FileRoutesByTo {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -237,8 +275,11 @@ export interface FileRoutesByTo {
   '/reports/direction': typeof AuthenticatedReportsDirectionRoute
   '/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/tasks/$id': typeof AuthenticatedTasksIdRoute
+  '/tasks/new': typeof AuthenticatedTasksNewRoute
   '/minutes': typeof AuthenticatedMinutesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
+  '/tasks': typeof AuthenticatedTasksIndexRoute
   '/company/employees/$id': typeof AuthenticatedCompanyEmployeesIdRoute
   '/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
   '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
@@ -253,6 +294,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/apps': typeof AuthenticatedAppsRoute
   '/_authenticated/company': typeof AuthenticatedCompanyRouteWithChildren
   '/_authenticated/plans': typeof AuthenticatedPlansRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -260,6 +302,7 @@ export interface FileRoutesById {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/_authenticated/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/_authenticated/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -268,8 +311,11 @@ export interface FileRoutesById {
   '/_authenticated/reports/direction': typeof AuthenticatedReportsDirectionRoute
   '/_authenticated/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
+  '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
+  '/_authenticated/tasks/new': typeof AuthenticatedTasksNewRoute
   '/_authenticated/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
+  '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/company/employees/$id': typeof AuthenticatedCompanyEmployeesIdRoute
   '/_authenticated/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
   '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
@@ -284,6 +330,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/admin'
+    | '/apps'
     | '/company'
     | '/plans'
     | '/profile'
@@ -291,6 +338,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/company/applications'
     | '/company/hierarchie'
     | '/minutes/$id'
     | '/minutes/dashboard'
@@ -299,8 +347,11 @@ export interface FileRouteTypes {
     | '/reports/direction'
     | '/reports/equipe'
     | '/reports/new'
+    | '/tasks/$id'
+    | '/tasks/new'
     | '/minutes/'
     | '/reports/'
+    | '/tasks/'
     | '/company/employees/$id'
     | '/reports/$id/edit'
     | '/api/public/ai/speak'
@@ -313,6 +364,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/admin'
+    | '/apps'
     | '/company'
     | '/plans'
     | '/profile'
@@ -320,6 +372,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/company/applications'
     | '/company/hierarchie'
     | '/minutes/$id'
     | '/minutes/dashboard'
@@ -327,8 +380,11 @@ export interface FileRouteTypes {
     | '/reports/direction'
     | '/reports/equipe'
     | '/reports/new'
+    | '/tasks/$id'
+    | '/tasks/new'
     | '/minutes'
     | '/reports'
+    | '/tasks'
     | '/company/employees/$id'
     | '/reports/$id/edit'
     | '/api/public/ai/speak'
@@ -342,6 +398,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/_authenticated/admin'
+    | '/_authenticated/apps'
     | '/_authenticated/company'
     | '/_authenticated/plans'
     | '/_authenticated/profile'
@@ -349,6 +406,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
     | '/_authenticated/minutes/$id'
     | '/_authenticated/minutes/dashboard'
@@ -357,8 +415,11 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/direction'
     | '/_authenticated/reports/equipe'
     | '/_authenticated/reports/new'
+    | '/_authenticated/tasks/$id'
+    | '/_authenticated/tasks/new'
     | '/_authenticated/minutes/'
     | '/_authenticated/reports/'
+    | '/_authenticated/tasks/'
     | '/_authenticated/company/employees/$id'
     | '/_authenticated/reports/$id/edit'
     | '/api/public/ai/speak'
@@ -466,11 +527,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCompanyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/apps': {
+      id: '/_authenticated/apps'
+      path: '/apps'
+      fullPath: '/apps'
+      preLoaderRoute: typeof AuthenticatedAppsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tasks/': {
+      id: '/_authenticated/tasks/'
+      path: '/tasks'
+      fullPath: '/tasks/'
+      preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/': {
@@ -485,6 +560,20 @@ declare module '@tanstack/react-router' {
       path: '/minutes'
       fullPath: '/minutes/'
       preLoaderRoute: typeof AuthenticatedMinutesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tasks/new': {
+      id: '/_authenticated/tasks/new'
+      path: '/tasks/new'
+      fullPath: '/tasks/new'
+      preLoaderRoute: typeof AuthenticatedTasksNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tasks/$id': {
+      id: '/_authenticated/tasks/$id'
+      path: '/tasks/$id'
+      fullPath: '/tasks/$id'
+      preLoaderRoute: typeof AuthenticatedTasksIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/new': {
@@ -543,6 +632,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCompanyHierarchieRouteImport
       parentRoute: typeof AuthenticatedCompanyRoute
     }
+    '/_authenticated/company/applications': {
+      id: '/_authenticated/company/applications'
+      path: '/applications'
+      fullPath: '/company/applications'
+      preLoaderRoute: typeof AuthenticatedCompanyApplicationsRouteImport
+      parentRoute: typeof AuthenticatedCompanyRoute
+    }
     '/_authenticated/reports/$id/': {
       id: '/_authenticated/reports/$id/'
       path: '/'
@@ -582,11 +678,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedCompanyRouteChildren {
+  AuthenticatedCompanyApplicationsRoute: typeof AuthenticatedCompanyApplicationsRoute
   AuthenticatedCompanyHierarchieRoute: typeof AuthenticatedCompanyHierarchieRoute
   AuthenticatedCompanyEmployeesIdRoute: typeof AuthenticatedCompanyEmployeesIdRoute
 }
 
 const AuthenticatedCompanyRouteChildren: AuthenticatedCompanyRouteChildren = {
+  AuthenticatedCompanyApplicationsRoute: AuthenticatedCompanyApplicationsRoute,
   AuthenticatedCompanyHierarchieRoute: AuthenticatedCompanyHierarchieRoute,
   AuthenticatedCompanyEmployeesIdRoute: AuthenticatedCompanyEmployeesIdRoute,
 }
@@ -612,6 +710,7 @@ const AuthenticatedReportsIdRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAppsRoute: typeof AuthenticatedAppsRoute
   AuthenticatedCompanyRoute: typeof AuthenticatedCompanyRouteWithChildren
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -622,12 +721,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsDirectionRoute: typeof AuthenticatedReportsDirectionRoute
   AuthenticatedReportsEquipeRoute: typeof AuthenticatedReportsEquipeRoute
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
+  AuthenticatedTasksIdRoute: typeof AuthenticatedTasksIdRoute
+  AuthenticatedTasksNewRoute: typeof AuthenticatedTasksNewRoute
   AuthenticatedMinutesIndexRoute: typeof AuthenticatedMinutesIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
+  AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAppsRoute: AuthenticatedAppsRoute,
   AuthenticatedCompanyRoute: AuthenticatedCompanyRouteWithChildren,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
@@ -638,8 +741,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsDirectionRoute: AuthenticatedReportsDirectionRoute,
   AuthenticatedReportsEquipeRoute: AuthenticatedReportsEquipeRoute,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
+  AuthenticatedTasksIdRoute: AuthenticatedTasksIdRoute,
+  AuthenticatedTasksNewRoute: AuthenticatedTasksNewRoute,
   AuthenticatedMinutesIndexRoute: AuthenticatedMinutesIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
+  AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -661,13 +767,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
