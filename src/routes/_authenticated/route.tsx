@@ -11,23 +11,15 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { checkIsPlatformAdmin } from "@/lib/platform.functions";
 import {
-  FileText,
-  FilePlus2,
   UserCircle2,
   LogOut,
   Menu,
   X,
-  Building2,
   ShieldAlert,
   ShieldCheck,
-  FileSignature,
   ChevronsLeft,
   ChevronsRight,
-  Package,
-  Users,
-  Network,
-  BarChart3,
-
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -37,6 +29,8 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import logoDailyBrief from "@/assets/logo-dailybrief.png";
 import { getMyProfile } from "@/lib/reports.functions";
+import { getMyModules } from "@/lib/modules.functions";
+import { moduleForPath, visibleModules } from "@/lib/modules/registry";
 
 
 export const Route = createFileRoute("/_authenticated")({
@@ -206,6 +200,12 @@ function SidebarInner({
     staleTime: 60_000,
   });
   const adminOnly = (profile as any)?.admin_only === true;
+  const modulesFn = useServerFn(getMyModules);
+  const { data: moduleState } = useQuery({
+    queryKey: ["my-modules"],
+    queryFn: () => modulesFn(),
+    staleTime: 60_000,
+  });
 
   // Redirect admin-only accounts to /admin (allow /admin and /profile)
   useEffect(() => {
@@ -218,17 +218,25 @@ function SidebarInner({
   const avatarUrl = profile?.avatar_url ?? undefined;
   const displayName = profile?.full_name ?? email;
   const initials = (profile?.full_name ?? email ?? "?").slice(0, 2).toUpperCase();
-  const navItems = adminOnly
-    ? ([
-        { to: "/admin", label: "Admin plateforme", icon: ShieldAlert },
-        { to: "/profile", label: "Profil", icon: UserCircle2 },
-      ] as const)
-    : [
-        ...NAV,
-        ...(isAdmin
-          ? ([{ to: "/admin", label: "Admin plateforme", icon: ShieldAlert }] as const)
-          : []),
-      ];
+  const mods = visibleModules(moduleState?.disabled);
+  const current =
+    mods.find((m) => m.code === moduleForPath(pathname)?.code) ?? mods[0];
+  const moduleScreens = (current?.screens ?? []).filter(
+    (s) => s.to !== "/company/applications" || moduleState?.isOwner,
+  );
+  const navItems: { to: string; label: string; icon: typeof UserCircle2 }[] =
+    adminOnly
+      ? [
+          { to: "/admin", label: "Admin plateforme", icon: ShieldAlert },
+          { to: "/profile", label: "Profil", icon: UserCircle2 },
+        ]
+      : [
+          { ...LAUNCHER_ITEM },
+          ...moduleScreens,
+          ...(isAdmin
+            ? [{ to: "/admin", label: "Admin plateforme", icon: ShieldAlert }]
+            : []),
+        ];
 
   return (
     <>
