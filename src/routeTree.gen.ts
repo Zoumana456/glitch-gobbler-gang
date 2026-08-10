@@ -27,6 +27,7 @@ import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedMinutesIndexRouteImport } from './routes/_authenticated/minutes.index'
 import { Route as AuthenticatedTasksNewRouteImport } from './routes/_authenticated/tasks.new'
+import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
 import { Route as AuthenticatedReportsEquipeRouteImport } from './routes/_authenticated/reports.equipe'
 import { Route as AuthenticatedReportsDirectionRouteImport } from './routes/_authenticated/reports.direction'
@@ -133,6 +134,11 @@ const AuthenticatedTasksNewRoute = AuthenticatedTasksNewRouteImport.update({
   path: '/tasks/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTasksIdRoute = AuthenticatedTasksIdRouteImport.update({
+  id: '/tasks/$id',
+  path: '/tasks/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReportsNewRoute = AuthenticatedReportsNewRouteImport.update({
   id: '/reports/new',
   path: '/reports/new',
@@ -236,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/reports/direction': typeof AuthenticatedReportsDirectionRoute
   '/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/new': typeof AuthenticatedTasksNewRoute
   '/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
@@ -268,6 +275,7 @@ export interface FileRoutesByTo {
   '/reports/direction': typeof AuthenticatedReportsDirectionRoute
   '/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/new': typeof AuthenticatedTasksNewRoute
   '/minutes': typeof AuthenticatedMinutesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/direction': typeof AuthenticatedReportsDirectionRoute
   '/_authenticated/reports/equipe': typeof AuthenticatedReportsEquipeRoute
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
+  '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/new': typeof AuthenticatedTasksNewRoute
   '/_authenticated/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
@@ -338,6 +347,7 @@ export interface FileRouteTypes {
     | '/reports/direction'
     | '/reports/equipe'
     | '/reports/new'
+    | '/tasks/$id'
     | '/tasks/new'
     | '/minutes/'
     | '/reports/'
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/reports/direction'
     | '/reports/equipe'
     | '/reports/new'
+    | '/tasks/$id'
     | '/tasks/new'
     | '/minutes'
     | '/reports'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/direction'
     | '/_authenticated/reports/equipe'
     | '/_authenticated/reports/new'
+    | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/new'
     | '/_authenticated/minutes/'
     | '/_authenticated/reports/'
@@ -557,6 +569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/tasks/$id': {
+      id: '/_authenticated/tasks/$id'
+      path: '/tasks/$id'
+      fullPath: '/tasks/$id'
+      preLoaderRoute: typeof AuthenticatedTasksIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/new': {
       id: '/_authenticated/reports/new'
       path: '/reports/new'
@@ -702,6 +721,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsDirectionRoute: typeof AuthenticatedReportsDirectionRoute
   AuthenticatedReportsEquipeRoute: typeof AuthenticatedReportsEquipeRoute
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
+  AuthenticatedTasksIdRoute: typeof AuthenticatedTasksIdRoute
   AuthenticatedTasksNewRoute: typeof AuthenticatedTasksNewRoute
   AuthenticatedMinutesIndexRoute: typeof AuthenticatedMinutesIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
@@ -721,6 +741,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsDirectionRoute: AuthenticatedReportsDirectionRoute,
   AuthenticatedReportsEquipeRoute: AuthenticatedReportsEquipeRoute,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
+  AuthenticatedTasksIdRoute: AuthenticatedTasksIdRoute,
   AuthenticatedTasksNewRoute: AuthenticatedTasksNewRoute,
   AuthenticatedMinutesIndexRoute: AuthenticatedMinutesIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
