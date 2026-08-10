@@ -23,6 +23,7 @@ import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCompanyRouteImport } from './routes/_authenticated/company'
 import { Route as AuthenticatedAppsRouteImport } from './routes/_authenticated/apps'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks.index'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedMinutesIndexRouteImport } from './routes/_authenticated/minutes.index'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
@@ -107,6 +108,11 @@ const AuthenticatedAppsRoute = AuthenticatedAppsRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedReportsIndexRoute =
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
+  '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/company/employees/$id': typeof AuthenticatedCompanyEmployeesIdRoute
   '/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
   '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByTo {
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/minutes': typeof AuthenticatedMinutesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
+  '/tasks': typeof AuthenticatedTasksIndexRoute
   '/company/employees/$id': typeof AuthenticatedCompanyEmployeesIdRoute
   '/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
   '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
@@ -289,6 +297,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
   '/_authenticated/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
+  '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/company/employees/$id': typeof AuthenticatedCompanyEmployeesIdRoute
   '/_authenticated/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
   '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
@@ -322,6 +331,7 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/minutes/'
     | '/reports/'
+    | '/tasks/'
     | '/company/employees/$id'
     | '/reports/$id/edit'
     | '/api/public/ai/speak'
@@ -352,6 +362,7 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/minutes'
     | '/reports'
+    | '/tasks'
     | '/company/employees/$id'
     | '/reports/$id/edit'
     | '/api/public/ai/speak'
@@ -384,6 +395,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/new'
     | '/_authenticated/minutes/'
     | '/_authenticated/reports/'
+    | '/_authenticated/tasks/'
     | '/_authenticated/company/employees/$id'
     | '/_authenticated/reports/$id/edit'
     | '/api/public/ai/speak'
@@ -503,6 +515,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tasks/': {
+      id: '/_authenticated/tasks/'
+      path: '/tasks'
+      fullPath: '/tasks/'
+      preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/': {
@@ -666,6 +685,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
   AuthenticatedMinutesIndexRoute: typeof AuthenticatedMinutesIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
+  AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -683,6 +703,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
   AuthenticatedMinutesIndexRoute: AuthenticatedMinutesIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
+  AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
