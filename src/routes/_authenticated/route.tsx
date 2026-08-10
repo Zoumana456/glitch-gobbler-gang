@@ -51,18 +51,12 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
-const NAV = [
-  { to: "/reports", label: "Rapports", icon: FileText },
-  { to: "/reports/new", label: "Nouveau rapport", icon: FilePlus2 },
-  { to: "/reports/equipe", label: "Mon équipe", icon: Users },
-  { to: "/reports/direction", label: "Vue direction", icon: BarChart3 },
-  { to: "/minutes", label: "Procès-verbaux", icon: FileSignature },
-  { to: "/company", label: "Entreprise", icon: Building2 },
-  { to: "/company/hierarchie", label: "Organigramme", icon: Network },
-  { to: "/reports/audit-roles", label: "Audit des rôles", icon: ShieldCheck },
-  { to: "/plans", label: "Plans", icon: Package },
-  { to: "/profile", label: "Profil", icon: UserCircle2 },
-] as const;
+const LAUNCHER_ITEM = {
+  to: "/apps",
+  label: "Applications",
+  icon: LayoutGrid,
+} as const;
+
 
 
 const COLLAPSE_KEY = "sidebar:collapsed";
