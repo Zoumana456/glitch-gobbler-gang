@@ -33,6 +33,7 @@ import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMinutesDashboardRouteImport } from './routes/_authenticated/minutes.dashboard'
 import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authenticated/minutes.$id'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
+import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
 import { Route as ApiPublicAiTranscribeRouteImport } from './routes/api/public/ai/transcribe'
 import { Route as ApiPublicAiSpeakRouteImport } from './routes/api/public/ai/speak'
@@ -165,6 +166,12 @@ const AuthenticatedCompanyHierarchieRoute =
     path: '/hierarchie',
     getParentRoute: () => AuthenticatedCompanyRoute,
   } as any)
+const AuthenticatedCompanyApplicationsRoute =
+  AuthenticatedCompanyApplicationsRouteImport.update({
+    id: '/applications',
+    path: '/applications',
+    getParentRoute: () => AuthenticatedCompanyRoute,
+  } as any)
 const AuthenticatedReportsIdIndexRoute =
   AuthenticatedReportsIdIndexRouteImport.update({
     id: '/',
@@ -208,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -238,6 +246,7 @@ export interface FileRoutesByTo {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -269,6 +278,7 @@ export interface FileRoutesById {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/_authenticated/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/_authenticated/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/company/applications'
     | '/company/hierarchie'
     | '/minutes/$id'
     | '/minutes/dashboard'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/company/applications'
     | '/company/hierarchie'
     | '/minutes/$id'
     | '/minutes/dashboard'
@@ -361,6 +373,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
     | '/_authenticated/minutes/$id'
     | '/_authenticated/minutes/dashboard'
@@ -562,6 +575,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCompanyHierarchieRouteImport
       parentRoute: typeof AuthenticatedCompanyRoute
     }
+    '/_authenticated/company/applications': {
+      id: '/_authenticated/company/applications'
+      path: '/applications'
+      fullPath: '/company/applications'
+      preLoaderRoute: typeof AuthenticatedCompanyApplicationsRouteImport
+      parentRoute: typeof AuthenticatedCompanyRoute
+    }
     '/_authenticated/reports/$id/': {
       id: '/_authenticated/reports/$id/'
       path: '/'
@@ -601,11 +621,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedCompanyRouteChildren {
+  AuthenticatedCompanyApplicationsRoute: typeof AuthenticatedCompanyApplicationsRoute
   AuthenticatedCompanyHierarchieRoute: typeof AuthenticatedCompanyHierarchieRoute
   AuthenticatedCompanyEmployeesIdRoute: typeof AuthenticatedCompanyEmployeesIdRoute
 }
 
 const AuthenticatedCompanyRouteChildren: AuthenticatedCompanyRouteChildren = {
+  AuthenticatedCompanyApplicationsRoute: AuthenticatedCompanyApplicationsRoute,
   AuthenticatedCompanyHierarchieRoute: AuthenticatedCompanyHierarchieRoute,
   AuthenticatedCompanyEmployeesIdRoute: AuthenticatedCompanyEmployeesIdRoute,
 }
