@@ -12,7 +12,7 @@ Oui, c'est possible : au lieu d'une seule application « rapports », DailyBrief
 
 ## 2. Nouveaux modules métier (ajout progressif)
 
-Chaque module suit le même patron : tables dédiées, RLS par entreprise et hiérarchie, écran liste + détail, workflow de validation réutilisant le circuit hiérarchique déjà en place, notifications, export PDF quand pertinent.
+Chaque module suit le même patron : tables dédiées, RLS par entreprise et hiérarchie, écran liste + détail, workflow de validation réutilisant le circuit hiérarchique déjà en place, notifications, export PDF quand pertinent, KPI,CRM,Emailing et autre.
 
 Ordre proposé :
 
