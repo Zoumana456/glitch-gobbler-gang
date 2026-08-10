@@ -159,7 +159,7 @@ function AuthenticatedLayout() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <Link to="/reports" className="flex items-center gap-2 font-semibold">
+          <Link to="/apps" className="flex items-center gap-2 font-semibold">
             <img src={logoDailyBrief} alt="DailyBrief" className="h-6 w-6 rounded" />
             DailyBrief
           </Link>
@@ -247,7 +247,7 @@ function SidebarInner({
         )}
       >
         <Link
-          to="/reports"
+          to="/apps"
           className="flex items-center gap-2 min-w-0"
           title="DailyBrief"
         >
