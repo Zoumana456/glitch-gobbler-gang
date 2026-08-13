@@ -10,7 +10,7 @@ import type {
 } from "./reports.types";
 
 const IMAGE_URL_TTL = 5 * 60; // 5 min — URL courte, régénérée à chaque affichage
-const ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 const MAX_SHARE_DAYS = 30; // durée max d'un lien de partage public
 
 
@@ -822,4 +822,3 @@ export const logSharedExport = createServerFn({ method: "POST" })
     await logAudit(supabaseAdmin, rep.id, null, "exported", meta.ip, meta.ua);
     return { ok: true };
   });
-
