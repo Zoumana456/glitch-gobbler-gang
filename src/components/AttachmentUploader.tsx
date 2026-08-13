@@ -15,7 +15,7 @@ export type FormAttachment = {
   uploading?: boolean;
 };
 
-export const ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 export const ATTACHMENT_ACCEPT = [
   "application/pdf",
   "application/msword",
@@ -85,7 +85,7 @@ export function AttachmentsList({
           onClick={() => inputRef.current?.click()}
         >
           <Paperclip className="h-4 w-4 mr-1.5" />
-          Ajouter (PDF, Word, vidéo · 5 Mo max)
+          Ajouter (PDF, Word, vidéo · 50 Mo max)
         </Button>
         <input
           ref={inputRef}
