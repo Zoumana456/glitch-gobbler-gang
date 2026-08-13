@@ -252,16 +252,18 @@ function AuthPage() {
                   disabled={loading}
                   onClick={async () => {
                     try {
-                      const res = await lovable.auth.signInWithOAuth("google", {
-                        redirect_uri: window.location.origin,
+                      const { data, error } = await supabase.auth.signInWithOAuth({
+                        provider: "google",
+                        options: {
+                          redirectTo: window.location.origin,
+                        }
                       });
-                      if (res.error) {
-                        toast.error(res.error.message ?? "Connexion Google impossible");
+                      if (error) {
+                        toast.error(error.message ?? "Connexion Google impossible");
                         return;
                       }
-                      if (res.redirected) return;
-                      toast.success("Connecté");
-                      navigate({ to: redirect ?? "/reports", replace: true });
+                      // For OAuth, Supabase redirects the browser automatically.
+                      // We don't need to navigate manually here.
                     } catch (e: any) {
                       toast.error(e?.message ?? "Connexion Google impossible");
                     }
