@@ -132,7 +132,7 @@ function ReportPdfDocument({
         )}
 
         {report.sections.map((s) => (
-          <View key={s.id} style={styles.section} wrap={false}>
+          <View key={s.id} style={styles.section}>
             <Text style={styles.h2}>{s.title || "Section"}</Text>
             {s.description && <Paragraphs text={s.description} />}
             {s.bullets.length > 0 && (
