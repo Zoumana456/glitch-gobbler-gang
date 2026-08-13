@@ -28,7 +28,7 @@ export const UPLOAD_RULES = {
     label: "document PDF/Word ou vidéo MP4/WEBM/MOV",
   },
   "company-proofs": {
-    maxBytes: 50 * 1024 * 1024, // 50 Mo
+    maxBytes: 10 * 1024 * 1024, // 10 Mo
     allowedExt: ["pdf", "png", "jpg", "jpeg", "webp", "doc", "docx"] as const,
     allowedMime: [
       "application/pdf",
