@@ -1,18 +1,11 @@
-import { useState, useRef } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { useServerFn } from "@tanstack/react-start";
+import { requestCompanyVerification } from "@/lib/reserved-names.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -21,10 +14,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Building2,
-  IdCard,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Camera,
   CheckCircle2,
+  IdCard,
   Loader2,
+  ShieldCheck,
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,119 +41,113 @@ type IdType = "id_card" | "passport" | "driving_license";
 export function RequestVerificationDialog({
   open,
   onOpenChange,
+  companyName,
+  onSubmitted,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (o: boolean) => void;
+  companyName: string;
+  onSubmitted?: () => void;
 }) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-
+  const requestFn = useServerFn(requestCompanyVerification);
+  const [step, setStep] = useState(1);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [idFile, setIdFile] = useState<File | null>(null);
-  const [idType, setIdType] = useState<IdType | "">("");
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [idType, setIdType] = useState<IdType>("id_card");
   const [fullLegalName, setFullLegalName] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
-  const [submitting, setSubmitting] = useState(false);
-
-  const queryClient = useQueryClient();
-
-  const handleClose = () => {
-    if (submitting) return;
-    onOpenChange(false);
-    setTimeout(() => {
+  useEffect(() => {
+    if (!open) {
       setStep(1);
       setProofFile(null);
       setIdFile(null);
-      setIdType("");
+      setSelfieFile(null);
+      setIdType("id_card");
       setFullLegalName("");
-    }, 300);
-  };
+      setMessage("");
+    }
+  }, [open]);
 
-  const submitMut = useMutation({
-    mutationFn: async () => {
-      if (!proofFile || !idFile || !idType || !fullLegalName.trim()) {
-        throw new Error("Informations manquantes");
-      }
-      const { data: userData } = await supabase.auth.getUser();
-      const uid = userData.user?.id;
-      if (!uid) throw new Error("Non connecté");
+  async function uploadFile(file: File): Promise<string> {
+    const bucket = "company-proofs" as const;
+    const { validateUpload, buildSafeStoragePath } = await import(
+      "@/lib/upload-validation"
+    );
+    const check = await validateUpload(file, bucket);
+    if (!check.ok) throw new Error(check.reason);
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) throw new Error("Non connecté");
+    const path = buildSafeStoragePath(uid, check.sanitizedExt);
+    const { error } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw new Error(error.message);
+    return path;
+  }
 
-      // Validation côté client simple (taille + ext de base)
-      if (proofFile.size > MAX || idFile.size > MAX) {
-        throw new Error("Un fichier dépasse la limite de 50 Mo");
-      }
-
-      // Upload proof (justificatif d'entreprise)
-      const proofExt = proofFile.name.split(".").pop()?.toLowerCase() || "bin";
-      const proofPath = `${uid}/${crypto.randomUUID()}_proof.${proofExt}`;
-      const { error: pErr } = await supabase.storage
-        .from("company-proofs")
-        .upload(proofPath, proofFile);
-      if (pErr) throw new Error("Erreur envoi justificatif: " + pErr.message);
-
-      // Upload ID
-      const idExt = idFile.name.split(".").pop()?.toLowerCase() || "bin";
-      const idPath = `${uid}/${crypto.randomUUID()}_id.${idExt}`;
-      const { error: iErr } = await supabase.storage
-        .from("company-proofs")
-        .upload(idPath, idFile);
-      if (iErr) throw new Error("Erreur envoi pièce: " + iErr.message);
-
-      // Créer la demande
-      const { error: reqErr } = await supabase.from("verification_requests").insert({
-        user_id: uid,
-        company_proof_path: proofPath,
-        id_document_path: idPath,
-        id_document_type: idType,
-        full_legal_name: fullLegalName.trim(),
-        status: "pending",
+  async function handleSubmit() {
+    if (!proofFile || !idFile || !selfieFile) {
+      toast.error("Complétez les 3 étapes");
+      return;
+    }
+    if (fullLegalName.trim().length < 2) {
+      toast.error("Nom légal requis");
+      return;
+    }
+    setLoading(true);
+    try {
+      const [proofPath, identityPath, selfiePath] = await Promise.all([
+        uploadFile(proofFile),
+        uploadFile(idFile),
+        uploadFile(selfieFile),
+      ]);
+      await requestFn({
+        data: {
+          name: companyName,
+          proofPath,
+          identityPath,
+          identityType: idType,
+          selfiePath,
+          fullLegalName: fullLegalName.trim(),
+          message: message || undefined,
+        },
       });
-      if (reqErr) {
-        // cleanup best-effort
-        supabase.storage.from("company-proofs").remove([proofPath, idPath]);
-        throw new Error("Erreur création demande: " + reqErr.message);
-      }
-      return true;
-    },
-    onSuccess: () => {
-      setStep(3);
-      queryClient.invalidateQueries({ queryKey: ["my-verification"] });
-    },
-    onError: (e: any) => {
-      toast.error(e?.message || "Erreur inattendue");
-    },
-    onSettled: () => setSubmitting(false),
-  });
+      toast.success("Demande envoyée. L'IA pré-analyse vos documents, un super admin va l'examiner.");
+      onOpenChange(false);
+      onSubmitted?.();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const nextStep = () => {
-    if (step === 1 && !proofFile) {
-      toast.error("Veuillez fournir un justificatif d'entreprise");
-      return;
-    }
-    if (step === 2) {
-      if (!idType) return toast.error("Veuillez sélectionner le type de pièce");
-      if (!fullLegalName.trim()) return toast.error("Nom légal requis");
-      if (!idFile) return toast.error("Photo de la pièce requise");
-      
-      setSubmitting(true);
-      submitMut.mutate();
-      return;
-    }
-    setStep((s) => (s + 1) as any);
-  };
+  const canNext1 = !!proofFile;
+  const canNext2 = !!idFile && fullLegalName.trim().length >= 2;
+  const canSubmit = !!proofFile && !!idFile && !!selfieFile && fullLegalName.trim().length >= 2;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Demande de vérification</DialogTitle>
-          <DialogDescription>
-            {step === 3
-              ? "Demande envoyée"
-              : "Renforcez la confiance de vos destinataires en validant votre identité professionnelle."}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              Vérifier « {companyName} »
+            </DialogTitle>
+            <DialogDescription>
+              Ce nom est réservé. Pour éviter l'usurpation d'identité, nous
+              devons vérifier votre identité en 3 étapes (KYC).
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="py-4">
+          <Stepper current={step} />
+
           {step === 1 && (
             <div className="space-y-3">
               <h3 className="font-medium text-sm">Étape 1 · Justificatif d'entreprise</h3>
@@ -202,50 +198,110 @@ export function RequestVerificationDialog({
                   accept={ACCEPT_IMG}
                   max={MAX}
                   icon={<Upload className="h-4 w-4 mr-2" />}
-                  label="Choisir la photo"
+                  label="Choisir la photo de la pièce"
                 />
               </div>
             </div>
           )}
 
           {step === 3 && (
-            <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-              <div className="rounded-full bg-green-100 p-3 text-green-600">
-                <CheckCircle2 className="h-8 w-8" />
+            <div className="space-y-3">
+              <h3 className="font-medium text-sm flex items-center gap-2">
+                <Camera className="h-4 w-4" /> Étape 3 · Selfie avec la pièce
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Tenez votre pièce d'identité à côté de votre visage. Les deux
+                doivent être bien visibles et lisibles.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setCameraOpen(true)} className="flex-1">
+                  <Camera className="h-4 w-4 mr-2" /> Prendre une photo
+                </Button>
               </div>
-              <div>
-                <h3 className="font-semibold text-lg">Demande reçue</h3>
-                <p className="text-sm text-muted-foreground mt-2 max-w-[280px]">
-                  Votre dossier est en cours d'analyse. Le badge pro sera activé dès validation.
-                </p>
+              <FilePicker
+                file={selfieFile}
+                onFile={setSelfieFile}
+                accept={ACCEPT_IMG}
+                max={MAX}
+                icon={<Upload className="h-4 w-4 mr-2" />}
+                label="Ou importer une photo"
+              />
+              <div className="space-y-1.5">
+                <Label>Message (optionnel)</Label>
+                <Textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Contexte, rôle dans l'entreprise…"
+                  rows={2}
+                />
               </div>
             </div>
           )}
-        </div>
 
-        <DialogFooter>
-          {step < 3 ? (
-            <div className="flex w-full justify-between gap-2">
+          <DialogFooter className="gap-2">
+            {step > 1 && (
+              <Button variant="ghost" onClick={() => setStep(step - 1)} disabled={loading}>
+                Précédent
+              </Button>
+            )}
+            {step < 3 && (
               <Button
-                variant="outline"
-                onClick={() => (step === 1 ? handleClose() : setStep(1))}
-                disabled={submitting}
+                onClick={() => setStep(step + 1)}
+                disabled={step === 1 ? !canNext1 : !canNext2}
               >
-                {step === 1 ? "Annuler" : "Retour"}
+                Suivant
               </Button>
-              <Button onClick={nextStep} disabled={submitting}>
-                {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {step === 2 ? "Soumettre" : "Suivant"}
+            )}
+            {step === 3 && (
+              <Button onClick={handleSubmit} disabled={loading || !canSubmit}>
+                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Envoyer la demande
               </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <CameraCapture
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        onCapture={(f) => {
+          setSelfieFile(f);
+          setCameraOpen(false);
+        }}
+      />
+    </>
+  );
+}
+
+function Stepper({ current }: { current: number }) {
+  const steps = ["Justificatif", "Identité", "Selfie"];
+  return (
+    <div className="flex items-center gap-2 py-2">
+      {steps.map((label, i) => {
+        const n = i + 1;
+        const done = n < current;
+        const active = n === current;
+        return (
+          <div key={label} className="flex-1 flex items-center gap-2">
+            <div
+              className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium ${
+                done
+                  ? "bg-primary text-primary-foreground"
+                  : active
+                    ? "bg-primary/20 text-primary border border-primary"
+                    : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {done ? <CheckCircle2 className="h-4 w-4" /> : n}
             </div>
-          ) : (
-            <Button onClick={handleClose} className="w-full">
-              Terminer
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <span className={`text-xs ${active ? "font-medium" : "text-muted-foreground"}`}>
+              {label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -266,33 +322,7 @@ function FilePicker({
 }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
-    <div className="space-y-2">
-      {file ? (
-        <div className="flex items-center justify-between p-2 rounded border bg-muted/30 text-sm">
-          <span className="truncate flex-1 max-w-[240px] font-medium" title={file.name}>
-            {file.name}
-          </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onFile(null)}
-            className="h-7 px-2 text-muted-foreground hover:text-destructive"
-          >
-            Retirer
-          </Button>
-        </div>
-      ) : (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full border-dashed"
-          onClick={() => ref.current?.click()}
-        >
-          {icon}
-          {label}
-        </Button>
-      )}
+    <>
       <input
         ref={ref}
         type="file"
@@ -307,6 +337,99 @@ function FilePicker({
           onFile(f);
         }}
       />
-    </div>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => ref.current?.click()}
+        className="w-full"
+      >
+        {icon}
+        <span className="truncate">{file ? file.name : label}</span>
+      </Button>
+    </>
+  );
+}
+
+function CameraCapture({
+  open,
+  onOpenChange,
+  onCapture,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onCapture: (f: File) => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      setReady(false);
+      return;
+    }
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: 1280, height: 720 },
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+          setReady(true);
+        }
+      } catch (e: any) {
+        toast.error("Impossible d'accéder à la caméra : " + (e?.message ?? ""));
+        onOpenChange(false);
+      }
+    })();
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    };
+  }, [open, onOpenChange]);
+
+  function snap() {
+    const v = videoRef.current;
+    if (!v) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = v.videoWidth;
+    canvas.height = v.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(v, 0, 0);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        onCapture(new File([blob], `selfie-${Date.now()}.jpg`, { type: "image/jpeg" }));
+      },
+      "image/jpeg",
+      0.9,
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Selfie avec la pièce d'identité</DialogTitle>
+          <DialogDescription>
+            Tenez la pièce à côté de votre visage puis capturez.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="bg-black rounded overflow-hidden aspect-video">
+          <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Annuler</Button>
+          <Button onClick={snap} disabled={!ready}>
+            <Camera className="h-4 w-4 mr-2" /> Capturer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
