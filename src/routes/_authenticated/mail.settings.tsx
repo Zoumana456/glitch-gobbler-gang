@@ -294,6 +294,8 @@ function MailSettings() {
           </Card>
         );
       })}
+        </TabsContent>
+      </Tabs>
 
       <AddMailAccountDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
