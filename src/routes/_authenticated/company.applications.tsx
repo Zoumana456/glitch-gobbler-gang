@@ -36,11 +36,31 @@ function CompanyApplicationsPage() {
 
   const mut = useMutation({
     mutationFn: (v: { code: string; enabled: boolean }) => setFn({ data: v }),
+    onMutate: async (v) => {
+      await qc.cancelQueries({ queryKey: ["my-modules"] });
+      const prev = qc.getQueryData<any>(["my-modules"]);
+      qc.setQueryData<any>(["my-modules"], (old: any) => {
+        if (!old) return old;
+        const set = new Set<string>(old.disabled ?? []);
+        if (v.enabled) set.delete(v.code);
+        else set.add(v.code);
+        return { ...old, disabled: [...set] };
+      });
+      return { prev };
+    },
     onSuccess: () => {
       toast.success("Applications mises à jour");
+    },
+    onError: (e: any, _v, ctx: any) => {
+      if (ctx?.prev) qc.setQueryData(["my-modules"], ctx.prev);
+      toast.error(
+        e?.message ??
+          "Impossible d'enregistrer ce réglage. Vérifiez que vous êtes propriétaire de l'entreprise.",
+      );
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["my-modules"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Erreur"),
   });
 
   const disabled = new Set(state?.disabled ?? []);
