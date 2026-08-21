@@ -199,3 +199,78 @@ export function addressLabel(a: MailAddress | null | undefined): string {
   if (!a) return "(inconnu)";
   return a.name?.trim() ? a.name : a.address;
 }
+
+/** Aide "mot de passe d'application" par fournisseur. */
+export const PROVIDER_APP_PASSWORD_HELP: Record<
+  MailProvider,
+  { label: string; url: string } | null
+> = {
+  gmail: {
+    label: "Créer un mot de passe d'application Google",
+    url: "https://myaccount.google.com/apppasswords",
+  },
+  microsoft: {
+    label: "Créer un mot de passe d'application Microsoft",
+    url: "https://account.live.com/proofs/AppPassword",
+  },
+  yahoo: {
+    label: "Créer un mot de passe d'application Yahoo",
+    url: "https://login.yahoo.com/account/security",
+  },
+  imap: null,
+};
+
+const PROVIDER_DOMAINS: Record<string, MailProvider> = {
+  "gmail.com": "gmail",
+  "googlemail.com": "gmail",
+  "outlook.com": "microsoft",
+  "outlook.fr": "microsoft",
+  "hotmail.com": "microsoft",
+  "hotmail.fr": "microsoft",
+  "live.com": "microsoft",
+  "live.fr": "microsoft",
+  "msn.com": "microsoft",
+  "yahoo.com": "yahoo",
+  "yahoo.fr": "yahoo",
+  "ymail.com": "yahoo",
+};
+
+/** Devine le fournisseur et les serveurs à partir de l'adresse saisie. */
+export function detectProvider(email: string): {
+  provider: MailProvider;
+  imap_host: string;
+  imap_port: number;
+  smtp_host: string;
+  smtp_port: number;
+  security: string;
+  smtp_security: string;
+  guessed: boolean;
+} {
+  const domain = email.trim().toLowerCase().split("@")[1] ?? "";
+  const known = PROVIDER_DOMAINS[domain];
+  if (known) {
+    const p = IMAP_PRESETS[known]!;
+    return {
+      provider: known,
+      imap_host: p.imap_host,
+      imap_port: p.imap_port,
+      smtp_host: p.smtp_host,
+      smtp_port: p.smtp_port,
+      security: p.security,
+      smtp_security: p.smtp_security,
+      guessed: false,
+    };
+  }
+  return {
+    provider: "imap",
+    imap_host: domain ? `imap.${domain}` : "",
+    imap_port: 993,
+    smtp_host: domain ? `smtp.${domain}` : "",
+    smtp_port: 465,
+    security: "SSL/TLS",
+    smtp_security: "SSL/TLS",
+    guessed: true,
+  };
+}
+
+export const MAIL_SECURITY_OPTIONS = ["SSL/TLS", "STARTTLS", "Aucune"];
