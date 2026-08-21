@@ -283,9 +283,9 @@ export async function messagesFor(
   const results = await Promise.all(
     targets.map(async (acc) => {
       try {
-        await ensureGatewayAccount(userId, acc.id);
-        const path = await pathForFolder(userId, acc.id, folder);
-        const list = await listGatewayMessages(acc.id, acc.email, {
+        const { transport } = await accountTransport(userId, acc.id);
+        const path = await pathForFolder(transport, folder);
+        const list = await transport.listMessages({
           path,
           search: filters.search,
           from: filters.from,
@@ -297,6 +297,7 @@ export async function messagesFor(
           starredOnly: filters.starredOnly || folder === "starred",
         });
         return list.map((m) => ({ ...m, provider: acc.provider }));
+
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Synchronisation interrompue.";
         errors.push(`${acc.email} : ${msg}`);
