@@ -32,9 +32,16 @@ import {
   ExternalLink,
   Info,
   Loader2,
+  Mail,
   ShieldCheck,
 } from "lucide-react";
-import { saveMailAccount, testMailAccount } from "@/lib/mail/mail.functions";
+import {
+  mailStatus,
+  saveMailAccount,
+  startMailOAuth,
+  testMailAccount,
+} from "@/lib/mail/mail.functions";
+
 import {
   detectProvider,
   MAIL_SECURITY_OPTIONS,
