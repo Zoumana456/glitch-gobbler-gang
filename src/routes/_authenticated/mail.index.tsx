@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/mail/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: MailDashboard;
+  component: MailDashboard,
 });
 
 function MailDashboard() {
