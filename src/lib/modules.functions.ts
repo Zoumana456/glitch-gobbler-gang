@@ -13,10 +13,10 @@ export const getMyModules = createServerFn({ method: "GET" })
   });
 
 export const setModuleEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { code: string; enabled: boolean }) =>
     z.object({ code: z.string().min(1).max(60), enabled: z.boolean() }).parse(d),
   )
-  .middleware([requireSupabaseAuth])
   .handler(async ({ data, context }) => {
     const { OPTIONAL_MODULE_CODES } = await import("@/lib/modules/registry");
     if (!OPTIONAL_MODULE_CODES.includes(data.code))
