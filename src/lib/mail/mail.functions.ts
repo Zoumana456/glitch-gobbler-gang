@@ -80,7 +80,7 @@ export const updateMailAccount = createServerFn({ method: "POST" })
   )
   .middleware([requireSupabaseAuth])
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const patch: Record<string, unknown> = {};
+    const patch: Record<string, any> = {};
     if (data.label !== undefined) patch["label"] = data.label;
     if (data.displayName !== undefined) patch["display_name"] = data.displayName;
     if (data.signature !== undefined) patch["signature"] = data.signature;
@@ -97,7 +97,7 @@ export const updateMailAccount = createServerFn({ method: "POST" })
     if (Object.keys(patch).length) {
       const { error } = await context.supabase
         .from("email_accounts")
-        .update(patch)
+        .update(patch as never)
         .eq("id", data.id)
         .eq("user_id", context.userId);
       if (error) throw new Error(error.message);
@@ -288,9 +288,9 @@ export const saveMailDraft = createServerFn({ method: "POST" })
     const payload = {
       user_id: context.userId,
       account_id: data.accountId,
-      to_addresses: data.to,
-      cc_addresses: data.cc,
-      bcc_addresses: data.bcc,
+      to_recipients: data.to,
+      cc_recipients: data.cc,
+      bcc_recipients: data.bcc,
       subject: data.subject,
       body_html: data.body,
     };
