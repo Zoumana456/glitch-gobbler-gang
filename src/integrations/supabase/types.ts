@@ -398,6 +398,225 @@ export type Database = {
         }
         Relationships: []
       }
+      email_accounts: {
+        Row: {
+          connection_key_ciphertext: string | null
+          created_at: string
+          display_name: string | null
+          email: string
+          gateway_account_id: string | null
+          id: string
+          imap_host: string | null
+          imap_password_ciphertext: string | null
+          imap_port: number | null
+          imap_security: string | null
+          imap_username: string | null
+          is_primary: boolean
+          label: string | null
+          last_sync_at: string | null
+          provider: string
+          signature: string | null
+          signature_mode: string
+          smtp_host: string | null
+          smtp_port: number | null
+          smtp_security: string | null
+          status: string
+          status_message: string | null
+          unread_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connection_key_ciphertext?: string | null
+          created_at?: string
+          display_name?: string | null
+          email: string
+          gateway_account_id?: string | null
+          id?: string
+          imap_host?: string | null
+          imap_password_ciphertext?: string | null
+          imap_port?: number | null
+          imap_security?: string | null
+          imap_username?: string | null
+          is_primary?: boolean
+          label?: string | null
+          last_sync_at?: string | null
+          provider: string
+          signature?: string | null
+          signature_mode?: string
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_security?: string | null
+          status?: string
+          status_message?: string | null
+          unread_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connection_key_ciphertext?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          gateway_account_id?: string | null
+          id?: string
+          imap_host?: string | null
+          imap_password_ciphertext?: string | null
+          imap_port?: number | null
+          imap_security?: string | null
+          imap_username?: string | null
+          is_primary?: boolean
+          label?: string | null
+          last_sync_at?: string | null
+          provider?: string
+          signature?: string | null
+          signature_mode?: string
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_security?: string | null
+          status?: string
+          status_message?: string | null
+          unread_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      email_drafts: {
+        Row: {
+          account_id: string
+          bcc_recipients: string
+          body_html: string
+          cc_recipients: string
+          created_at: string
+          id: string
+          in_reply_to: string | null
+          subject: string
+          to_recipients: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          bcc_recipients?: string
+          body_html?: string
+          cc_recipients?: string
+          created_at?: string
+          id?: string
+          in_reply_to?: string | null
+          subject?: string
+          to_recipients?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          bcc_recipients?: string
+          body_html?: string
+          cc_recipients?: string
+          created_at?: string
+          id?: string
+          in_reply_to?: string | null
+          subject?: string
+          to_recipients?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_drafts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_folders: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          position: number
+          provider_folder_id: string
+          unread_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          position?: number
+          provider_folder_id: string
+          unread_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          position?: number
+          provider_folder_id?: string
+          unread_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_folders_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_sync_logs: {
+        Row: {
+          account_id: string | null
+          action: string
+          created_at: string
+          error_message: string | null
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          action: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          action?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sync_logs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string | null
