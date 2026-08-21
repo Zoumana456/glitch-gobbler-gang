@@ -20,6 +20,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   LayoutGrid,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -55,12 +56,39 @@ const LAUNCHER_ITEM = {
 
 const COLLAPSE_KEY = "sidebar:collapsed";
 
+/** Pages "système" affichées en plein écran, sans barre latérale. */
+const CHROMELESS_PATHS = ["/apps", "/company/applications"];
+
 function AuthenticatedLayout() {
   const { user } = Route.useRouteContext();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = router.state.location.pathname;
+  const chromeless = CHROMELESS_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+
+  const modulesFn = useServerFn(getMyModules);
+  const { data: moduleState } = useQuery({
+    queryKey: ["my-modules"],
+    queryFn: () => modulesFn(),
+    staleTime: 60_000,
+  });
+
+  // Une application désactivée n'est plus accessible par URL directe.
+  const currentModule = moduleForPath(pathname);
+  const moduleBlocked =
+    !!currentModule &&
+    !currentModule.core &&
+    (moduleState?.disabled ?? []).includes(currentModule.code);
+
+  useEffect(() => {
+    if (!moduleBlocked) return;
+    toast.info("Cette application est désactivée pour votre entreprise");
+    router.navigate({ to: "/apps", replace: true });
+  }, [moduleBlocked, router]);
 
   useEffect(() => {
     try {
@@ -93,6 +121,18 @@ function AuthenticatedLayout() {
     } catch (err: any) {
       toast.error(err?.message ?? "Erreur de déconnexion");
     }
+  }
+
+  if (chromeless) {
+    return (
+      <div className="min-h-dvh bg-muted/30 flex flex-col">
+        <TopBar email={user.email ?? ""} onSignOut={handleSignOut} />
+        <main className="flex-1 min-w-0">
+          <Outlet />
+        </main>
+        <CommandPalette />
+      </div>
+    );
   }
 
   return (
@@ -171,6 +211,71 @@ function AuthenticatedLayout() {
       </div>
 
     </div>
+  );
+}
+
+function TopBar({
+  email,
+  onSignOut,
+}: {
+  email: string;
+  onSignOut: () => void;
+}) {
+  const profileFn = useServerFn(getMyProfile);
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => profileFn(),
+    staleTime: 60_000,
+  });
+  const displayName = profile?.full_name ?? email;
+  const initials = (profile?.full_name ?? email ?? "?").slice(0, 2).toUpperCase();
+
+  return (
+    <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-border bg-background px-3 py-2 sm:px-4">
+      <Link to="/apps" className="flex min-w-0 items-center gap-2 font-semibold">
+        <img
+          src={logoDailyBrief}
+          alt="DailyBrief"
+          className="h-7 w-7 shrink-0 rounded"
+        />
+        <span className="truncate">DailyBrief</span>
+      </Link>
+      <div className="ml-auto flex items-center gap-1">
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Rechercher (⌘K)"
+          title="Rechercher (⌘K)"
+          onClick={() =>
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+            )
+          }
+        >
+          <Search className="h-4 w-4" />
+        </Button>
+        <NotificationsBell collapsed />
+        <Link
+          to="/profile"
+          className="rounded-md p-1 hover:bg-accent"
+          title={displayName}
+        >
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={profile?.avatar_url ?? undefined} alt={displayName} />
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          </Avatar>
+        </Link>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onSignOut}
+          aria-label="Se déconnecter"
+          title="Se déconnecter"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
+      </div>
+    </header>
   );
 }
 
