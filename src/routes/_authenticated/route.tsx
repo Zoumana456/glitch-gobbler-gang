@@ -102,6 +102,18 @@ function AuthenticatedLayout() {
     }
   }
 
+  if (chromeless) {
+    return (
+      <div className="min-h-dvh bg-muted/30 flex flex-col">
+        <TopBar email={user.email ?? ""} onSignOut={handleSignOut} />
+        <main className="flex-1 min-w-0">
+          <Outlet />
+        </main>
+        <CommandPalette />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-dvh bg-muted/30">
       {/* Sidebar desktop — fixed */}
