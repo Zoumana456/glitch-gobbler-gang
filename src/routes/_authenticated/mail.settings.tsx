@@ -64,8 +64,17 @@ function MailSettings() {
   const { data } = useQuery({ queryKey: ["mail", "status"], queryFn: () => statusFn() });
   const accounts = data?.accounts ?? [];
 
+  type UpdateInput = {
+    id: string;
+    label?: string | null;
+    signature?: string | null;
+    signatureMode?: "auto" | "manual" | "none";
+    isPrimary?: boolean;
+    status?: "connected" | "disabled";
+  };
   const update = useMutation({
-    mutationFn: (input: Parameters<typeof updateFn>[0]["data"]) => updateFn({ data: input }),
+    mutationFn: (input: UpdateInput) => updateFn({ data: input }),
+
     onSuccess: () => {
       toast.success("Paramètres enregistrés.");
       qc.invalidateQueries({ queryKey: ["mail"] });

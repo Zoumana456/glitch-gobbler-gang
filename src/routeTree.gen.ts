@@ -37,6 +37,7 @@ import { Route as AuthenticatedReportsAuditRolesRouteImport } from './routes/_au
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedMinutesDashboardRouteImport } from './routes/_authenticated/minutes.dashboard'
 import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authenticated/minutes.$id'
+import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
 import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
@@ -191,6 +192,12 @@ const AuthenticatedMinutesIdRoute = AuthenticatedMinutesIdRouteImport.update({
   path: '/minutes/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMailSettingsRoute =
+  AuthenticatedMailSettingsRouteImport.update({
+    id: '/mail/settings',
+    path: '/mail/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCompanyHierarchieRoute =
   AuthenticatedCompanyHierarchieRouteImport.update({
     id: '/hierarchie',
@@ -248,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
@@ -283,6 +291,7 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/reports/audit-roles': typeof AuthenticatedReportsAuditRolesRoute
@@ -320,6 +329,7 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/_authenticated/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/_authenticated/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/mail/settings'
     | '/minutes/$id'
     | '/minutes/dashboard'
     | '/reports/$id'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/mail/settings'
     | '/minutes/$id'
     | '/minutes/dashboard'
     | '/reports/audit-roles'
@@ -429,6 +441,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
+    | '/_authenticated/mail/settings'
     | '/_authenticated/minutes/$id'
     | '/_authenticated/minutes/dashboard'
     | '/_authenticated/reports/$id'
@@ -662,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMinutesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mail/settings': {
+      id: '/_authenticated/mail/settings'
+      path: '/mail/settings'
+      fullPath: '/mail/settings'
+      preLoaderRoute: typeof AuthenticatedMailSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/company/hierarchie': {
       id: '/_authenticated/company/hierarchie'
       path: '/hierarchie'
@@ -753,6 +773,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCompanyRoute: typeof AuthenticatedCompanyRouteWithChildren
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
   AuthenticatedMinutesIdRoute: typeof AuthenticatedMinutesIdRoute
   AuthenticatedMinutesDashboardRoute: typeof AuthenticatedMinutesDashboardRoute
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
@@ -774,6 +795,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCompanyRoute: AuthenticatedCompanyRouteWithChildren,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
   AuthenticatedMinutesIdRoute: AuthenticatedMinutesIdRoute,
   AuthenticatedMinutesDashboardRoute: AuthenticatedMinutesDashboardRoute,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
