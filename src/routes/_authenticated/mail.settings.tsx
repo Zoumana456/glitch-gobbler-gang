@@ -120,6 +120,46 @@ function MailSettings() {
         </Button>
       </div>
 
+      <Tabs defaultValue="accounts" className="space-y-4">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="accounts">Comptes</TabsTrigger>
+          <TabsTrigger value="templates">Modèles</TabsTrigger>
+          <TabsTrigger value="signatures">Signatures</TabsTrigger>
+          <TabsTrigger value="logs">Journal</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="templates">
+          <MailTemplatesPanel />
+        </TabsContent>
+
+        <TabsContent value="signatures">
+          <MailSignaturesPanel accounts={accounts} />
+        </TabsContent>
+
+        <TabsContent value="logs" className="space-y-1 text-sm">
+          {logs.length === 0 && (
+            <p className="text-muted-foreground">Aucun évènement pour le moment.</p>
+          )}
+          {logs.map((l: any) => (
+            <div
+              key={l.id}
+              className="flex flex-wrap items-center gap-2 border-b py-1 last:border-0"
+            >
+              <Badge variant={l.status === "success" ? "outline" : "destructive"}>
+                {l.status === "success" ? "OK" : "Erreur"}
+              </Badge>
+              <span className="font-mono text-xs">{l.action}</span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(l.created_at).toLocaleString("fr-FR")}
+              </span>
+              {l.error_message && (
+                <span className="text-xs text-destructive">{l.error_message}</span>
+              )}
+            </div>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="accounts" className="space-y-4">
       {accounts.length === 0 && (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
