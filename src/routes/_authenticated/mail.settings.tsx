@@ -21,15 +21,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Plus, RefreshCw, Settings2, Star, Trash2 } from "lucide-react";
 import {
   deleteMailAccount,
+  listMailLogs,
   mailStatus,
   syncMailAccounts,
   updateMailAccount,
 } from "@/lib/mail/mail.functions";
 import { PROVIDER_LABELS } from "@/lib/mail/types";
 import { AddMailAccountDialog } from "@/components/mail/AddMailAccountDialog";
+import { MailTemplatesPanel } from "@/components/mail/MailTemplatesPanel";
+import { MailSignaturesPanel } from "@/components/mail/MailSignaturesPanel";
 
 export const Route = createFileRoute("/_authenticated/mail/settings")({
   head: () => ({
