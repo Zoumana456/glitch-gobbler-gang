@@ -422,8 +422,9 @@ export async function syncAccountFor(
 ): Promise<{ unread: number }> {
   const db = await admin();
   try {
-    await ensureGatewayAccount(userId, accountId);
-    const folders = await listGatewayFolders(accountId);
+    const { transport } = await accountTransport(userId, accountId);
+    const folders = await orderFolders(await transport.listFolders());
+
     const inbox = folders.find((f) => f.kind === "inbox");
     const unread = inbox?.unread ?? 0;
 
