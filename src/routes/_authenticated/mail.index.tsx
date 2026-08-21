@@ -210,10 +210,8 @@ function MailDashboard() {
         />
       </div>
 
-      <div className="grid gap-4">
+      <Card>
 
-
-        <Card>
           <CardHeader>
             <CardTitle className="text-base">Non-lus par compte</CardTitle>
           </CardHeader>
