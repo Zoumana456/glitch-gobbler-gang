@@ -25,7 +25,9 @@ const NAV_ITEMS = [
       module: m.name,
     })),
   ),
-];
+].filter(
+  (item, idx, arr) => arr.findIndex((o) => o.to === item.to) === idx,
+);
 
 const ICONS = {
   report: FileText,
