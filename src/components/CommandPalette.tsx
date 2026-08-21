@@ -11,8 +11,21 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { FileText, FileSignature, Users, Building2, Loader2 } from "lucide-react";
+import { FileText, FileSignature, Users, Building2, Loader2, LayoutGrid } from "lucide-react";
 import { globalSearch, type SearchResult } from "@/lib/search.functions";
+import { APP_MODULES } from "@/lib/modules/registry";
+
+const NAV_ITEMS = [
+  { to: "/apps", label: "Applications", icon: LayoutGrid, module: "" },
+  ...APP_MODULES.flatMap((m) =>
+    m.screens.map((s) => ({
+      to: s.to,
+      label: s.label,
+      icon: s.icon,
+      module: m.name,
+    })),
+  ),
+];
 
 const ICONS = {
   report: FileText,
