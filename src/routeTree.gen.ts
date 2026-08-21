@@ -48,6 +48,7 @@ import { Route as ApiPublicAiTranscribeRouteImport } from './routes/api/public/a
 import { Route as ApiPublicAiSpeakRouteImport } from './routes/api/public/ai/speak'
 import { Route as AuthenticatedReportsIdEditRouteImport } from './routes/_authenticated/reports.$id.edit'
 import { Route as AuthenticatedCompanyEmployeesIdRouteImport } from './routes/_authenticated/company.employees.$id'
+import { Route as ApiPublicMailOauthCallbackRouteImport } from './routes/api/public/mail/oauth/callback'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -258,6 +259,12 @@ const AuthenticatedCompanyEmployeesIdRoute =
     path: '/employees/$id',
     getParentRoute: () => AuthenticatedCompanyRoute,
   } as any)
+const ApiPublicMailOauthCallbackRoute =
+  ApiPublicMailOauthCallbackRouteImport.update({
+    id: '/api/public/mail/oauth/callback',
+    path: '/api/public/mail/oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ai/transcribe': typeof ApiPublicAiTranscribeRoute
   '/api/public/mail/dispatch-scheduled': typeof ApiPublicMailDispatchScheduledRoute
   '/reports/$id/': typeof AuthenticatedReportsIdIndexRoute
+  '/api/public/mail/oauth/callback': typeof ApiPublicMailOauthCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -336,6 +344,7 @@ export interface FileRoutesByTo {
   '/api/public/ai/transcribe': typeof ApiPublicAiTranscribeRoute
   '/api/public/mail/dispatch-scheduled': typeof ApiPublicMailDispatchScheduledRoute
   '/reports/$id': typeof AuthenticatedReportsIdIndexRoute
+  '/api/public/mail/oauth/callback': typeof ApiPublicMailOauthCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -378,6 +387,7 @@ export interface FileRoutesById {
   '/api/public/ai/transcribe': typeof ApiPublicAiTranscribeRoute
   '/api/public/mail/dispatch-scheduled': typeof ApiPublicMailDispatchScheduledRoute
   '/_authenticated/reports/$id/': typeof AuthenticatedReportsIdIndexRoute
+  '/api/public/mail/oauth/callback': typeof ApiPublicMailOauthCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -420,6 +430,7 @@ export interface FileRouteTypes {
     | '/api/public/ai/transcribe'
     | '/api/public/mail/dispatch-scheduled'
     | '/reports/$id/'
+    | '/api/public/mail/oauth/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/api/public/ai/transcribe'
     | '/api/public/mail/dispatch-scheduled'
     | '/reports/$id'
+    | '/api/public/mail/oauth/callback'
   id:
     | '__root__'
     | '/'
@@ -499,6 +511,7 @@ export interface FileRouteTypes {
     | '/api/public/ai/transcribe'
     | '/api/public/mail/dispatch-scheduled'
     | '/_authenticated/reports/$id/'
+    | '/api/public/mail/oauth/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -514,6 +527,7 @@ export interface RootRouteChildren {
   ApiPublicAiSpeakRoute: typeof ApiPublicAiSpeakRoute
   ApiPublicAiTranscribeRoute: typeof ApiPublicAiTranscribeRoute
   ApiPublicMailDispatchScheduledRoute: typeof ApiPublicMailDispatchScheduledRoute
+  ApiPublicMailOauthCallbackRoute: typeof ApiPublicMailOauthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -791,6 +805,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCompanyEmployeesIdRouteImport
       parentRoute: typeof AuthenticatedCompanyRoute
     }
+    '/api/public/mail/oauth/callback': {
+      id: '/api/public/mail/oauth/callback'
+      path: '/api/public/mail/oauth/callback'
+      fullPath: '/api/public/mail/oauth/callback'
+      preLoaderRoute: typeof ApiPublicMailOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -891,6 +912,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAiSpeakRoute: ApiPublicAiSpeakRoute,
   ApiPublicAiTranscribeRoute: ApiPublicAiTranscribeRoute,
   ApiPublicMailDispatchScheduledRoute: ApiPublicMailDispatchScheduledRoute,
+  ApiPublicMailOauthCallbackRoute: ApiPublicMailOauthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
