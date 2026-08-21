@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { mailStatus, syncMailAccounts } from "@/lib/mail/mail.functions";
 import { mailDashboardStats } from "@/lib/mail/stats.functions";
-import { PROVIDER_LABELS } from "@/lib/mail/types";
+
 import { AddMailAccountDialog } from "@/components/mail/AddMailAccountDialog";
 import { ComposeMailDialog } from "@/components/mail/ComposeMailDialog";
 
