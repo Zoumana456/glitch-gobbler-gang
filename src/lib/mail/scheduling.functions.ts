@@ -81,7 +81,17 @@ export const listScheduledMails = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .order("scheduled_at", { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as ScheduledMailRow[];
+    // On ne renvoie jamais le contenu binaire des pièces jointes au client.
+    return ((data ?? []) as unknown as (ScheduledMailRow & {
+      attachments: { filename: string; contentType: string; size: number; content?: string }[];
+    })[]).map((r) => ({
+      ...r,
+      attachments: (r.attachments ?? []).map(({ filename, contentType, size }) => ({
+        filename,
+        contentType,
+        size,
+      })),
+    }));
   });
 
 export const rescheduleMailMessage = createServerFn({ method: "POST" })
