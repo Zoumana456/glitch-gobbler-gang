@@ -315,7 +315,15 @@ function CompanyPage() {
             {company.seats_used} / {company.seat_limit} sièges utilisés
           </p>
         </div>
-        <InviteDialog />
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-2">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Link to="/company/hierarchie">
+              <Network className="mr-2 h-4 w-4" />
+              Organigramme
+            </Link>
+          </Button>
+          <InviteDialog />
+        </div>
       </header>
 
       {dashboard && (
