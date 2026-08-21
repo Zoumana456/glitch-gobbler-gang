@@ -238,8 +238,8 @@ function MailDashboard() {
               </ResponsiveContainer>
             )}
           </CardContent>
-        </Card>
-      </div>
+      </Card>
+
 
       <Card>
         <CardHeader>
