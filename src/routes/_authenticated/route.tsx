@@ -237,9 +237,6 @@ function SidebarInner({
             ? [{ to: "/admin", label: "Admin plateforme", icon: ShieldAlert }]
             : []),
         ];
-  const otherModules = adminOnly
-    ? []
-    : mods.filter((m) => m.code !== current?.code);
 
   return (
     <>
