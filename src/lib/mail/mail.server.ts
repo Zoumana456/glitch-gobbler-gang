@@ -1,19 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { decryptSecret, encryptSecret } from "./crypto.server";
+import { encryptSecret } from "./crypto.server";
 import {
   deleteGatewayAccount,
-  deleteGatewayMessage,
-  getGatewayAttachment,
-  getGatewayMessage,
-  listGatewayFolders,
-  listGatewayMessages,
-  moveGatewayMessage,
-  setGatewayFlags,
-  submitGatewayMessage,
-  upsertGatewayAccount,
   verifyImapCredentials,
   type ImapCredentials,
 } from "./gateway.server";
+import { transportForRow, type MailTransport } from "./transport.server";
+
 import {
   FOLDER_LABELS,
   FOLDER_ORDER,
@@ -169,7 +162,9 @@ export async function saveImapAccountFor(
   if (error) throw new Error(error.message);
 
   // 2. enregistrement dans la passerelle sous l'identifiant du compte
+  const { upsertGatewayAccount } = await import("./gateway.server");
   await upsertGatewayAccount(data.id as string, creds);
+
   await db
     .from("email_accounts")
     .update({ gateway_account_id: data.id, last_sync_at: new Date().toISOString() })
@@ -184,24 +179,19 @@ export async function saveImapAccountFor(
   return pub as unknown as MailAccount;
 }
 
-/** (Re)pousse les identifiants stockés vers la passerelle. */
-export async function ensureGatewayAccount(userId: string, accountId: string) {
+/** Charge le compte et prépare le transport (API OAuth ou passerelle IMAP). */
+export async function accountTransport(userId: string, accountId: string) {
   const row = await loadAccountWithSecrets(userId, accountId);
-  if (!row.imap_password_ciphertext) return row;
-  await upsertGatewayAccount(row.id, {
-    email: row.email,
-    displayName: row.display_name,
-    username: row.imap_username ?? row.email,
-    password: decryptSecret(row.imap_password_ciphertext),
-    imapHost: row.imap_host,
-    imapPort: row.imap_port,
-    imapSecure: String(row.imap_security ?? "").toUpperCase().includes("SSL"),
-    smtpHost: row.smtp_host,
-    smtpPort: row.smtp_port,
-    smtpSecure: !String(row.smtp_security ?? "").toUpperCase().includes("STARTTLS"),
-  });
+  const transport = await transportForRow(row);
+  return { row, transport };
+}
+
+/** Compatibilité : (re)pousse les identifiants stockés vers la passerelle. */
+export async function ensureGatewayAccount(userId: string, accountId: string) {
+  const { row } = await accountTransport(userId, accountId);
   return row;
 }
+
 
 export async function deleteAccountFor(userId: string, accountId: string) {
   const db = await admin();
@@ -229,27 +219,29 @@ function fallbackFolders(): MailFolder[] {
   }));
 }
 
+async function orderFolders(remote: MailFolder[]): Promise<MailFolder[]> {
+  const known = new Map<MailFolderKind, MailFolder>();
+  for (const f of remote) if (f.kind !== "custom" && !known.has(f.kind)) known.set(f.kind, f);
+  const ordered = FOLDER_ORDER.map(
+    (kind) =>
+      known.get(kind) ?? {
+        id: kind,
+        kind,
+        name: FOLDER_LABELS[kind],
+        path: kind === "inbox" ? "INBOX" : kind,
+        unread: 0,
+      },
+  );
+  return [...ordered, ...remote.filter((f) => f.kind === "custom")];
+}
+
 export async function foldersFor(
   userId: string,
   accountId: string,
 ): Promise<MailFolder[]> {
   try {
-    await ensureGatewayAccount(userId, accountId);
-    const remote = await listGatewayFolders(accountId);
-    const known = new Map<MailFolderKind, MailFolder>();
-    for (const f of remote) if (f.kind !== "custom" && !known.has(f.kind)) known.set(f.kind, f);
-    const ordered = FOLDER_ORDER.map(
-      (kind) =>
-        known.get(kind) ?? {
-          id: kind,
-          kind,
-          name: FOLDER_LABELS[kind],
-          path: kind === "inbox" ? "INBOX" : kind,
-          unread: 0,
-        },
-    );
-    const custom = remote.filter((f) => f.kind === "custom");
-    return [...ordered, ...custom];
+    const { transport } = await accountTransport(userId, accountId);
+    return await orderFolders(await transport.listFolders());
   } catch (e) {
     console.error("[mail] dossiers indisponibles", e);
     return fallbackFolders();
@@ -257,14 +249,18 @@ export async function foldersFor(
 }
 
 async function pathForFolder(
-  userId: string,
-  accountId: string,
+  transport: MailTransport,
   folder: MailFolderKind,
 ): Promise<string> {
   if (folder === "inbox" || folder === "starred") return "INBOX";
-  const folders = await foldersFor(userId, accountId);
-  return folders.find((f) => f.kind === folder)?.path ?? "INBOX";
+  try {
+    const folders = await orderFolders(await transport.listFolders());
+    return folders.find((f) => f.kind === folder)?.path ?? "INBOX";
+  } catch {
+    return folder;
+  }
 }
+
 
 /* ------------------------------------------------------------------ */
 /* Messages                                                            */
@@ -287,9 +283,9 @@ export async function messagesFor(
   const results = await Promise.all(
     targets.map(async (acc) => {
       try {
-        await ensureGatewayAccount(userId, acc.id);
-        const path = await pathForFolder(userId, acc.id, folder);
-        const list = await listGatewayMessages(acc.id, acc.email, {
+        const { transport } = await accountTransport(userId, acc.id);
+        const path = await pathForFolder(transport, folder);
+        const list = await transport.listMessages({
           path,
           search: filters.search,
           from: filters.from,
@@ -301,6 +297,7 @@ export async function messagesFor(
           starredOnly: filters.starredOnly || folder === "starred",
         });
         return list.map((m) => ({ ...m, provider: acc.provider }));
+
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Synchronisation interrompue.";
         errors.push(`${acc.email} : ${msg}`);
@@ -325,8 +322,8 @@ export async function messageFor(
   accountId: string,
   messageId: string,
 ): Promise<MailMessageFull> {
-  const row = await ensureGatewayAccount(userId, accountId);
-  const full = await getGatewayMessage(accountId, row.email, messageId);
+  const { row, transport } = await accountTransport(userId, accountId);
+  const full = await transport.getMessage(messageId);
   return { ...full, provider: row.provider };
 }
 
@@ -336,14 +333,14 @@ export async function flagFor(
   messageId: string,
   change: { read?: boolean; starred?: boolean },
 ) {
-  await ensureGatewayAccount(userId, accountId);
+  const { transport } = await accountTransport(userId, accountId);
   const add: string[] = [];
   const remove: string[] = [];
   if (change.read === true) add.push("\\Seen");
   if (change.read === false) remove.push("\\Seen");
   if (change.starred === true) add.push("\\Flagged");
   if (change.starred === false) remove.push("\\Flagged");
-  await setGatewayFlags(accountId, messageId, add, remove);
+  await transport.setFlags(messageId, add, remove);
 }
 
 export async function moveFor(
@@ -352,14 +349,14 @@ export async function moveFor(
   messageId: string,
   folder: MailFolderKind,
 ) {
-  await ensureGatewayAccount(userId, accountId);
-  const path = await pathForFolder(userId, accountId, folder);
-  await moveGatewayMessage(accountId, messageId, path);
+  const { transport } = await accountTransport(userId, accountId);
+  const path = await pathForFolder(transport, folder);
+  await transport.move(messageId, path);
 }
 
 export async function trashFor(userId: string, accountId: string, messageId: string) {
-  await ensureGatewayAccount(userId, accountId);
-  await deleteGatewayMessage(accountId, messageId);
+  const { transport } = await accountTransport(userId, accountId);
+  await transport.remove(messageId);
   await logMailEvent(userId, accountId, "message.delete", "success");
 }
 
@@ -368,9 +365,10 @@ export async function attachmentFor(
   accountId: string,
   attachmentId: string,
 ) {
-  await ensureGatewayAccount(userId, accountId);
-  return getGatewayAttachment(accountId, attachmentId);
+  const { transport } = await accountTransport(userId, accountId);
+  return transport.attachment(attachmentId);
 }
+
 
 export type SendInput = {
   accountId: string;
@@ -385,13 +383,14 @@ export type SendInput = {
 };
 
 export async function sendFor(userId: string, input: SendInput) {
-  const row = await ensureGatewayAccount(userId, input.accountId);
+  const { row, transport } = await accountTransport(userId, input.accountId);
   const signature =
     row.signature_mode === "auto" && row.signature
       ? `<br/><br/><div class="signature">${row.signature}</div>`
       : "";
   try {
-    await submitGatewayMessage(input.accountId, {
+    await transport.submit({
+
       from: { name: row.display_name, address: row.email },
       to: input.to,
       cc: input.cc,
@@ -423,8 +422,9 @@ export async function syncAccountFor(
 ): Promise<{ unread: number }> {
   const db = await admin();
   try {
-    await ensureGatewayAccount(userId, accountId);
-    const folders = await listGatewayFolders(accountId);
+    const { transport } = await accountTransport(userId, accountId);
+    const folders = await orderFolders(await transport.listFolders());
+
     const inbox = folders.find((f) => f.kind === "inbox");
     const unread = inbox?.unread ?? 0;
 

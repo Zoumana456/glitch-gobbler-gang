@@ -400,6 +400,7 @@ export type Database = {
       }
       email_accounts: {
         Row: {
+          auth_type: string
           connection_key_ciphertext: string | null
           created_at: string
           display_name: string | null
@@ -414,6 +415,10 @@ export type Database = {
           is_primary: boolean
           label: string | null
           last_sync_at: string | null
+          oauth_access_token_ciphertext: string | null
+          oauth_expires_at: string | null
+          oauth_refresh_token_ciphertext: string | null
+          oauth_scope: string | null
           provider: string
           signature: string | null
           signature_mode: string
@@ -427,6 +432,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auth_type?: string
           connection_key_ciphertext?: string | null
           created_at?: string
           display_name?: string | null
@@ -441,6 +447,10 @@ export type Database = {
           is_primary?: boolean
           label?: string | null
           last_sync_at?: string | null
+          oauth_access_token_ciphertext?: string | null
+          oauth_expires_at?: string | null
+          oauth_refresh_token_ciphertext?: string | null
+          oauth_scope?: string | null
           provider: string
           signature?: string | null
           signature_mode?: string
@@ -454,6 +464,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auth_type?: string
           connection_key_ciphertext?: string | null
           created_at?: string
           display_name?: string | null
@@ -468,6 +479,10 @@ export type Database = {
           is_primary?: boolean
           label?: string | null
           last_sync_at?: string | null
+          oauth_access_token_ciphertext?: string | null
+          oauth_expires_at?: string | null
+          oauth_refresh_token_ciphertext?: string | null
+          oauth_scope?: string | null
           provider?: string
           signature?: string | null
           signature_mode?: string

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +69,21 @@ function MailSettings() {
   const { data } = useQuery({ queryKey: ["mail", "status"], queryFn: () => statusFn() });
   const { data: logs = [] } = useQuery({ queryKey: ["mail", "logs"], queryFn: () => logsFn() });
   const accounts = data?.accounts ?? [];
+
+  // Retour de la connexion en un clic Gmail / Outlook
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("connected");
+    const failed = params.get("mail_error");
+    if (!connected && !failed) return;
+    if (connected) {
+      toast.success(`${connected} est connecté.`);
+      void qc.invalidateQueries({ queryKey: ["mail"] });
+    }
+    if (failed) toast.error(failed);
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [qc]);
+
 
   type UpdateInput = {
     id: string;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +32,16 @@ import {
   ExternalLink,
   Info,
   Loader2,
+  Mail,
   ShieldCheck,
 } from "lucide-react";
-import { saveMailAccount, testMailAccount } from "@/lib/mail/mail.functions";
+import {
+  mailStatus,
+  saveMailAccount,
+  startMailOAuth,
+  testMailAccount,
+} from "@/lib/mail/mail.functions";
+
 import {
   detectProvider,
   MAIL_SECURITY_OPTIONS,
@@ -50,6 +57,31 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
   const qc = useQueryClient();
   const testFn = useServerFn(testMailAccount);
   const saveFn = useServerFn(saveMailAccount);
+  const statusFn = useServerFn(mailStatus);
+  const startOAuthFn = useServerFn(startMailOAuth);
+
+  const { data: status } = useQuery({
+    queryKey: ["mail", "status"],
+    queryFn: () => statusFn({}),
+    enabled: open,
+  });
+  const oauth = status?.oauth;
+
+  const [oauthPending, setOauthPending] = useState<"gmail" | "microsoft" | null>(null);
+  const connect = useMutation({
+    mutationFn: async (provider: "gmail" | "microsoft") => {
+      setOauthPending(provider);
+      return startOAuthFn({ data: { provider, origin: window.location.origin } });
+    },
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
+    onError: (e: Error) => {
+      setOauthPending(null);
+      toast.error(e.message);
+    },
+  });
+
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -146,7 +178,49 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
+        {(oauth?.gmail || oauth?.microsoft) && (
+          <div className="space-y-3 rounded-lg border bg-muted/40 p-3">
+            <p className="text-sm font-medium">Connexion en un clic</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {oauth?.gmail && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={oauthPending !== null}
+                  onClick={() => connect.mutate("gmail")}
+                >
+                  {oauthPending === "gmail" ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Mail className="mr-2 h-4 w-4" />
+                  )}
+                  Continuer avec Google
+                </Button>
+              )}
+              {oauth?.microsoft && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={oauthPending !== null}
+                  onClick={() => connect.mutate("microsoft")}
+                >
+                  {oauthPending === "microsoft" ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Mail className="mr-2 h-4 w-4" />
+                  )}
+                  Continuer avec Microsoft
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Aucun mot de passe à saisir : l'autorisation se fait chez le fournisseur.
+            </p>
+          </div>
+        )}
+
         <div className="space-y-4">
+
           <div className="space-y-2">
             <Label htmlFor="mail-email">Adresse e-mail</Label>
             <Input

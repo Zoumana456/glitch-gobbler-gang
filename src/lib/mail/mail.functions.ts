@@ -38,14 +38,46 @@ const imapSchema = z.object({
 
 export const mailStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ gatewayReady: boolean; accounts: MailAccount[] }> => {
-    const { gatewayConfig } = await import("@/lib/mail/gateway.server");
-    const { listAccountsFor } = await import("@/lib/mail/mail.server");
-    return {
-      gatewayReady: Boolean(gatewayConfig()),
-      accounts: await listAccountsFor(context.supabase, context.userId),
-    };
+  .handler(
+    async ({
+      context,
+    }): Promise<{
+      gatewayReady: boolean;
+      oauth: { gmail: boolean; microsoft: boolean };
+      accounts: MailAccount[];
+    }> => {
+      const { gatewayConfig } = await import("@/lib/mail/gateway.server");
+      const { oauthAvailability } = await import("@/lib/mail/oauth.server");
+      const { listAccountsFor } = await import("@/lib/mail/mail.server");
+      return {
+        gatewayReady: Boolean(gatewayConfig()),
+        oauth: oauthAvailability(),
+        accounts: await listAccountsFor(context.supabase, context.userId),
+      };
+    },
+  );
+
+/** Démarre la connexion en un clic Gmail / Outlook : renvoie l'URL de consentement. */
+export const startMailOAuth = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        provider: z.enum(["gmail", "microsoft"]),
+        origin: z.string().url().max(300),
+      })
+      .parse(d),
+  )
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ data, context }): Promise<{ url: string }> => {
+    const { authorizeUrl, signState } = await import("@/lib/mail/oauth.server");
+    const state = signState({
+      userId: context.userId,
+      provider: data.provider,
+      origin: data.origin,
+    });
+    return { url: authorizeUrl(data.provider, data.origin, state) };
   });
+
 
 export const testMailAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => imapSchema.parse(d))

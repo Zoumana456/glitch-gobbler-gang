@@ -4,23 +4,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
   Cell,
   Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
+
 import {
   CalendarClock,
   Inbox,
@@ -36,7 +31,7 @@ import {
 } from "lucide-react";
 import { mailStatus, syncMailAccounts } from "@/lib/mail/mail.functions";
 import { mailDashboardStats } from "@/lib/mail/stats.functions";
-import { PROVIDER_LABELS } from "@/lib/mail/types";
+
 import { AddMailAccountDialog } from "@/components/mail/AddMailAccountDialog";
 import { ComposeMailDialog } from "@/components/mail/ComposeMailDialog";
 
@@ -157,19 +152,34 @@ function MailDashboard() {
               <Inbox className="mr-2 h-4 w-4" /> Boîte unifiée
             </Link>
           </Button>
+          <Button variant="ghost" asChild>
+            <Link to="/mail/scheduled">
+              <CalendarClock className="mr-2 h-4 w-4" /> Envois programmés
+            </Link>
+          </Button>
+          <Button variant="ghost" asChild>
+            <Link to="/mail/settings">
+              <Settings2 className="mr-2 h-4 w-4" /> Paramètres
+            </Link>
+          </Button>
+
         </div>
       </div>
 
-      {data && !data.gatewayReady && (
-        <Alert>
-          <ShieldCheck className="h-4 w-4" />
-          <AlertTitle>Relais de messagerie à activer</AlertTitle>
-          <AlertDescription>
-            L'interface est complète ; la relève des messages IMAP/SMTP démarre dès que la
-            clé d'accès du relais de messagerie est enregistrée.
-          </AlertDescription>
-        </Alert>
-      )}
+      {data &&
+        !data.gatewayReady &&
+        !data.oauth?.gmail &&
+        !data.oauth?.microsoft && (
+          <Alert>
+            <ShieldCheck className="h-4 w-4" />
+            <AlertTitle>Connexion des boîtes à activer</AlertTitle>
+            <AlertDescription>
+              L'interface est complète. Activez la connexion en un clic (Google /
+              Microsoft) ou le relais IMAP/SMTP pour commencer à relever les messages.
+            </AlertDescription>
+          </Alert>
+        )}
+
 
       {inError.length > 0 && (
         <Alert variant="destructive">
@@ -210,132 +220,8 @@ function MailDashboard() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Volume envoyé (14 derniers jours)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[260px]">
-            {isLoading ? (
-              <p className="text-sm text-muted-foreground">Chargement…</p>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats?.sentByDay ?? []}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis
-                    dataKey="day"
-                    tickFormatter={(v: string) => v.slice(5)}
-                    fontSize={11}
-                  />
-                  <YAxis allowDecimals={false} fontSize={11} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="sent" name="Envoyés" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="failed" name="Échecs" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+      <Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Performance des envois (30 j)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Taux de réussite</span>
-                <span className="font-semibold">{stats?.successRate ?? 100}%</span>
-              </div>
-              <Progress value={stats?.successRate ?? 100} className="mt-2" />
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Réussis</p>
-                <p className="text-lg font-semibold">{stats?.sent30 ?? 0}</p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Échecs</p>
-                <p className="text-lg font-semibold text-destructive">
-                  {stats?.sendFailures30 ?? 0}
-                </p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Erreurs de relève (7 j)</p>
-                <p className="text-lg font-semibold">{stats?.syncErrors7 ?? 0}</p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Modèles / signatures</p>
-                <p className="text-lg font-semibold">
-                  {stats?.templates ?? 0} / {stats?.signatures ?? 0}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Santé des comptes</CardTitle>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/mail/scheduled">
-                  <CalendarClock className="mr-2 h-4 w-4" /> Envois programmés
-                </Link>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/mail/settings">
-                  <Settings2 className="mr-2 h-4 w-4" /> Paramètres
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(stats?.accounts.length ?? 0) === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Aucun compte connecté. Ajoutez Gmail, Outlook, Yahoo ou une boîte
-                professionnelle pour commencer.
-              </p>
-            )}
-            {(stats?.accounts ?? []).map((a) => (
-              <div
-                key={a.id}
-                className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{a.email}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {PROVIDER_LABELS[a.provider as keyof typeof PROVIDER_LABELS] ?? a.provider}
-                    {a.label ? ` · ${a.label}` : ""}
-                    {a.last_sync_at
-                      ? ` · dernière relève ${new Date(a.last_sync_at).toLocaleString("fr-FR")}`
-                      : " · jamais relevé"}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {a.is_primary && <Badge variant="secondary">Principal</Badge>}
-                  <Badge variant={a.status === "connected" ? "default" : "destructive"}>
-                    {a.status === "connected" ? "Connecté" : "À vérifier"}
-                  </Badge>
-                  <Badge variant="outline">{a.unread_count} non lus</Badge>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => sync.mutate(a.id)}
-                    disabled={sync.isPending}
-                  >
-                    <RefreshCw className="mr-2 h-3.5 w-3.5" /> Relever
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
           <CardHeader>
             <CardTitle className="text-base">Non-lus par compte</CardTitle>
           </CardHeader>
@@ -362,8 +248,8 @@ function MailDashboard() {
               </ResponsiveContainer>
             )}
           </CardContent>
-        </Card>
-      </div>
+      </Card>
+
 
       <Card>
         <CardHeader>
