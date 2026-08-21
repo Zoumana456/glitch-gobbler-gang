@@ -70,6 +70,26 @@ function AuthenticatedLayout() {
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
 
+  const modulesFn = useServerFn(getMyModules);
+  const { data: moduleState } = useQuery({
+    queryKey: ["my-modules"],
+    queryFn: () => modulesFn(),
+    staleTime: 60_000,
+  });
+
+  // Une application désactivée n'est plus accessible par URL directe.
+  const currentModule = moduleForPath(pathname);
+  const moduleBlocked =
+    !!currentModule &&
+    !currentModule.core &&
+    (moduleState?.disabled ?? []).includes(currentModule.code);
+
+  useEffect(() => {
+    if (!moduleBlocked) return;
+    toast.info("Cette application est désactivée pour votre entreprise");
+    router.navigate({ to: "/apps", replace: true });
+  }, [moduleBlocked, router]);
+
   useEffect(() => {
     try {
       const v = localStorage.getItem(COLLAPSE_KEY);
