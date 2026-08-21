@@ -65,7 +65,9 @@ function MailSettings() {
   const [addOpen, setAddOpen] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, { signature: string; label: string }>>({});
 
+  const logsFn = useServerFn(listMailLogs);
   const { data } = useQuery({ queryKey: ["mail", "status"], queryFn: () => statusFn() });
+  const { data: logs = [] } = useQuery({ queryKey: ["mail", "logs"], queryFn: () => logsFn() });
   const accounts = data?.accounts ?? [];
 
   type UpdateInput = {
