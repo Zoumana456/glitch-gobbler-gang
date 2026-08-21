@@ -70,6 +70,21 @@ function MailSettings() {
   const { data: logs = [] } = useQuery({ queryKey: ["mail", "logs"], queryFn: () => logsFn() });
   const accounts = data?.accounts ?? [];
 
+  // Retour de la connexion en un clic Gmail / Outlook
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("connected");
+    const failed = params.get("mail_error");
+    if (!connected && !failed) return;
+    if (connected) {
+      toast.success(`${connected} est connecté.`);
+      void qc.invalidateQueries({ queryKey: ["mail"] });
+    }
+    if (failed) toast.error(failed);
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [qc]);
+
+
   type UpdateInput = {
     id: string;
     label?: string | null;
