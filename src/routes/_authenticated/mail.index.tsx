@@ -152,6 +152,17 @@ function MailDashboard() {
               <Inbox className="mr-2 h-4 w-4" /> Boîte unifiée
             </Link>
           </Button>
+          <Button variant="ghost" asChild>
+            <Link to="/mail/scheduled">
+              <CalendarClock className="mr-2 h-4 w-4" /> Envois programmés
+            </Link>
+          </Button>
+          <Button variant="ghost" asChild>
+            <Link to="/mail/settings">
+              <Settings2 className="mr-2 h-4 w-4" /> Paramètres
+            </Link>
+          </Button>
+
         </div>
       </div>
 
