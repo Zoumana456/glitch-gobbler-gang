@@ -383,13 +383,14 @@ export type SendInput = {
 };
 
 export async function sendFor(userId: string, input: SendInput) {
-  const row = await ensureGatewayAccount(userId, input.accountId);
+  const { row, transport } = await accountTransport(userId, input.accountId);
   const signature =
     row.signature_mode === "auto" && row.signature
       ? `<br/><br/><div class="signature">${row.signature}</div>`
       : "";
   try {
-    await submitGatewayMessage(input.accountId, {
+    await transport.submit({
+
       from: { name: row.display_name, address: row.email },
       to: input.to,
       cc: input.cc,
