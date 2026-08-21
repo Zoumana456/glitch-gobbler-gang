@@ -1,19 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { decryptSecret, encryptSecret } from "./crypto.server";
+import { encryptSecret } from "./crypto.server";
 import {
   deleteGatewayAccount,
-  deleteGatewayMessage,
-  getGatewayAttachment,
-  getGatewayMessage,
-  listGatewayFolders,
-  listGatewayMessages,
-  moveGatewayMessage,
-  setGatewayFlags,
-  submitGatewayMessage,
-  upsertGatewayAccount,
   verifyImapCredentials,
   type ImapCredentials,
 } from "./gateway.server";
+import { transportForRow } from "./transport.server";
+
 import {
   FOLDER_LABELS,
   FOLDER_ORDER,
