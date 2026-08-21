@@ -322,8 +322,8 @@ export async function messageFor(
   accountId: string,
   messageId: string,
 ): Promise<MailMessageFull> {
-  const row = await ensureGatewayAccount(userId, accountId);
-  const full = await getGatewayMessage(accountId, row.email, messageId);
+  const { row, transport } = await accountTransport(userId, accountId);
+  const full = await transport.getMessage(messageId);
   return { ...full, provider: row.provider };
 }
 
@@ -333,14 +333,14 @@ export async function flagFor(
   messageId: string,
   change: { read?: boolean; starred?: boolean },
 ) {
-  await ensureGatewayAccount(userId, accountId);
+  const { transport } = await accountTransport(userId, accountId);
   const add: string[] = [];
   const remove: string[] = [];
   if (change.read === true) add.push("\\Seen");
   if (change.read === false) remove.push("\\Seen");
   if (change.starred === true) add.push("\\Flagged");
   if (change.starred === false) remove.push("\\Flagged");
-  await setGatewayFlags(accountId, messageId, add, remove);
+  await transport.setFlags(messageId, add, remove);
 }
 
 export async function moveFor(
@@ -349,14 +349,14 @@ export async function moveFor(
   messageId: string,
   folder: MailFolderKind,
 ) {
-  await ensureGatewayAccount(userId, accountId);
-  const path = await pathForFolder(userId, accountId, folder);
-  await moveGatewayMessage(accountId, messageId, path);
+  const { transport } = await accountTransport(userId, accountId);
+  const path = await pathForFolder(transport, folder);
+  await transport.move(messageId, path);
 }
 
 export async function trashFor(userId: string, accountId: string, messageId: string) {
-  await ensureGatewayAccount(userId, accountId);
-  await deleteGatewayMessage(accountId, messageId);
+  const { transport } = await accountTransport(userId, accountId);
+  await transport.remove(messageId);
   await logMailEvent(userId, accountId, "message.delete", "success");
 }
 
@@ -365,9 +365,10 @@ export async function attachmentFor(
   accountId: string,
   attachmentId: string,
 ) {
-  await ensureGatewayAccount(userId, accountId);
-  return getGatewayAttachment(accountId, attachmentId);
+  const { transport } = await accountTransport(userId, accountId);
+  return transport.attachment(attachmentId);
 }
+
 
 export type SendInput = {
   accountId: string;
