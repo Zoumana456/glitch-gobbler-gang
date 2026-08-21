@@ -247,12 +247,13 @@ export function gmailTransport(
 
     async setFlags(messageId: string, add: string[], remove: string[]): Promise<void> {
       const token = await getToken();
-      const map = (flags: string[]) =>
+      const map = (flags: string[]): string[] =>
         flags
           .map((f) =>
             f === "\\Seen" ? "UNREAD" : f === "\\Flagged" ? "STARRED" : null,
           )
-          .filter((v): v is string => !!v);
+          .filter((v): v is string => v !== null);
+
       // \Seen ajouté ⇒ retirer UNREAD (logique inversée pour Gmail)
       const addLabelIds = [
         ...map(remove).filter((l) => l === "UNREAD"),
