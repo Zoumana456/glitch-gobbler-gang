@@ -146,7 +146,49 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
+        {(oauth?.gmail || oauth?.microsoft) && (
+          <div className="space-y-3 rounded-lg border bg-muted/40 p-3">
+            <p className="text-sm font-medium">Connexion en un clic</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {oauth?.gmail && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={oauthPending !== null}
+                  onClick={() => connect.mutate("gmail")}
+                >
+                  {oauthPending === "gmail" ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Mail className="mr-2 h-4 w-4" />
+                  )}
+                  Continuer avec Google
+                </Button>
+              )}
+              {oauth?.microsoft && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={oauthPending !== null}
+                  onClick={() => connect.mutate("microsoft")}
+                >
+                  {oauthPending === "microsoft" ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Mail className="mr-2 h-4 w-4" />
+                  )}
+                  Continuer avec Microsoft
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Aucun mot de passe à saisir : l'autorisation se fait chez le fournisseur.
+            </p>
+          </div>
+        )}
+
         <div className="space-y-4">
+
           <div className="space-y-2">
             <Label htmlFor="mail-email">Adresse e-mail</Label>
             <Input
