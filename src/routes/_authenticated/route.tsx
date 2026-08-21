@@ -55,12 +55,19 @@ const LAUNCHER_ITEM = {
 
 const COLLAPSE_KEY = "sidebar:collapsed";
 
+/** Pages "système" affichées en plein écran, sans barre latérale. */
+const CHROMELESS_PATHS = ["/apps", "/company/applications"];
+
 function AuthenticatedLayout() {
   const { user } = Route.useRouteContext();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = router.state.location.pathname;
+  const chromeless = CHROMELESS_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
   useEffect(() => {
     try {
