@@ -83,8 +83,20 @@ export const APP_MODULES: AppModule[] = [
     core: true,
     screens: [
       { to: "/company", label: "Entreprise", icon: Building2 },
-      { to: "/company/hierarchie", label: "Organigramme", icon: Network },
       { to: "/company/applications", label: "Gérer les applications", icon: LayoutGrid },
+    ],
+  },
+  {
+    code: "hierarchy",
+    name: "Hiérarchie",
+    description: "Organigramme de l'entreprise et suivi des validations.",
+    icon: Network,
+    tone: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+    entry: "/company/hierarchie",
+    core: true,
+    screens: [
+      { to: "/company/hierarchie", label: "Organigramme", icon: Network },
+      { to: "/reports/direction", label: "Vue direction", icon: BarChart3 },
     ],
   },
   {
