@@ -88,6 +88,7 @@ export const APP_MODULES: AppModule[] = [
     screens: [
       { to: "/mail", label: "Tableau de bord", icon: Mail },
       { to: "/mail/inbox", label: "Boîte unifiée", icon: Inbox },
+      { to: "/mail/scheduled", label: "Envois programmés", icon: CalendarClock },
       { to: "/mail/settings", label: "Comptes & paramètres", icon: Settings2 },
     ],
   },
