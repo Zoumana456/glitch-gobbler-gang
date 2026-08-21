@@ -184,24 +184,19 @@ export async function saveImapAccountFor(
   return pub as unknown as MailAccount;
 }
 
-/** (Re)pousse les identifiants stockés vers la passerelle. */
-export async function ensureGatewayAccount(userId: string, accountId: string) {
+/** Charge le compte et prépare le transport (API OAuth ou passerelle IMAP). */
+export async function accountTransport(userId: string, accountId: string) {
   const row = await loadAccountWithSecrets(userId, accountId);
-  if (!row.imap_password_ciphertext) return row;
-  await upsertGatewayAccount(row.id, {
-    email: row.email,
-    displayName: row.display_name,
-    username: row.imap_username ?? row.email,
-    password: decryptSecret(row.imap_password_ciphertext),
-    imapHost: row.imap_host,
-    imapPort: row.imap_port,
-    imapSecure: String(row.imap_security ?? "").toUpperCase().includes("SSL"),
-    smtpHost: row.smtp_host,
-    smtpPort: row.smtp_port,
-    smtpSecure: !String(row.smtp_security ?? "").toUpperCase().includes("STARTTLS"),
-  });
+  const transport = await transportForRow(row);
+  return { row, transport };
+}
+
+/** Compatibilité : (re)pousse les identifiants stockés vers la passerelle. */
+export async function ensureGatewayAccount(userId: string, accountId: string) {
+  const { row } = await accountTransport(userId, accountId);
   return row;
 }
+
 
 export async function deleteAccountFor(userId: string, accountId: string) {
   const db = await admin();
