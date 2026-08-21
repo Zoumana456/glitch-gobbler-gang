@@ -579,6 +579,115 @@ export type Database = {
           },
         ]
       }
+      email_scheduled_messages: {
+        Row: {
+          account_id: string
+          attachments: Json
+          attempts: number
+          bcc_recipients: string
+          body_html: string
+          cc_recipients: string
+          created_at: string
+          id: string
+          in_reply_to: string | null
+          last_error: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          subject: string
+          to_recipients: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          attachments?: Json
+          attempts?: number
+          bcc_recipients?: string
+          body_html?: string
+          cc_recipients?: string
+          created_at?: string
+          id?: string
+          in_reply_to?: string | null
+          last_error?: string | null
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_recipients?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          attachments?: Json
+          attempts?: number
+          bcc_recipients?: string
+          body_html?: string
+          cc_recipients?: string
+          created_at?: string
+          id?: string
+          in_reply_to?: string | null
+          last_error?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_recipients?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_scheduled_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_signatures: {
+        Row: {
+          account_id: string
+          body_html: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          body_html?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          body_html?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_signatures_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_sync_logs: {
         Row: {
           account_id: string | null
@@ -613,6 +722,53 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          body_html: string
+          company_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          scope: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body_html?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          scope?: string
+          subject?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body_html?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          scope?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
