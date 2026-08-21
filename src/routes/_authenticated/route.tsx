@@ -324,8 +324,17 @@ function SidebarInner({
         </div>
       )}
 
-      <nav className={cn("space-y-1 flex-1", collapsed ? "px-2" : "px-3")}>
-
+      <nav
+        className={cn(
+          "space-y-1 flex-1 overflow-y-auto",
+          collapsed ? "px-2" : "px-3",
+        )}
+      >
+        {!adminOnly && !collapsed && current && (
+          <div className="px-3 pb-1 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground truncate">
+            {current.name}
+          </div>
+        )}
         {navItems.map((item) => {
           const active =
             item.to === "/reports"
