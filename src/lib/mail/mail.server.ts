@@ -5,7 +5,7 @@ import {
   verifyImapCredentials,
   type ImapCredentials,
 } from "./gateway.server";
-import { transportForRow } from "./transport.server";
+import { transportForRow, type MailTransport } from "./transport.server";
 
 import {
   FOLDER_LABELS,
