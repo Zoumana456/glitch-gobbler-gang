@@ -193,6 +193,71 @@ function AuthenticatedLayout() {
   );
 }
 
+function TopBar({
+  email,
+  onSignOut,
+}: {
+  email: string;
+  onSignOut: () => void;
+}) {
+  const profileFn = useServerFn(getMyProfile);
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => profileFn(),
+    staleTime: 60_000,
+  });
+  const displayName = profile?.full_name ?? email;
+  const initials = (profile?.full_name ?? email ?? "?").slice(0, 2).toUpperCase();
+
+  return (
+    <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-border bg-background px-3 py-2 sm:px-4">
+      <Link to="/apps" className="flex min-w-0 items-center gap-2 font-semibold">
+        <img
+          src={logoDailyBrief}
+          alt="DailyBrief"
+          className="h-7 w-7 shrink-0 rounded"
+        />
+        <span className="truncate">DailyBrief</span>
+      </Link>
+      <div className="ml-auto flex items-center gap-1">
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Rechercher (⌘K)"
+          title="Rechercher (⌘K)"
+          onClick={() =>
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+            )
+          }
+        >
+          <Search className="h-4 w-4" />
+        </Button>
+        <NotificationsBell collapsed />
+        <Link
+          to="/profile"
+          className="rounded-md p-1 hover:bg-accent"
+          title={displayName}
+        >
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={profile?.avatar_url ?? undefined} alt={displayName} />
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          </Avatar>
+        </Link>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onSignOut}
+          aria-label="Se déconnecter"
+          title="Se déconnecter"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
+      </div>
+    </header>
+  );
+}
+
 function SidebarInner({
   email,
   onSignOut,
