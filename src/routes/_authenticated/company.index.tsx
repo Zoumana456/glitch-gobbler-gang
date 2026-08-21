@@ -58,6 +58,21 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/company/")({
+  head: () => ({
+    meta: [
+      { title: "Mon entreprise — DailyBrief" },
+      {
+        name: "description",
+        content:
+          "Suivi quotidien des rapports, employés et sièges de votre entreprise sur DailyBrief.",
+      },
+      { property: "og:title", content: "Mon entreprise — DailyBrief" },
+      {
+        property: "og:description",
+        content: "Suivi quotidien des rapports et des employés de votre entreprise.",
+      },
+    ],
+  }),
   validateSearch: zodValidator(searchSchema),
   component: CompanyPage,
 });
