@@ -166,16 +166,20 @@ function MailDashboard() {
         </div>
       </div>
 
-      {data && !data.gatewayReady && (
-        <Alert>
-          <ShieldCheck className="h-4 w-4" />
-          <AlertTitle>Relais de messagerie à activer</AlertTitle>
-          <AlertDescription>
-            L'interface est complète ; la relève des messages IMAP/SMTP démarre dès que la
-            clé d'accès du relais de messagerie est enregistrée.
-          </AlertDescription>
-        </Alert>
-      )}
+      {data &&
+        !data.gatewayReady &&
+        !data.oauth?.gmail &&
+        !data.oauth?.microsoft && (
+          <Alert>
+            <ShieldCheck className="h-4 w-4" />
+            <AlertTitle>Connexion des boîtes à activer</AlertTitle>
+            <AlertDescription>
+              L'interface est complète. Activez la connexion en un clic (Google /
+              Microsoft) ou le relais IMAP/SMTP pour commencer à relever les messages.
+            </AlertDescription>
+          </Alert>
+        )}
+
 
       {inError.length > 0 && (
         <Alert variant="destructive">
