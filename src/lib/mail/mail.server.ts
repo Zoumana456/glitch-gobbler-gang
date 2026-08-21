@@ -162,7 +162,9 @@ export async function saveImapAccountFor(
   if (error) throw new Error(error.message);
 
   // 2. enregistrement dans la passerelle sous l'identifiant du compte
+  const { upsertGatewayAccount } = await import("./gateway.server");
   await upsertGatewayAccount(data.id as string, creds);
+
   await db
     .from("email_accounts")
     .update({ gateway_account_id: data.id, last_sync_at: new Date().toISOString() })
