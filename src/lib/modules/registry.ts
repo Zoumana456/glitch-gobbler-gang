@@ -83,8 +83,20 @@ export const APP_MODULES: AppModule[] = [
     core: true,
     screens: [
       { to: "/company", label: "Entreprise", icon: Building2 },
-      { to: "/company/hierarchie", label: "Organigramme", icon: Network },
       { to: "/company/applications", label: "Gérer les applications", icon: LayoutGrid },
+    ],
+  },
+  {
+    code: "hierarchy",
+    name: "Hiérarchie",
+    description: "Organigramme de l'entreprise et suivi des validations.",
+    icon: Network,
+    tone: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+    entry: "/company/hierarchie",
+    core: true,
+    screens: [
+      { to: "/company/hierarchie", label: "Organigramme", icon: Network },
+      { to: "/reports/direction", label: "Vue direction", icon: BarChart3 },
     ],
   },
   {
@@ -120,9 +132,12 @@ export function getModule(code: string): AppModule | undefined {
 
 /** Retrouve le module auquel appartient un chemin donné. */
 export function moduleForPath(pathname: string): AppModule | undefined {
-  return APP_MODULES.find(
-    (m) => pathname === m.entry || pathname.startsWith(`${m.entry}/`),
-  );
+  // correspondance la plus longue d'abord : /company/hierarchie doit gagner sur /company
+  return [...APP_MODULES]
+    .sort((a, b) => b.entry.length - a.entry.length)
+    .find(
+      (m) => pathname === m.entry || pathname.startsWith(`${m.entry}/`),
+    );
 }
 
 /** Liste des modules visibles pour un jeu de modules activés. */

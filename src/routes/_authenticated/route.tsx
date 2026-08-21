@@ -237,9 +237,6 @@ function SidebarInner({
             ? [{ to: "/admin", label: "Admin plateforme", icon: ShieldAlert }]
             : []),
         ];
-  const otherModules = adminOnly
-    ? []
-    : mods.filter((m) => m.code !== current?.code);
 
   return (
     <>
@@ -373,35 +370,6 @@ function SidebarInner({
           );
         })}
 
-        {otherModules.length > 0 && (
-          <div className="pt-3 space-y-1">
-            {!collapsed && (
-              <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Autres applications
-              </div>
-            )}
-            {collapsed && <div className="mx-auto my-2 h-px w-6 bg-sidebar-border" />}
-            {otherModules.map((m) => {
-              const Icon = m.icon;
-              return (
-                <Link
-                  key={m.code}
-                  to={m.entry}
-                  title={collapsed ? m.name : undefined}
-                  className={cn(
-                    "flex items-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-                    collapsed
-                      ? "justify-center h-10 w-10 mx-auto"
-                      : "gap-3 px-3 py-2",
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span className="truncate">{m.name}</span>}
-                </Link>
-              );
-            })}
-          </div>
-        )}
       </nav>
       <div
         className={cn(
