@@ -219,27 +219,29 @@ function fallbackFolders(): MailFolder[] {
   }));
 }
 
+async function orderFolders(remote: MailFolder[]): Promise<MailFolder[]> {
+  const known = new Map<MailFolderKind, MailFolder>();
+  for (const f of remote) if (f.kind !== "custom" && !known.has(f.kind)) known.set(f.kind, f);
+  const ordered = FOLDER_ORDER.map(
+    (kind) =>
+      known.get(kind) ?? {
+        id: kind,
+        kind,
+        name: FOLDER_LABELS[kind],
+        path: kind === "inbox" ? "INBOX" : kind,
+        unread: 0,
+      },
+  );
+  return [...ordered, ...remote.filter((f) => f.kind === "custom")];
+}
+
 export async function foldersFor(
   userId: string,
   accountId: string,
 ): Promise<MailFolder[]> {
   try {
-    await ensureGatewayAccount(userId, accountId);
-    const remote = await listGatewayFolders(accountId);
-    const known = new Map<MailFolderKind, MailFolder>();
-    for (const f of remote) if (f.kind !== "custom" && !known.has(f.kind)) known.set(f.kind, f);
-    const ordered = FOLDER_ORDER.map(
-      (kind) =>
-        known.get(kind) ?? {
-          id: kind,
-          kind,
-          name: FOLDER_LABELS[kind],
-          path: kind === "inbox" ? "INBOX" : kind,
-          unread: 0,
-        },
-    );
-    const custom = remote.filter((f) => f.kind === "custom");
-    return [...ordered, ...custom];
+    const { transport } = await accountTransport(userId, accountId);
+    return await orderFolders(await transport.listFolders());
   } catch (e) {
     console.error("[mail] dossiers indisponibles", e);
     return fallbackFolders();
@@ -247,14 +249,18 @@ export async function foldersFor(
 }
 
 async function pathForFolder(
-  userId: string,
-  accountId: string,
+  transport: MailTransport,
   folder: MailFolderKind,
 ): Promise<string> {
   if (folder === "inbox" || folder === "starred") return "INBOX";
-  const folders = await foldersFor(userId, accountId);
-  return folders.find((f) => f.kind === folder)?.path ?? "INBOX";
+  try {
+    const folders = await orderFolders(await transport.listFolders());
+    return folders.find((f) => f.kind === folder)?.path ?? "INBOX";
+  } catch {
+    return folder;
+  }
 }
+
 
 /* ------------------------------------------------------------------ */
 /* Messages                                                            */
