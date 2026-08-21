@@ -84,7 +84,7 @@ export const APP_MODULES: AppModule[] = [
     screens: [
       { to: "/company", label: "Entreprise", icon: Building2 },
       { to: "/company/hierarchie", label: "Organigramme", icon: Network },
-      { to: "/company/applications", label: "Applications", icon: LayoutGrid },
+      { to: "/company/applications", label: "Gérer les applications", icon: LayoutGrid },
     ],
   },
   {

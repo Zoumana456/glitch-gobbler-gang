@@ -75,22 +75,41 @@ function AppsLauncher() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {modules.map((m) => {
           const Icon = m.icon;
+          const extras = m.screens.filter(
+            (s) =>
+              s.to !== m.entry &&
+              (s.to !== "/company/applications" || state?.isOwner),
+          );
           return (
-            <Link
+            <div
               key={m.code}
-              to={m.entry}
-              className="group rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-accent/40"
+              className="group rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
             >
-              <div
-                className={`mb-3 inline-flex h-11 w-11 items-center justify-center rounded-lg ${m.tone}`}
-              >
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="font-semibold truncate">{m.name}</div>
-              <p className="text-xs text-muted-foreground line-clamp-2">
-                {m.description}
-              </p>
-            </Link>
+              <Link to={m.entry} className="block">
+                <div
+                  className={`mb-3 inline-flex h-11 w-11 items-center justify-center rounded-lg ${m.tone}`}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="font-semibold truncate">{m.name}</div>
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {m.description}
+                </p>
+              </Link>
+              {extras.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {extras.map((s) => (
+                    <Link
+                      key={s.to}
+                      to={s.to}
+                      className="rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      {s.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

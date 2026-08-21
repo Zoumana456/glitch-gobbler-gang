@@ -11,8 +11,21 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { FileText, FileSignature, Users, Building2, Loader2 } from "lucide-react";
+import { FileText, FileSignature, Users, Building2, Loader2, LayoutGrid } from "lucide-react";
 import { globalSearch, type SearchResult } from "@/lib/search.functions";
+import { APP_MODULES } from "@/lib/modules/registry";
+
+const NAV_ITEMS = [
+  { to: "/apps", label: "Applications", icon: LayoutGrid, module: "" },
+  ...APP_MODULES.flatMap((m) =>
+    m.screens.map((s) => ({
+      to: s.to,
+      label: s.label,
+      icon: s.icon,
+      module: m.name,
+    })),
+  ),
+];
 
 const ICONS = {
   report: FileText,
@@ -69,9 +82,28 @@ export function CommandPalette() {
         onValueChange={setQuery}
       />
       <CommandList>
+        <CommandGroup heading="Navigation">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <CommandItem
+                key={item.to}
+                value={`${item.label} ${item.module}`}
+                onSelect={() => go(item.to)}
+              >
+                <Icon className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="flex-1 truncate">{item.label}</span>
+                {item.module && (
+                  <span className="text-xs text-muted-foreground">{item.module}</span>
+                )}
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
+        <CommandSeparator />
         {trimmed.length < 2 ? (
           <div className="py-6 text-center text-sm text-muted-foreground">
-            Tapez au moins 2 caractères pour rechercher…
+            Tapez au moins 2 caractères pour rechercher plus loin…
           </div>
         ) : isFetching ? (
           <div className="flex items-center justify-center py-6 gap-2 text-sm text-muted-foreground">
