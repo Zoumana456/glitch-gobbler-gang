@@ -15,6 +15,7 @@ import {
   Inbox,
   Settings2,
   type LucideIcon,
+  CalendarClock,
 } from "lucide-react";
 
 export type ModuleScreen = {
