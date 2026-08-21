@@ -200,29 +200,17 @@ export function gmailTransport(
         ids.map(async (id) => {
           try {
             return await api<any>(token, `/messages/${encodeURIComponent(id)}`, {
-              query: { format: "metadata", metadataHeaders: "From" },
+              query: { format: "metadata" },
             });
           } catch {
             return null;
           }
         }),
       );
-      // les en-têtes multiples nécessitent une seconde passe légère
-      const withHeaders = await Promise.all(
-        full.map(async (m) => {
-          if (!m) return null;
-          try {
-            return await api<any>(token, `/messages/${encodeURIComponent(m.id)}`, {
-              query: { format: "metadata" },
-            });
-          } catch {
-            return m;
-          }
-        }),
-      );
-      return withHeaders
-        .filter(Boolean)
+      return full
+        .filter((m): m is any => Boolean(m))
         .map((m) => summarize(m, accountId, accountEmail));
+
     },
 
     async getMessage(messageId: string): Promise<MailMessageFull> {
