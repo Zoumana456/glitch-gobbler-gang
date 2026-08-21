@@ -132,9 +132,12 @@ export function getModule(code: string): AppModule | undefined {
 
 /** Retrouve le module auquel appartient un chemin donné. */
 export function moduleForPath(pathname: string): AppModule | undefined {
-  return APP_MODULES.find(
-    (m) => pathname === m.entry || pathname.startsWith(`${m.entry}/`),
-  );
+  // correspondance la plus longue d'abord : /company/hierarchie doit gagner sur /company
+  return [...APP_MODULES]
+    .sort((a, b) => b.entry.length - a.entry.length)
+    .find(
+      (m) => pathname === m.entry || pathname.startsWith(`${m.entry}/`),
+    );
 }
 
 /** Liste des modules visibles pour un jeu de modules activés. */
