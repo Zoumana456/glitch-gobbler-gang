@@ -26,6 +26,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks.index'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedMinutesIndexRouteImport } from './routes/_authenticated/minutes.index'
+import { Route as AuthenticatedMailIndexRouteImport } from './routes/_authenticated/mail.index'
 import { Route as AuthenticatedCompanyIndexRouteImport } from './routes/_authenticated/company.index'
 import { Route as AuthenticatedTasksNewRouteImport } from './routes/_authenticated/tasks.new'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
@@ -36,6 +37,8 @@ import { Route as AuthenticatedReportsAuditRolesRouteImport } from './routes/_au
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedMinutesDashboardRouteImport } from './routes/_authenticated/minutes.dashboard'
 import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authenticated/minutes.$id'
+import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
+import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/mail.inbox'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
 import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
@@ -130,6 +133,11 @@ const AuthenticatedMinutesIndexRoute =
     path: '/minutes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMailIndexRoute = AuthenticatedMailIndexRouteImport.update({
+  id: '/mail/',
+  path: '/mail/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCompanyIndexRoute =
   AuthenticatedCompanyIndexRouteImport.update({
     id: '/',
@@ -183,6 +191,17 @@ const AuthenticatedMinutesDashboardRoute =
 const AuthenticatedMinutesIdRoute = AuthenticatedMinutesIdRouteImport.update({
   id: '/minutes/$id',
   path: '/minutes/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMailSettingsRoute =
+  AuthenticatedMailSettingsRouteImport.update({
+    id: '/mail/settings',
+    path: '/mail/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMailInboxRoute = AuthenticatedMailInboxRouteImport.update({
+  id: '/mail/inbox',
+  path: '/mail/inbox',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCompanyHierarchieRoute =
@@ -242,6 +261,8 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/mail/inbox': typeof AuthenticatedMailInboxRoute
+  '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
@@ -252,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/new': typeof AuthenticatedTasksNewRoute
   '/company/': typeof AuthenticatedCompanyIndexRoute
+  '/mail/': typeof AuthenticatedMailIndexRoute
   '/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
@@ -276,6 +298,8 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/mail/inbox': typeof AuthenticatedMailInboxRoute
+  '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/reports/audit-roles': typeof AuthenticatedReportsAuditRolesRoute
@@ -285,6 +309,7 @@ export interface FileRoutesByTo {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/new': typeof AuthenticatedTasksNewRoute
   '/company': typeof AuthenticatedCompanyIndexRoute
+  '/mail': typeof AuthenticatedMailIndexRoute
   '/minutes': typeof AuthenticatedMinutesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
@@ -312,6 +337,8 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/_authenticated/mail/inbox': typeof AuthenticatedMailInboxRoute
+  '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/_authenticated/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/_authenticated/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
@@ -322,6 +349,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/new': typeof AuthenticatedTasksNewRoute
   '/_authenticated/company/': typeof AuthenticatedCompanyIndexRoute
+  '/_authenticated/mail/': typeof AuthenticatedMailIndexRoute
   '/_authenticated/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
@@ -349,6 +377,8 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/mail/inbox'
+    | '/mail/settings'
     | '/minutes/$id'
     | '/minutes/dashboard'
     | '/reports/$id'
@@ -359,6 +389,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/new'
     | '/company/'
+    | '/mail/'
     | '/minutes/'
     | '/reports/'
     | '/tasks/'
@@ -383,6 +414,8 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/mail/inbox'
+    | '/mail/settings'
     | '/minutes/$id'
     | '/minutes/dashboard'
     | '/reports/audit-roles'
@@ -392,6 +425,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/new'
     | '/company'
+    | '/mail'
     | '/minutes'
     | '/reports'
     | '/tasks'
@@ -418,6 +452,8 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
+    | '/_authenticated/mail/inbox'
+    | '/_authenticated/mail/settings'
     | '/_authenticated/minutes/$id'
     | '/_authenticated/minutes/dashboard'
     | '/_authenticated/reports/$id'
@@ -428,6 +464,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/new'
     | '/_authenticated/company/'
+    | '/_authenticated/mail/'
     | '/_authenticated/minutes/'
     | '/_authenticated/reports/'
     | '/_authenticated/tasks/'
@@ -573,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMinutesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mail/': {
+      id: '/_authenticated/mail/'
+      path: '/mail'
+      fullPath: '/mail/'
+      preLoaderRoute: typeof AuthenticatedMailIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/company/': {
       id: '/_authenticated/company/'
       path: '/'
@@ -641,6 +685,20 @@ declare module '@tanstack/react-router' {
       path: '/minutes/$id'
       fullPath: '/minutes/$id'
       preLoaderRoute: typeof AuthenticatedMinutesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mail/settings': {
+      id: '/_authenticated/mail/settings'
+      path: '/mail/settings'
+      fullPath: '/mail/settings'
+      preLoaderRoute: typeof AuthenticatedMailSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mail/inbox': {
+      id: '/_authenticated/mail/inbox'
+      path: '/mail/inbox'
+      fullPath: '/mail/inbox'
+      preLoaderRoute: typeof AuthenticatedMailInboxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/company/hierarchie': {
@@ -734,6 +792,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCompanyRoute: typeof AuthenticatedCompanyRouteWithChildren
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedMailInboxRoute: typeof AuthenticatedMailInboxRoute
+  AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
   AuthenticatedMinutesIdRoute: typeof AuthenticatedMinutesIdRoute
   AuthenticatedMinutesDashboardRoute: typeof AuthenticatedMinutesDashboardRoute
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
@@ -743,6 +803,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
   AuthenticatedTasksIdRoute: typeof AuthenticatedTasksIdRoute
   AuthenticatedTasksNewRoute: typeof AuthenticatedTasksNewRoute
+  AuthenticatedMailIndexRoute: typeof AuthenticatedMailIndexRoute
   AuthenticatedMinutesIndexRoute: typeof AuthenticatedMinutesIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
@@ -754,6 +815,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCompanyRoute: AuthenticatedCompanyRouteWithChildren,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedMailInboxRoute: AuthenticatedMailInboxRoute,
+  AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
   AuthenticatedMinutesIdRoute: AuthenticatedMinutesIdRoute,
   AuthenticatedMinutesDashboardRoute: AuthenticatedMinutesDashboardRoute,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
@@ -763,6 +826,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
   AuthenticatedTasksIdRoute: AuthenticatedTasksIdRoute,
   AuthenticatedTasksNewRoute: AuthenticatedTasksNewRoute,
+  AuthenticatedMailIndexRoute: AuthenticatedMailIndexRoute,
   AuthenticatedMinutesIndexRoute: AuthenticatedMinutesIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,

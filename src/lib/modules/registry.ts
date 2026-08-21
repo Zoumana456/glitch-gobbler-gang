@@ -11,6 +11,9 @@ import {
   UserCircle2,
   ListChecks,
   LayoutGrid,
+  Mail,
+  Inbox,
+  Settings2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -71,6 +74,21 @@ export const APP_MODULES: AppModule[] = [
     screens: [
       { to: "/tasks", label: "Tâches", icon: ListChecks },
       { to: "/tasks/new", label: "Nouvelle tâche", icon: FilePlus2 },
+    ],
+  },
+  {
+    code: "mail",
+    name: "Messagerie",
+    description:
+      "Tous vos comptes e-mail (Gmail, Outlook, Yahoo, professionnel) dans une seule boîte unifiée.",
+    icon: Mail,
+    tone: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+    entry: "/mail",
+    core: false,
+    screens: [
+      { to: "/mail", label: "Tableau de bord", icon: Mail },
+      { to: "/mail/inbox", label: "Boîte unifiée", icon: Inbox },
+      { to: "/mail/settings", label: "Comptes & paramètres", icon: Settings2 },
     ],
   },
   {
