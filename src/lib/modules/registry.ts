@@ -15,6 +15,7 @@ import {
   Inbox,
   Settings2,
   type LucideIcon,
+  CalendarClock,
 } from "lucide-react";
 
 export type ModuleScreen = {
@@ -88,6 +89,7 @@ export const APP_MODULES: AppModule[] = [
     screens: [
       { to: "/mail", label: "Tableau de bord", icon: Mail },
       { to: "/mail/inbox", label: "Boîte unifiée", icon: Inbox },
+      { to: "/mail/scheduled", label: "Envois programmés", icon: CalendarClock },
       { to: "/mail/settings", label: "Comptes & paramètres", icon: Settings2 },
     ],
   },

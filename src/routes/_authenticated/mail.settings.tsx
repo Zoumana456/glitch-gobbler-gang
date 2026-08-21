@@ -21,15 +21,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Plus, RefreshCw, Settings2, Star, Trash2 } from "lucide-react";
 import {
   deleteMailAccount,
+  listMailLogs,
   mailStatus,
   syncMailAccounts,
   updateMailAccount,
 } from "@/lib/mail/mail.functions";
 import { PROVIDER_LABELS } from "@/lib/mail/types";
 import { AddMailAccountDialog } from "@/components/mail/AddMailAccountDialog";
+import { MailTemplatesPanel } from "@/components/mail/MailTemplatesPanel";
+import { MailSignaturesPanel } from "@/components/mail/MailSignaturesPanel";
 
 export const Route = createFileRoute("/_authenticated/mail/settings")({
   head: () => ({
@@ -61,7 +65,9 @@ function MailSettings() {
   const [addOpen, setAddOpen] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, { signature: string; label: string }>>({});
 
+  const logsFn = useServerFn(listMailLogs);
   const { data } = useQuery({ queryKey: ["mail", "status"], queryFn: () => statusFn() });
+  const { data: logs = [] } = useQuery({ queryKey: ["mail", "logs"], queryFn: () => logsFn() });
   const accounts = data?.accounts ?? [];
 
   type UpdateInput = {
@@ -116,6 +122,46 @@ function MailSettings() {
         </Button>
       </div>
 
+      <Tabs defaultValue="accounts" className="space-y-4">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="accounts">Comptes</TabsTrigger>
+          <TabsTrigger value="templates">Modèles</TabsTrigger>
+          <TabsTrigger value="signatures">Signatures</TabsTrigger>
+          <TabsTrigger value="logs">Journal</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="templates">
+          <MailTemplatesPanel />
+        </TabsContent>
+
+        <TabsContent value="signatures">
+          <MailSignaturesPanel accounts={accounts} />
+        </TabsContent>
+
+        <TabsContent value="logs" className="space-y-1 text-sm">
+          {logs.length === 0 && (
+            <p className="text-muted-foreground">Aucun évènement pour le moment.</p>
+          )}
+          {logs.map((l: any) => (
+            <div
+              key={l.id}
+              className="flex flex-wrap items-center gap-2 border-b py-1 last:border-0"
+            >
+              <Badge variant={l.status === "success" ? "outline" : "destructive"}>
+                {l.status === "success" ? "OK" : "Erreur"}
+              </Badge>
+              <span className="font-mono text-xs">{l.action}</span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(l.created_at).toLocaleString("fr-FR")}
+              </span>
+              {l.error_message && (
+                <span className="text-xs text-destructive">{l.error_message}</span>
+              )}
+            </div>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="accounts" className="space-y-4">
       {accounts.length === 0 && (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
@@ -250,6 +296,8 @@ function MailSettings() {
           </Card>
         );
       })}
+        </TabsContent>
+      </Tabs>
 
       <AddMailAccountDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>

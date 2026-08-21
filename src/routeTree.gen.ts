@@ -38,10 +38,12 @@ import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMinutesDashboardRouteImport } from './routes/_authenticated/minutes.dashboard'
 import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authenticated/minutes.$id'
 import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
+import { Route as AuthenticatedMailScheduledRouteImport } from './routes/_authenticated/mail.scheduled'
 import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/mail.inbox'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
 import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
+import { Route as ApiPublicMailDispatchScheduledRouteImport } from './routes/api/public/mail/dispatch-scheduled'
 import { Route as ApiPublicAiTranscribeRouteImport } from './routes/api/public/ai/transcribe'
 import { Route as ApiPublicAiSpeakRouteImport } from './routes/api/public/ai/speak'
 import { Route as AuthenticatedReportsIdEditRouteImport } from './routes/_authenticated/reports.$id.edit'
@@ -199,6 +201,12 @@ const AuthenticatedMailSettingsRoute =
     path: '/mail/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMailScheduledRoute =
+  AuthenticatedMailScheduledRouteImport.update({
+    id: '/mail/scheduled',
+    path: '/mail/scheduled',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMailInboxRoute = AuthenticatedMailInboxRouteImport.update({
   id: '/mail/inbox',
   path: '/mail/inbox',
@@ -221,6 +229,12 @@ const AuthenticatedReportsIdIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedReportsIdRoute,
+  } as any)
+const ApiPublicMailDispatchScheduledRoute =
+  ApiPublicMailDispatchScheduledRouteImport.update({
+    id: '/api/public/mail/dispatch-scheduled',
+    path: '/api/public/mail/dispatch-scheduled',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicAiTranscribeRoute = ApiPublicAiTranscribeRouteImport.update({
   id: '/api/public/ai/transcribe',
@@ -262,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/mail/inbox': typeof AuthenticatedMailInboxRoute
+  '/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -281,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
   '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
   '/api/public/ai/transcribe': typeof ApiPublicAiTranscribeRoute
+  '/api/public/mail/dispatch-scheduled': typeof ApiPublicMailDispatchScheduledRoute
   '/reports/$id/': typeof AuthenticatedReportsIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -299,6 +315,7 @@ export interface FileRoutesByTo {
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/mail/inbox': typeof AuthenticatedMailInboxRoute
+  '/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -317,6 +334,7 @@ export interface FileRoutesByTo {
   '/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
   '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
   '/api/public/ai/transcribe': typeof ApiPublicAiTranscribeRoute
+  '/api/public/mail/dispatch-scheduled': typeof ApiPublicMailDispatchScheduledRoute
   '/reports/$id': typeof AuthenticatedReportsIdIndexRoute
 }
 export interface FileRoutesById {
@@ -338,6 +356,7 @@ export interface FileRoutesById {
   '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/_authenticated/mail/inbox': typeof AuthenticatedMailInboxRoute
+  '/_authenticated/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/_authenticated/minutes/$id': typeof AuthenticatedMinutesIdRoute
   '/_authenticated/minutes/dashboard': typeof AuthenticatedMinutesDashboardRoute
@@ -357,6 +376,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/$id/edit': typeof AuthenticatedReportsIdEditRoute
   '/api/public/ai/speak': typeof ApiPublicAiSpeakRoute
   '/api/public/ai/transcribe': typeof ApiPublicAiTranscribeRoute
+  '/api/public/mail/dispatch-scheduled': typeof ApiPublicMailDispatchScheduledRoute
   '/_authenticated/reports/$id/': typeof AuthenticatedReportsIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -378,6 +398,7 @@ export interface FileRouteTypes {
     | '/company/applications'
     | '/company/hierarchie'
     | '/mail/inbox'
+    | '/mail/scheduled'
     | '/mail/settings'
     | '/minutes/$id'
     | '/minutes/dashboard'
@@ -397,6 +418,7 @@ export interface FileRouteTypes {
     | '/reports/$id/edit'
     | '/api/public/ai/speak'
     | '/api/public/ai/transcribe'
+    | '/api/public/mail/dispatch-scheduled'
     | '/reports/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -415,6 +437,7 @@ export interface FileRouteTypes {
     | '/company/applications'
     | '/company/hierarchie'
     | '/mail/inbox'
+    | '/mail/scheduled'
     | '/mail/settings'
     | '/minutes/$id'
     | '/minutes/dashboard'
@@ -433,6 +456,7 @@ export interface FileRouteTypes {
     | '/reports/$id/edit'
     | '/api/public/ai/speak'
     | '/api/public/ai/transcribe'
+    | '/api/public/mail/dispatch-scheduled'
     | '/reports/$id'
   id:
     | '__root__'
@@ -453,6 +477,7 @@ export interface FileRouteTypes {
     | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
     | '/_authenticated/mail/inbox'
+    | '/_authenticated/mail/scheduled'
     | '/_authenticated/mail/settings'
     | '/_authenticated/minutes/$id'
     | '/_authenticated/minutes/dashboard'
@@ -472,6 +497,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/$id/edit'
     | '/api/public/ai/speak'
     | '/api/public/ai/transcribe'
+    | '/api/public/mail/dispatch-scheduled'
     | '/_authenticated/reports/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -487,6 +513,7 @@ export interface RootRouteChildren {
   ShareTokenRoute: typeof ShareTokenRoute
   ApiPublicAiSpeakRoute: typeof ApiPublicAiSpeakRoute
   ApiPublicAiTranscribeRoute: typeof ApiPublicAiTranscribeRoute
+  ApiPublicMailDispatchScheduledRoute: typeof ApiPublicMailDispatchScheduledRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -694,6 +721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMailSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mail/scheduled': {
+      id: '/_authenticated/mail/scheduled'
+      path: '/mail/scheduled'
+      fullPath: '/mail/scheduled'
+      preLoaderRoute: typeof AuthenticatedMailScheduledRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mail/inbox': {
       id: '/_authenticated/mail/inbox'
       path: '/mail/inbox'
@@ -721,6 +755,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reports/$id/'
       preLoaderRoute: typeof AuthenticatedReportsIdIndexRouteImport
       parentRoute: typeof AuthenticatedReportsIdRoute
+    }
+    '/api/public/mail/dispatch-scheduled': {
+      id: '/api/public/mail/dispatch-scheduled'
+      path: '/api/public/mail/dispatch-scheduled'
+      fullPath: '/api/public/mail/dispatch-scheduled'
+      preLoaderRoute: typeof ApiPublicMailDispatchScheduledRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/ai/transcribe': {
       id: '/api/public/ai/transcribe'
@@ -793,6 +834,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedMailInboxRoute: typeof AuthenticatedMailInboxRoute
+  AuthenticatedMailScheduledRoute: typeof AuthenticatedMailScheduledRoute
   AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
   AuthenticatedMinutesIdRoute: typeof AuthenticatedMinutesIdRoute
   AuthenticatedMinutesDashboardRoute: typeof AuthenticatedMinutesDashboardRoute
@@ -816,6 +858,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedMailInboxRoute: AuthenticatedMailInboxRoute,
+  AuthenticatedMailScheduledRoute: AuthenticatedMailScheduledRoute,
   AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
   AuthenticatedMinutesIdRoute: AuthenticatedMinutesIdRoute,
   AuthenticatedMinutesDashboardRoute: AuthenticatedMinutesDashboardRoute,
@@ -847,6 +890,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareTokenRoute: ShareTokenRoute,
   ApiPublicAiSpeakRoute: ApiPublicAiSpeakRoute,
   ApiPublicAiTranscribeRoute: ApiPublicAiTranscribeRoute,
+  ApiPublicMailDispatchScheduledRoute: ApiPublicMailDispatchScheduledRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
