@@ -50,6 +50,31 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
   const qc = useQueryClient();
   const testFn = useServerFn(testMailAccount);
   const saveFn = useServerFn(saveMailAccount);
+  const statusFn = useServerFn(mailStatus);
+  const startOAuthFn = useServerFn(startMailOAuth);
+
+  const { data: status } = useQuery({
+    queryKey: ["mail", "status"],
+    queryFn: () => statusFn({}),
+    enabled: open,
+  });
+  const oauth = status?.oauth;
+
+  const [oauthPending, setOauthPending] = useState<"gmail" | "microsoft" | null>(null);
+  const connect = useMutation({
+    mutationFn: async (provider: "gmail" | "microsoft") => {
+      setOauthPending(provider);
+      return startOAuthFn({ data: { provider, origin: window.location.origin } });
+    },
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
+    onError: (e: Error) => {
+      setOauthPending(null);
+      toast.error(e.message);
+    },
+  });
+
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
