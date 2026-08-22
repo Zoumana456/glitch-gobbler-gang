@@ -10,14 +10,13 @@
 
 **Fichier** : `src/routes/_authenticated/mail.index.tsx`
 
-1. **Supprimer les 4 cartes de stats** (Messages non lus, Envoyés 7j, Envois programmés, Pièces jointes). L'utilisateur a déjà demandé de ne garder que « Non-lus par compte » et « Activité récente ».
+1. **Conserver les 4 cartes de stats** (Messages non lus, Envoyés 7j, Envois programmés, Pièces jointes) telles quelles.
 2. **Raccourcir l'en-tête** :
    - Supprimer le sous-titre verbeux.
    - Réduire à 3 boutons principaux : « Ajouter un compte », « Rédiger », « Boîte unifiée ».
    - Déplacer « Synchroniser », « Envois programmés », « Paramètres » dans un menu déroulant compact (DropdownMenu) ou en liens discrets sous le titre.
 3. **Raccourcir l'alerte passerelle** : un message court sur une ligne au lieu d'un bloc.
 4. **Conserver** les deux cartes : « Non-lus par compte » (pie chart) et « Activité récente ».
-5. Supprimer l'import de `recharts`/`stats` si les stat cards sont retirées et que les données ne servent plus au dashboard. Vérifier que `mailDashboardStats` reste utile pour les deux cartes restantes (unreadByAccount + recent).
 
 ## Partie 2 — Alléger la boîte de dialogue « Connecter un compte »
 
