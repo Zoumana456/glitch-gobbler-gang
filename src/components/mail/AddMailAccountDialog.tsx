@@ -216,6 +216,25 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
           </div>
         )}
 
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Autres fournisseurs</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {(["yahoo", "gmail", "microsoft", "imap"] as MailProvider[]).map((p) => (
+              <Button
+                key={p}
+                type="button"
+                size="sm"
+                variant={provider === p ? "default" : "outline"}
+                className="h-auto whitespace-normal py-2 text-xs"
+                onClick={() => applyProvider(p)}
+              >
+                {PROVIDER_SHORT_LABELS[p]}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+
         <div className="space-y-4">
 
           <div className="space-y-2">
