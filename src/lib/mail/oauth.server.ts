@@ -28,12 +28,14 @@ const MS_SCOPES = [
 
 export function oauthClient(provider: OAuthProvider): { id: string; secret: string } | null {
   if (provider === "gmail") {
-    const id = process.env["GOOGLE_OAUTH_CLIENT_ID"];
-    const secret = process.env["GOOGLE_OAUTH_CLIENT_SECRET"];
+    const id = process.env["MAIL_GOOGLE_CLIENT_ID"] ?? process.env["GOOGLE_OAUTH_CLIENT_ID"];
+    const secret =
+      process.env["MAIL_GOOGLE_CLIENT_SECRET"] ?? process.env["GOOGLE_OAUTH_CLIENT_SECRET"];
     return id && secret ? { id, secret } : null;
   }
-  const id = process.env["MS_OAUTH_CLIENT_ID"];
-  const secret = process.env["MS_OAUTH_CLIENT_SECRET"];
+  const id = process.env["MAIL_MICROSOFT_CLIENT_ID"] ?? process.env["MS_OAUTH_CLIENT_ID"];
+  const secret =
+    process.env["MAIL_MICROSOFT_CLIENT_SECRET"] ?? process.env["MS_OAUTH_CLIENT_SECRET"];
   return id && secret ? { id, secret } : null;
 }
 
