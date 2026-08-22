@@ -25,12 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   CheckCircle2,
   ChevronDown,
   ExternalLink,
-  Info,
   Loader2,
   Mail,
   ShieldCheck,
