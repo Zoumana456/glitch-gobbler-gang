@@ -49,7 +49,15 @@ import {
   type MailProvider,
 } from "@/lib/mail/types";
 
+const PROVIDER_SHORT_LABELS: Record<MailProvider, string> = {
+  yahoo: "Yahoo Mail",
+  gmail: "Gmail (IMAP)",
+  microsoft: "Outlook / Hotmail",
+  imap: "Pro (autre domaine)",
+};
+
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
+
 
 export function AddMailAccountDialog({ open, onOpenChange }: Props) {
   const qc = useQueryClient();
