@@ -72,6 +72,7 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
     enabled: open,
   });
   const oauth = status?.oauth;
+  const gatewayReady = status?.gatewayReady ?? false;
 
   const [oauthPending, setOauthPending] = useState<"gmail" | "microsoft" | null>(null);
   const connect = useMutation({
