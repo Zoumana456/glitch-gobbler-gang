@@ -46,8 +46,22 @@ export function oauthAvailability() {
   };
 }
 
+/**
+ * Google et Microsoft n'acceptent que les adresses de retour déclarées dans leur
+ * console. On utilise donc toujours l'origine publiée, quelle que soit l'origine
+ * d'où l'utilisateur a cliqué (aperçu, localhost, domaine personnalisé).
+ */
+export function canonicalOrigin(origin: string): string {
+  const declared = process.env["MAIL_OAUTH_ORIGIN"]?.replace(/\/+$/, "");
+  if (declared) return declared;
+  const current = origin.replace(/\/+$/, "");
+  return /^https:\/\/[^/]*\.lovable\.app$/.test(current) && !current.includes("id-preview--")
+    ? current
+    : "https://rapport-journaliere.lovable.app";
+}
+
 export function redirectUri(origin: string): string {
-  return `${origin.replace(/\/+$/, "")}/api/public/mail/oauth/callback`;
+  return `${canonicalOrigin(origin)}/api/public/mail/oauth/callback`;
 }
 
 /* ----------------------------- state signé ----------------------------- */
