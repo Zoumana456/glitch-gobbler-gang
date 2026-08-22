@@ -28,18 +28,14 @@
 4. **Alléger le texte des indices** : raccourcir le hint Microsoft et les autres à une phrase.
 5. La section OAuth ne s'affiche que si au moins un provider est configuré — c'est déjà le cas, pas de changement.
 
-## Partie 3 — Solution Hotmail sans Azure
+## Partie 3 — Activer OAuth Microsoft (le user a trouvé les identifiants Azure)
 
-**Problème** : sans OAuth Microsoft ni passerelle IMAP, Hotmail ne peut pas se connecter.
+Le user a récupéré l'ID client et le secret Microsoft. On les enregistre via le formulaire sécurisé (`secrets--add_secret`) sous les noms attendus par `src/lib/mail/oauth.server.ts`.
 
-**Approche** : 
-- Azure app registration est en réalité **gratuit** sur https://entra.microsoft.com (anciennement Azure AD). Le user a buté sur l'inscription Azure (carte bancaire demandée). Sur Entra, un compte personnel Microsoft suffit pour créer une app gratuite.
-- En attendant, on rend l'interface honnête : si ni OAuth ni passerelle ne sont configurés, l'alerte indique clairement « Aucune méthode de connexion active » avec un lien vers les paramètres, au lieu de textes vagues.
-- Si le user veut activer l'IMAP : il faut déployer une passerelle (EmailEngine ou équivalent) sur un host qui permet les sockets TCP (Railway, Fly.io, VPS). On documente ce besoin de façon concise dans les paramètres.
-
-**Modifications** :
-- `mail.index.tsx` : alerte plus claire quand rien n'est configuré.
-- `mail.settings.tsx` : ajouter une section d'aide compacte expliquant les 2 chemins (OAuth Google gratuit / Passerelle IMAP) avec liens.
+**Actions** :
+1. Ouvrir le formulaire sécurisé pour `MAIL_MICROSOFT_CLIENT_ID` et `MAIL_MICROSOFT_CLIENT_SECRET` (et les variantes `MICROSOFT_OAUTH_CLIENT_ID` / `MICROSOFT_OAUTH_CLIENT_SECRET` déjà supportées).
+2. Vérifier que `oauth.server.ts` lit bien ces variables pour activer le bouton « Continuer avec Microsoft ».
+3. Une fois les secrets enregistrés et publiés, le bouton « Continuer avec Microsoft » apparaît dans le dialog d'ajout de compte — Hotmail/Outlook se connecte en un clic, sans mot de passe, sans IMAP, sans passerelle.
 
 ## Partie 4 — Nettoyer le code inutilisé
 
