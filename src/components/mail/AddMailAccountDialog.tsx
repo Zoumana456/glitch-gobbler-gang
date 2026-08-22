@@ -49,7 +49,15 @@ import {
   type MailProvider,
 } from "@/lib/mail/types";
 
+const PROVIDER_SHORT_LABELS: Record<MailProvider, string> = {
+  yahoo: "Yahoo Mail",
+  gmail: "Gmail (IMAP)",
+  microsoft: "Outlook / Hotmail",
+  imap: "Pro (autre domaine)",
+};
+
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
+
 
 export function AddMailAccountDialog({ open, onOpenChange }: Props) {
   const qc = useQueryClient();
@@ -113,7 +121,33 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
     setSmtpSecurity(d.smtp_security);
   }, [email, touchedServers]);
 
+  /** Sélection manuelle d'un fournisseur : applique ses serveurs. */
+  function applyProvider(p: MailProvider) {
+    setProvider(p);
+    setTouchedServers(true);
+    const preset = IMAP_PRESETS[p];
+    if (preset) {
+      setGuessed(false);
+      setImapHost(preset.imap_host);
+      setImapPort(String(preset.imap_port));
+      setSmtpHost(preset.smtp_host);
+      setSmtpPort(String(preset.smtp_port));
+      setImapSecurity(preset.security);
+      setSmtpSecurity(preset.smtp_security);
+    } else {
+      setGuessed(true);
+      setImapHost("");
+      setSmtpHost("");
+      setImapPort("993");
+      setSmtpPort("465");
+      setImapSecurity("SSL/TLS");
+      setSmtpSecurity("SSL/TLS");
+      setAdvancedOpen(true);
+    }
+  }
+
   function reset() {
+
     setEmail("");
     setPassword("");
     setDisplayName("");
@@ -215,6 +249,25 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
             </p>
           </div>
         )}
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Autres fournisseurs</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {(["yahoo", "gmail", "microsoft", "imap"] as MailProvider[]).map((p) => (
+              <Button
+                key={p}
+                type="button"
+                size="sm"
+                variant={provider === p ? "default" : "outline"}
+                className="h-auto whitespace-normal py-2 text-xs"
+                onClick={() => applyProvider(p)}
+              >
+                {PROVIDER_SHORT_LABELS[p]}
+              </Button>
+            ))}
+          </div>
+        </div>
+
 
         <div className="space-y-4">
 
