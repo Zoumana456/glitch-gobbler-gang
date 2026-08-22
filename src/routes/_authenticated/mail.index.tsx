@@ -127,27 +127,10 @@ function MailDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-2xl font-semibold">
-            <Mail className="h-6 w-6 text-primary" /> Tableau de bord messagerie
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Activité de vos comptes connectés et performance de vos envois.
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            variant="outline"
-            onClick={() => sync.mutate(null)}
-            disabled={sync.isPending}
-          >
-            {sync.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            Synchroniser
-          </Button>
+        <h1 className="flex items-center gap-2 text-2xl font-semibold">
+          <Mail className="h-6 w-6 text-primary" /> Messagerie
+        </h1>
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={() => setAddOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Ajouter un compte
           </Button>
@@ -159,17 +142,36 @@ function MailDashboard() {
               <Inbox className="mr-2 h-4 w-4" /> Boîte unifiée
             </Link>
           </Button>
-          <Button variant="ghost" asChild>
-            <Link to="/mail/scheduled">
-              <CalendarClock className="mr-2 h-4 w-4" /> Envois programmés
-            </Link>
-          </Button>
-          <Button variant="ghost" asChild>
-            <Link to="/mail/settings">
-              <Settings2 className="mr-2 h-4 w-4" /> Paramètres
-            </Link>
-          </Button>
-
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => sync.mutate(null)}
+                disabled={sync.isPending}
+              >
+                {sync.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Synchroniser
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/mail/scheduled">
+                  <CalendarClock className="mr-2 h-4 w-4" /> Envois programmés
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/mail/settings">
+                  <Settings2 className="mr-2 h-4 w-4" /> Paramètres
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -179,19 +181,15 @@ function MailDashboard() {
         !data.oauth?.microsoft && (
           <Alert>
             <ShieldCheck className="h-4 w-4" />
-            <AlertTitle>Connexion des boîtes à activer</AlertTitle>
             <AlertDescription>
-              L'interface est complète. Activez la connexion en un clic (Google /
-              Microsoft) ou le relais IMAP/SMTP pour commencer à relever les messages.
+              Aucune méthode de connexion active. Ajoutez un compte pour commencer.
             </AlertDescription>
           </Alert>
         )}
 
-
       {inError.length > 0 && (
         <Alert variant="destructive">
           <TriangleAlert className="h-4 w-4" />
-          <AlertTitle>Comptes à reconnecter</AlertTitle>
           <AlertDescription>
             {inError
               .map((a) => `${a.email} : ${a.status_message ?? "connexion échouée"}`)
