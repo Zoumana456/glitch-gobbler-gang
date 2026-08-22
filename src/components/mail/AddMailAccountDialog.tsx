@@ -258,6 +258,7 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
                 key={p}
                 type="button"
                 size="sm"
+                disabled={!gatewayReady}
                 variant={provider === p ? "default" : "outline"}
                 className="h-auto whitespace-normal py-2 text-xs"
                 onClick={() => applyProvider(p)}
@@ -266,7 +267,14 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
               </Button>
             ))}
           </div>
+          {!gatewayReady && (
+            <p className="text-xs text-muted-foreground">
+              Connexion par mot de passe (IMAP/SMTP) momentanément indisponible : utilisez Google
+              ou Microsoft ci-dessus.
+            </p>
+          )}
         </div>
+
 
 
         <div className="space-y-4">
