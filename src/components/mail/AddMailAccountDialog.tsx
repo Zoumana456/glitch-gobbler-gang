@@ -198,7 +198,8 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
 
   const help = PROVIDER_APP_PASSWORD_HELP[provider];
   const hint = IMAP_PRESETS[provider]?.hint;
-  const ready = email.includes("@") && !!password && !!imapHost.trim() && !!smtpHost.trim();
+  const ready =
+    gatewayReady && email.includes("@") && !!password && !!imapHost.trim() && !!smtpHost.trim();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
