@@ -14,7 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import {
   CalendarClock,
@@ -22,6 +28,7 @@ import {
   Loader2,
   Mail,
   MailCheck,
+  MoreVertical,
   Paperclip,
   Plus,
   RefreshCw,
