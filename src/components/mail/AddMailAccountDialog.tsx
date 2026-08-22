@@ -25,12 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   CheckCircle2,
   ChevronDown,
   ExternalLink,
-  Info,
   Loader2,
   Mail,
   ShieldCheck,
@@ -173,8 +171,7 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>Connecter un compte e-mail</DialogTitle>
           <DialogDescription>
-            Deux informations suffisent : votre adresse et votre mot de passe. Les
-            identifiants sont chiffrés (AES-256) et aucun contenu d'e-mail n'est stocké.
+            Adresse + mot de passe, chiffrés (AES-256).
           </DialogDescription>
         </DialogHeader>
 
@@ -245,25 +242,20 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
           </div>
 
           {email.includes("@") && !guessed && (
-            <p className="flex items-center gap-2 text-sm text-primary">
+            <p className="flex items-center gap-1.5 text-sm text-primary">
               <CheckCircle2 className="h-4 w-4" />
-              {PROVIDER_LABELS[provider]} détecté automatiquement — rien d'autre à remplir.
+              {PROVIDER_LABELS[provider]} — serveurs détectés.
             </p>
           )}
 
           {email.includes("@") && guessed && (
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Boîte professionnelle : nous utilisons {imapHost || "imap.votre-domaine"} et{" "}
-                {smtpHost || "smtp.votre-domaine"}. Si la connexion échoue, ajustez les
-                réglages avancés ci-dessous.
-              </AlertDescription>
-            </Alert>
+            <p className="text-xs text-muted-foreground">
+              Serveurs estimés : {imapHost || "imap.votre-domaine"} / {smtpHost || "smtp.votre-domaine"}. Ajustez en « Réglages avancés » si besoin.
+            </p>
           )}
 
           {hint && (
-            <p className="flex items-start gap-2 text-xs text-muted-foreground">
+            <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {hint}
             </p>
