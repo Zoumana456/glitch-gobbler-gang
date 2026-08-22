@@ -167,6 +167,7 @@ export const IMAP_PRESETS: Record<
     smtp_port: 587,
     security: "SSL/TLS",
     smtp_security: "STARTTLS",
+    hint: "Microsoft exige un mot de passe d'application (account.microsoft.com → Sécurité → Options de sécurité avancées → Mots de passe d'application). Le mot de passe habituel ne fonctionne pas.",
   },
 };
 
