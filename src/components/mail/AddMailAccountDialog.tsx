@@ -121,7 +121,33 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
     setSmtpSecurity(d.smtp_security);
   }, [email, touchedServers]);
 
+  /** Sélection manuelle d'un fournisseur : applique ses serveurs. */
+  function applyProvider(p: MailProvider) {
+    setProvider(p);
+    setTouchedServers(true);
+    const preset = IMAP_PRESETS[p];
+    if (preset) {
+      setGuessed(false);
+      setImapHost(preset.imap_host);
+      setImapPort(String(preset.imap_port));
+      setSmtpHost(preset.smtp_host);
+      setSmtpPort(String(preset.smtp_port));
+      setImapSecurity(preset.security);
+      setSmtpSecurity(preset.smtp_security);
+    } else {
+      setGuessed(true);
+      setImapHost("");
+      setSmtpHost("");
+      setImapPort("993");
+      setSmtpPort("465");
+      setImapSecurity("SSL/TLS");
+      setSmtpSecurity("SSL/TLS");
+      setAdvancedOpen(true);
+    }
+  }
+
   function reset() {
+
     setEmail("");
     setPassword("");
     setDisplayName("");
