@@ -78,7 +78,12 @@ export function signState(payload: {
   origin: string;
 }): string {
   const body = Buffer.from(
-    JSON.stringify({ ...payload, n: randomBytes(8).toString("hex"), t: Date.now() }),
+    JSON.stringify({
+      ...payload,
+      origin: canonicalOrigin(payload.origin),
+      n: randomBytes(8).toString("hex"),
+      t: Date.now(),
+    }),
   ).toString("base64url");
   const sig = createHmac("sha256", stateKey()).update(body).digest("base64url");
   return `${body}.${sig}`;
