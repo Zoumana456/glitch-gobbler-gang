@@ -247,7 +247,7 @@ export function AddMailAccountDialog({ open, onOpenChange }: Props) {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Aucun mot de passe à saisir : l'autorisation se fait chez le fournisseur.
+              Aucun mot de passe à saisir. L'autorisation se termine sur le site publié.
             </p>
           </div>
         )}
