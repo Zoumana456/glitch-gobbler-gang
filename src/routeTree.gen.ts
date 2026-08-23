@@ -41,6 +41,7 @@ import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
 import { Route as AuthenticatedMailScheduledRouteImport } from './routes/_authenticated/mail.scheduled'
 import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/mail.inbox'
+import { Route as AuthenticatedLeavesNewRouteImport } from './routes/_authenticated/leaves.new'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
 import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
@@ -220,6 +221,11 @@ const AuthenticatedMailInboxRoute = AuthenticatedMailInboxRouteImport.update({
   path: '/mail/inbox',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeavesNewRoute = AuthenticatedLeavesNewRouteImport.update({
+  id: '/leaves/new',
+  path: '/leaves/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCompanyHierarchieRoute =
   AuthenticatedCompanyHierarchieRouteImport.update({
     id: '/hierarchie',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/leaves/new': typeof AuthenticatedLeavesNewRoute
   '/mail/inbox': typeof AuthenticatedMailInboxRoute
   '/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/leaves/new': typeof AuthenticatedLeavesNewRoute
   '/mail/inbox': typeof AuthenticatedMailInboxRoute
   '/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
@@ -373,6 +381,7 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/_authenticated/leaves/new': typeof AuthenticatedLeavesNewRoute
   '/_authenticated/mail/inbox': typeof AuthenticatedMailInboxRoute
   '/_authenticated/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
@@ -417,6 +426,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/leaves/new'
     | '/mail/inbox'
     | '/mail/scheduled'
     | '/mail/settings'
@@ -458,6 +468,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/leaves/new'
     | '/mail/inbox'
     | '/mail/scheduled'
     | '/mail/settings'
@@ -500,6 +511,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
+    | '/_authenticated/leaves/new'
     | '/_authenticated/mail/inbox'
     | '/_authenticated/mail/scheduled'
     | '/_authenticated/mail/settings'
@@ -769,6 +781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMailInboxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leaves/new': {
+      id: '/_authenticated/leaves/new'
+      path: '/leaves/new'
+      fullPath: '/leaves/new'
+      preLoaderRoute: typeof AuthenticatedLeavesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/company/hierarchie': {
       id: '/_authenticated/company/hierarchie'
       path: '/hierarchie'
@@ -874,6 +893,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCompanyRoute: typeof AuthenticatedCompanyRouteWithChildren
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedLeavesNewRoute: typeof AuthenticatedLeavesNewRoute
   AuthenticatedMailInboxRoute: typeof AuthenticatedMailInboxRoute
   AuthenticatedMailScheduledRoute: typeof AuthenticatedMailScheduledRoute
   AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
@@ -899,6 +919,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCompanyRoute: AuthenticatedCompanyRouteWithChildren,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedLeavesNewRoute: AuthenticatedLeavesNewRoute,
   AuthenticatedMailInboxRoute: AuthenticatedMailInboxRoute,
   AuthenticatedMailScheduledRoute: AuthenticatedMailScheduledRoute,
   AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
