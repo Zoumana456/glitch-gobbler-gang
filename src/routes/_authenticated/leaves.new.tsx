@@ -203,10 +203,17 @@ function NewLeavePage() {
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground">
-            Durée décomptée : <span className="font-medium text-foreground">{days} jour(s)</span>{" "}
-            ouvré(s).
-          </p>
+          {days > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Durée décomptée :{" "}
+              <span className="font-medium text-foreground">{days} jour(s)</span> ouvré(s).
+            </p>
+          ) : (
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              Cette période ne contient aucun jour ouvré (samedi/dimanche) : choisissez
+              d'autres dates.
+            </p>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="leave-reason">Motif (facultatif)</Label>
