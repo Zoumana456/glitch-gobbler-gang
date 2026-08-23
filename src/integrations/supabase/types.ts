@@ -788,6 +788,220 @@ export type Database = {
           },
         ]
       }
+      leave_approvals: {
+        Row: {
+          approver_id: string
+          comment: string | null
+          decided_at: string
+          decision: string
+          id: string
+          level: number
+          request_id: string
+        }
+        Insert: {
+          approver_id: string
+          comment?: string | null
+          decided_at?: string
+          decision: string
+          id?: string
+          level?: number
+          request_id: string
+        }
+        Update: {
+          approver_id?: string
+          comment?: string | null
+          decided_at?: string
+          decision?: string
+          id?: string
+          level?: number
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_approvals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "leave_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_balances: {
+        Row: {
+          allocated_days: number
+          company_id: string
+          created_at: string
+          id: string
+          type_id: string
+          updated_at: string
+          used_days: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          allocated_days?: number
+          company_id: string
+          created_at?: string
+          id?: string
+          type_id: string
+          updated_at?: string
+          used_days?: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          allocated_days?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          type_id?: string
+          updated_at?: string
+          used_days?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_balances_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balances_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_requests: {
+        Row: {
+          company_id: string
+          created_at: string
+          current_approver_id: string | null
+          days_count: number
+          decided_at: string | null
+          end_date: string
+          half_end: boolean
+          half_start: boolean
+          id: string
+          proof_path: string | null
+          reason: string | null
+          start_date: string
+          status: string
+          submitted_at: string | null
+          type_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          current_approver_id?: string | null
+          days_count?: number
+          decided_at?: string | null
+          end_date: string
+          half_end?: boolean
+          half_start?: boolean
+          id?: string
+          proof_path?: string | null
+          reason?: string | null
+          start_date: string
+          status?: string
+          submitted_at?: string | null
+          type_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          current_approver_id?: string | null
+          days_count?: number
+          decided_at?: string | null
+          end_date?: string
+          half_end?: boolean
+          half_start?: boolean
+          id?: string
+          proof_path?: string | null
+          reason?: string | null
+          start_date?: string
+          status?: string
+          submitted_at?: string | null
+          type_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_types: {
+        Row: {
+          code: string
+          company_id: string | null
+          created_at: string
+          default_days: number
+          id: string
+          is_active: boolean
+          is_paid: boolean
+          name: string
+          requires_proof: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          company_id?: string | null
+          created_at?: string
+          default_days?: number
+          id?: string
+          is_active?: boolean
+          is_paid?: boolean
+          name: string
+          requires_proof?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          company_id?: string | null
+          created_at?: string
+          default_days?: number
+          id?: string
+          is_active?: boolean
+          is_paid?: boolean
+          name?: string
+          requires_proof?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_types_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string | null

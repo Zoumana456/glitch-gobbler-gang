@@ -16,6 +16,8 @@ import {
   Settings2,
   type LucideIcon,
   CalendarClock,
+  CalendarCheck2,
+  CalendarRange,
 } from "lucide-react";
 
 export type ModuleScreen = {
@@ -75,6 +77,22 @@ export const APP_MODULES: AppModule[] = [
     screens: [
       { to: "/tasks", label: "Tâches", icon: ListChecks },
       { to: "/tasks/new", label: "Nouvelle tâche", icon: FilePlus2 },
+    ],
+  },
+  {
+    code: "leaves",
+    name: "Congés & absences",
+    description:
+      "Demandes de congés, soldes, justificatifs, validations hiérarchiques et calendrier d'équipe.",
+    icon: CalendarCheck2,
+    tone: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+    entry: "/leaves",
+    core: false,
+    screens: [
+      { to: "/leaves", label: "Mes congés", icon: CalendarCheck2 },
+      { to: "/leaves/new", label: "Nouvelle demande", icon: FilePlus2 },
+      { to: "/leaves/validations", label: "À valider", icon: ShieldCheck },
+      { to: "/leaves/calendrier", label: "Calendrier d'équipe", icon: CalendarRange },
     ],
   },
   {

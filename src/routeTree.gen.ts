@@ -27,6 +27,7 @@ import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedMinutesIndexRouteImport } from './routes/_authenticated/minutes.index'
 import { Route as AuthenticatedMailIndexRouteImport } from './routes/_authenticated/mail.index'
+import { Route as AuthenticatedLeavesIndexRouteImport } from './routes/_authenticated/leaves.index'
 import { Route as AuthenticatedCompanyIndexRouteImport } from './routes/_authenticated/company.index'
 import { Route as AuthenticatedTasksNewRouteImport } from './routes/_authenticated/tasks.new'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
@@ -40,6 +41,9 @@ import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
 import { Route as AuthenticatedMailScheduledRouteImport } from './routes/_authenticated/mail.scheduled'
 import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/mail.inbox'
+import { Route as AuthenticatedLeavesValidationsRouteImport } from './routes/_authenticated/leaves.validations'
+import { Route as AuthenticatedLeavesNewRouteImport } from './routes/_authenticated/leaves.new'
+import { Route as AuthenticatedLeavesCalendrierRouteImport } from './routes/_authenticated/leaves.calendrier'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
 import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
@@ -141,6 +145,12 @@ const AuthenticatedMailIndexRoute = AuthenticatedMailIndexRouteImport.update({
   path: '/mail/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeavesIndexRoute =
+  AuthenticatedLeavesIndexRouteImport.update({
+    id: '/leaves/',
+    path: '/leaves/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCompanyIndexRoute =
   AuthenticatedCompanyIndexRouteImport.update({
     id: '/',
@@ -213,6 +223,23 @@ const AuthenticatedMailInboxRoute = AuthenticatedMailInboxRouteImport.update({
   path: '/mail/inbox',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeavesValidationsRoute =
+  AuthenticatedLeavesValidationsRouteImport.update({
+    id: '/leaves/validations',
+    path: '/leaves/validations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLeavesNewRoute = AuthenticatedLeavesNewRouteImport.update({
+  id: '/leaves/new',
+  path: '/leaves/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLeavesCalendrierRoute =
+  AuthenticatedLeavesCalendrierRouteImport.update({
+    id: '/leaves/calendrier',
+    path: '/leaves/calendrier',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCompanyHierarchieRoute =
   AuthenticatedCompanyHierarchieRouteImport.update({
     id: '/hierarchie',
@@ -282,6 +309,9 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/leaves/calendrier': typeof AuthenticatedLeavesCalendrierRoute
+  '/leaves/new': typeof AuthenticatedLeavesNewRoute
+  '/leaves/validations': typeof AuthenticatedLeavesValidationsRoute
   '/mail/inbox': typeof AuthenticatedMailInboxRoute
   '/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
@@ -295,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/new': typeof AuthenticatedTasksNewRoute
   '/company/': typeof AuthenticatedCompanyIndexRoute
+  '/leaves/': typeof AuthenticatedLeavesIndexRoute
   '/mail/': typeof AuthenticatedMailIndexRoute
   '/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
@@ -322,6 +353,9 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/leaves/calendrier': typeof AuthenticatedLeavesCalendrierRoute
+  '/leaves/new': typeof AuthenticatedLeavesNewRoute
+  '/leaves/validations': typeof AuthenticatedLeavesValidationsRoute
   '/mail/inbox': typeof AuthenticatedMailInboxRoute
   '/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
@@ -334,6 +368,7 @@ export interface FileRoutesByTo {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/new': typeof AuthenticatedTasksNewRoute
   '/company': typeof AuthenticatedCompanyIndexRoute
+  '/leaves': typeof AuthenticatedLeavesIndexRoute
   '/mail': typeof AuthenticatedMailIndexRoute
   '/minutes': typeof AuthenticatedMinutesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
@@ -364,6 +399,9 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/_authenticated/leaves/calendrier': typeof AuthenticatedLeavesCalendrierRoute
+  '/_authenticated/leaves/new': typeof AuthenticatedLeavesNewRoute
+  '/_authenticated/leaves/validations': typeof AuthenticatedLeavesValidationsRoute
   '/_authenticated/mail/inbox': typeof AuthenticatedMailInboxRoute
   '/_authenticated/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
@@ -377,6 +415,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/new': typeof AuthenticatedTasksNewRoute
   '/_authenticated/company/': typeof AuthenticatedCompanyIndexRoute
+  '/_authenticated/leaves/': typeof AuthenticatedLeavesIndexRoute
   '/_authenticated/mail/': typeof AuthenticatedMailIndexRoute
   '/_authenticated/minutes/': typeof AuthenticatedMinutesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
@@ -407,6 +446,9 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/leaves/calendrier'
+    | '/leaves/new'
+    | '/leaves/validations'
     | '/mail/inbox'
     | '/mail/scheduled'
     | '/mail/settings'
@@ -420,6 +462,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/new'
     | '/company/'
+    | '/leaves/'
     | '/mail/'
     | '/minutes/'
     | '/reports/'
@@ -447,6 +490,9 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/leaves/calendrier'
+    | '/leaves/new'
+    | '/leaves/validations'
     | '/mail/inbox'
     | '/mail/scheduled'
     | '/mail/settings'
@@ -459,6 +505,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/new'
     | '/company'
+    | '/leaves'
     | '/mail'
     | '/minutes'
     | '/reports'
@@ -488,6 +535,9 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
+    | '/_authenticated/leaves/calendrier'
+    | '/_authenticated/leaves/new'
+    | '/_authenticated/leaves/validations'
     | '/_authenticated/mail/inbox'
     | '/_authenticated/mail/scheduled'
     | '/_authenticated/mail/settings'
@@ -501,6 +551,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/new'
     | '/_authenticated/company/'
+    | '/_authenticated/leaves/'
     | '/_authenticated/mail/'
     | '/_authenticated/minutes/'
     | '/_authenticated/reports/'
@@ -658,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMailIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leaves/': {
+      id: '/_authenticated/leaves/'
+      path: '/leaves'
+      fullPath: '/leaves/'
+      preLoaderRoute: typeof AuthenticatedLeavesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/company/': {
       id: '/_authenticated/company/'
       path: '/'
@@ -747,6 +805,27 @@ declare module '@tanstack/react-router' {
       path: '/mail/inbox'
       fullPath: '/mail/inbox'
       preLoaderRoute: typeof AuthenticatedMailInboxRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leaves/validations': {
+      id: '/_authenticated/leaves/validations'
+      path: '/leaves/validations'
+      fullPath: '/leaves/validations'
+      preLoaderRoute: typeof AuthenticatedLeavesValidationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leaves/new': {
+      id: '/_authenticated/leaves/new'
+      path: '/leaves/new'
+      fullPath: '/leaves/new'
+      preLoaderRoute: typeof AuthenticatedLeavesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leaves/calendrier': {
+      id: '/_authenticated/leaves/calendrier'
+      path: '/leaves/calendrier'
+      fullPath: '/leaves/calendrier'
+      preLoaderRoute: typeof AuthenticatedLeavesCalendrierRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/company/hierarchie': {
@@ -854,6 +933,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCompanyRoute: typeof AuthenticatedCompanyRouteWithChildren
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedLeavesCalendrierRoute: typeof AuthenticatedLeavesCalendrierRoute
+  AuthenticatedLeavesNewRoute: typeof AuthenticatedLeavesNewRoute
+  AuthenticatedLeavesValidationsRoute: typeof AuthenticatedLeavesValidationsRoute
   AuthenticatedMailInboxRoute: typeof AuthenticatedMailInboxRoute
   AuthenticatedMailScheduledRoute: typeof AuthenticatedMailScheduledRoute
   AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
@@ -866,6 +948,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
   AuthenticatedTasksIdRoute: typeof AuthenticatedTasksIdRoute
   AuthenticatedTasksNewRoute: typeof AuthenticatedTasksNewRoute
+  AuthenticatedLeavesIndexRoute: typeof AuthenticatedLeavesIndexRoute
   AuthenticatedMailIndexRoute: typeof AuthenticatedMailIndexRoute
   AuthenticatedMinutesIndexRoute: typeof AuthenticatedMinutesIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
@@ -878,6 +961,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCompanyRoute: AuthenticatedCompanyRouteWithChildren,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedLeavesCalendrierRoute: AuthenticatedLeavesCalendrierRoute,
+  AuthenticatedLeavesNewRoute: AuthenticatedLeavesNewRoute,
+  AuthenticatedLeavesValidationsRoute: AuthenticatedLeavesValidationsRoute,
   AuthenticatedMailInboxRoute: AuthenticatedMailInboxRoute,
   AuthenticatedMailScheduledRoute: AuthenticatedMailScheduledRoute,
   AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
@@ -890,6 +976,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
   AuthenticatedTasksIdRoute: AuthenticatedTasksIdRoute,
   AuthenticatedTasksNewRoute: AuthenticatedTasksNewRoute,
+  AuthenticatedLeavesIndexRoute: AuthenticatedLeavesIndexRoute,
   AuthenticatedMailIndexRoute: AuthenticatedMailIndexRoute,
   AuthenticatedMinutesIndexRoute: AuthenticatedMinutesIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
