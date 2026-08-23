@@ -16,6 +16,8 @@ import {
   Settings2,
   type LucideIcon,
   CalendarClock,
+  CalendarCheck2,
+  CalendarRange,
 } from "lucide-react";
 
 export type ModuleScreen = {
