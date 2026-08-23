@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/leaves/new")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: NewLeavePage;
+  component: NewLeavePage,
 });
 
 function NewLeavePage() {
