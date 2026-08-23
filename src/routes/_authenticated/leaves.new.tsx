@@ -53,10 +53,15 @@ function NewLeavePage() {
     queryFn: () => typesFn(),
   });
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Par défaut : prochain jour ouvré, pour éviter une période sans jour décompté.
+  const nextWorkday = useMemo(() => {
+    const d = new Date();
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }, []);
   const [typeId, setTypeId] = useState("");
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(today);
+  const [startDate, setStartDate] = useState(nextWorkday);
+  const [endDate, setEndDate] = useState(nextWorkday);
   const [halfStart, setHalfStart] = useState(false);
   const [halfEnd, setHalfEnd] = useState(false);
   const [reason, setReason] = useState("");
