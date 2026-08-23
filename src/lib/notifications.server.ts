@@ -4,7 +4,10 @@ export type NotificationType =
   | "report_rejected"
   | "report_reminder"
   | "task_assigned"
-  | "task_completed";
+  | "task_completed"
+  | "leave_submitted"
+  | "leave_approved"
+  | "leave_rejected";
 
 export type NotificationDraft = {
   user_id: string;
