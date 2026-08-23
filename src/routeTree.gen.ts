@@ -41,6 +41,7 @@ import { Route as AuthenticatedMinutesIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
 import { Route as AuthenticatedMailScheduledRouteImport } from './routes/_authenticated/mail.scheduled'
 import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/mail.inbox'
+import { Route as AuthenticatedLeavesValidationsRouteImport } from './routes/_authenticated/leaves.validations'
 import { Route as AuthenticatedLeavesNewRouteImport } from './routes/_authenticated/leaves.new'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
 import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
@@ -221,6 +222,12 @@ const AuthenticatedMailInboxRoute = AuthenticatedMailInboxRouteImport.update({
   path: '/mail/inbox',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeavesValidationsRoute =
+  AuthenticatedLeavesValidationsRouteImport.update({
+    id: '/leaves/validations',
+    path: '/leaves/validations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLeavesNewRoute = AuthenticatedLeavesNewRouteImport.update({
   id: '/leaves/new',
   path: '/leaves/new',
@@ -296,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/leaves/new': typeof AuthenticatedLeavesNewRoute
+  '/leaves/validations': typeof AuthenticatedLeavesValidationsRoute
   '/mail/inbox': typeof AuthenticatedMailInboxRoute
   '/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
@@ -338,6 +346,7 @@ export interface FileRoutesByTo {
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/leaves/new': typeof AuthenticatedLeavesNewRoute
+  '/leaves/validations': typeof AuthenticatedLeavesValidationsRoute
   '/mail/inbox': typeof AuthenticatedMailInboxRoute
   '/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
@@ -382,6 +391,7 @@ export interface FileRoutesById {
   '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/_authenticated/leaves/new': typeof AuthenticatedLeavesNewRoute
+  '/_authenticated/leaves/validations': typeof AuthenticatedLeavesValidationsRoute
   '/_authenticated/mail/inbox': typeof AuthenticatedMailInboxRoute
   '/_authenticated/mail/scheduled': typeof AuthenticatedMailScheduledRoute
   '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
@@ -427,6 +437,7 @@ export interface FileRouteTypes {
     | '/company/applications'
     | '/company/hierarchie'
     | '/leaves/new'
+    | '/leaves/validations'
     | '/mail/inbox'
     | '/mail/scheduled'
     | '/mail/settings'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/company/applications'
     | '/company/hierarchie'
     | '/leaves/new'
+    | '/leaves/validations'
     | '/mail/inbox'
     | '/mail/scheduled'
     | '/mail/settings'
@@ -512,6 +524,7 @@ export interface FileRouteTypes {
     | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
     | '/_authenticated/leaves/new'
+    | '/_authenticated/leaves/validations'
     | '/_authenticated/mail/inbox'
     | '/_authenticated/mail/scheduled'
     | '/_authenticated/mail/settings'
@@ -781,6 +794,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMailInboxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leaves/validations': {
+      id: '/_authenticated/leaves/validations'
+      path: '/leaves/validations'
+      fullPath: '/leaves/validations'
+      preLoaderRoute: typeof AuthenticatedLeavesValidationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/leaves/new': {
       id: '/_authenticated/leaves/new'
       path: '/leaves/new'
@@ -894,6 +914,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedLeavesNewRoute: typeof AuthenticatedLeavesNewRoute
+  AuthenticatedLeavesValidationsRoute: typeof AuthenticatedLeavesValidationsRoute
   AuthenticatedMailInboxRoute: typeof AuthenticatedMailInboxRoute
   AuthenticatedMailScheduledRoute: typeof AuthenticatedMailScheduledRoute
   AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
@@ -920,6 +941,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedLeavesNewRoute: AuthenticatedLeavesNewRoute,
+  AuthenticatedLeavesValidationsRoute: AuthenticatedLeavesValidationsRoute,
   AuthenticatedMailInboxRoute: AuthenticatedMailInboxRoute,
   AuthenticatedMailScheduledRoute: AuthenticatedMailScheduledRoute,
   AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
