@@ -52,7 +52,15 @@ export type ReportPayload = {
   sections: ReportSectionPayload[];
   images: ReportImagePayload[];
   attachments: ReportAttachmentPayload[];
+  doc_type?: DocType;
+  doc_number?: string;
+  currency?: string;
+  tax_rate?: number;
+  period_label?: string;
+  counterparty?: string;
+  budget_lines?: BudgetLine[];
 };
+
 
 export type LoadedImage = {
   id: string;
