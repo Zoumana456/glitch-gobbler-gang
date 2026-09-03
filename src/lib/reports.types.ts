@@ -130,7 +130,10 @@ export type ReportListItem = {
   created_at: string;
   status?: ReportStatus;
   kind?: ReportKind;
+  doc_type?: DocType;
+  doc_number?: string | null;
 };
+
 
 // ============ Hiérarchie & circuit de validation ============
 
