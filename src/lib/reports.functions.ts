@@ -326,6 +326,27 @@ async function persistChildren(
   await supabase.from("report_sections").delete().eq("report_id", reportId);
   await supabase.from("report_images").delete().eq("report_id", reportId);
   await supabase.from("report_attachments").delete().eq("report_id", reportId);
+  await supabase.from("report_budget_lines").delete().eq("report_id", reportId);
+
+  const budgetInserts = (input.budget_lines ?? [])
+    .filter((l) => (l.label ?? "").trim() || l.quantity || l.unit_price || l.planned_amount || l.actual_amount)
+    .map((l, idx) => ({
+      report_id: reportId,
+      category: l.category ?? "",
+      label: l.label ?? "",
+      unit: l.unit ?? "",
+      quantity: l.quantity ?? 0,
+      unit_price: l.unit_price ?? 0,
+      planned_amount: l.planned_amount ?? 0,
+      actual_amount: l.actual_amount ?? 0,
+      notes: l.notes ?? "",
+      position: idx,
+    }));
+  if (budgetInserts.length > 0) {
+    const { error } = await supabase.from("report_budget_lines").insert(budgetInserts);
+    if (error) throw new Error(error.message);
+  }
+
 
   // Insert sections and gather created IDs (ordered by position)
   const sectionInserts = input.sections.map((s, idx) => ({
