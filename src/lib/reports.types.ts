@@ -1,4 +1,18 @@
+import type { BudgetLine, DocType } from "./budget";
+
+export type { BudgetLine, DocType };
+
+export type DocMeta = {
+  doc_type: DocType;
+  doc_number: string;
+  currency: string;
+  tax_rate: number;
+  period_label: string;
+  counterparty: string;
+};
+
 export type ReportImagePayload = {
+
   id?: string;
   storage_path: string;
   section_id: string | null;
