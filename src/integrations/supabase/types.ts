@@ -1192,6 +1192,59 @@ export type Database = {
           },
         ]
       }
+      report_budget_lines: {
+        Row: {
+          actual_amount: number
+          category: string
+          created_at: string
+          id: string
+          label: string
+          notes: string
+          planned_amount: number
+          position: number
+          quantity: number
+          report_id: string
+          unit: string
+          unit_price: number
+        }
+        Insert: {
+          actual_amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          label?: string
+          notes?: string
+          planned_amount?: number
+          position?: number
+          quantity?: number
+          report_id: string
+          unit?: string
+          unit_price?: number
+        }
+        Update: {
+          actual_amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          label?: string
+          notes?: string
+          planned_amount?: number
+          position?: number
+          quantity?: number
+          report_id?: string
+          unit?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_budget_lines_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_images: {
         Row: {
           caption: string
@@ -1459,18 +1512,24 @@ export type Database = {
           author_id: string
           company_id: string | null
           conclusion: string | null
+          counterparty: string | null
           created_at: string
+          currency: string
           current_approver_id: string | null
+          doc_number: string | null
+          doc_type: string
           id: string
           intro: string | null
           kind: string
           period_end: string | null
+          period_label: string | null
           period_start: string | null
           report_date: string
           share_expires_at: string | null
           share_token: string | null
           status: string
           submitted_at: string | null
+          tax_rate: number
           title: string
           updated_at: string
         }
@@ -1479,18 +1538,24 @@ export type Database = {
           author_id: string
           company_id?: string | null
           conclusion?: string | null
+          counterparty?: string | null
           created_at?: string
+          currency?: string
           current_approver_id?: string | null
+          doc_number?: string | null
+          doc_type?: string
           id?: string
           intro?: string | null
           kind?: string
           period_end?: string | null
+          period_label?: string | null
           period_start?: string | null
           report_date: string
           share_expires_at?: string | null
           share_token?: string | null
           status?: string
           submitted_at?: string | null
+          tax_rate?: number
           title: string
           updated_at?: string
         }
@@ -1499,18 +1564,24 @@ export type Database = {
           author_id?: string
           company_id?: string | null
           conclusion?: string | null
+          counterparty?: string | null
           created_at?: string
+          currency?: string
           current_approver_id?: string | null
+          doc_number?: string | null
+          doc_type?: string
           id?: string
           intro?: string | null
           kind?: string
           period_end?: string | null
+          period_label?: string | null
           period_start?: string | null
           report_date?: string
           share_expires_at?: string | null
           share_token?: string | null
           status?: string
           submitted_at?: string | null
+          tax_rate?: number
           title?: string
           updated_at?: string
         }
