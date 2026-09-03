@@ -934,7 +934,15 @@ export const getSharedReport = createServerFn({ method: "GET" })
       general_images: generalImages,
       general_attachments: generalAttachments,
       share_expires_at: (report.share_expires_at as string | null) ?? null,
+      doc_type: ((report as any).doc_type ?? "report") as any,
+      doc_number: (report as any).doc_number ?? "",
+      currency: (report as any).currency ?? "XOF",
+      tax_rate: Number((report as any).tax_rate ?? 0),
+      period_label: (report as any).period_label ?? "",
+      counterparty: (report as any).counterparty ?? "",
+      budget_lines: mapBudgetLines(budgetLines as any),
     } as LoadedReport;
+
   });
 
 export const logSharedExport = createServerFn({ method: "POST" })
