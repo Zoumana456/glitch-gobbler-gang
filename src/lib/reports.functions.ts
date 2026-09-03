@@ -158,7 +158,10 @@ export const listReports = createServerFn({ method: "GET" })
       title: r.title,
       intro: r.intro ?? "",
       created_at: r.created_at,
+      doc_type: (r.doc_type ?? "report") as any,
+      doc_number: r.doc_number ?? null,
     }));
+
   });
 
 export const getReport = createServerFn({ method: "GET" })
