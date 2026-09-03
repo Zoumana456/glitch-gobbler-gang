@@ -169,7 +169,13 @@ export const getReport = createServerFn({ method: "GET" })
   .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<LoadedReport> => {
     const { supabase } = context;
-    const [{ data: report, error: e1 }, { data: sections }, { data: images }, { data: attachments }] =
+    const [
+      { data: report, error: e1 },
+      { data: sections },
+      { data: images },
+      { data: attachments },
+      { data: budgetLines },
+    ] =
       await Promise.all([
         supabase.from("reports").select("*").eq("id", data.id).maybeSingle(),
         supabase
@@ -187,9 +193,17 @@ export const getReport = createServerFn({ method: "GET" })
           .select("id, storage_path, section_id, position, file_name, mime_type, size_bytes")
           .eq("report_id", data.id)
           .order("position", { ascending: true }),
+        supabase
+          .from("report_budget_lines")
+          .select(
+            "id, category, label, unit, quantity, unit_price, planned_amount, actual_amount, notes, position",
+          )
+          .eq("report_id", data.id)
+          .order("position", { ascending: true }),
       ]);
     if (e1) throw new Error(e1.message);
     if (!report) throw new Error("Rapport introuvable");
+
 
     const sectionIds = (sections ?? []).map((s: any) => s.id);
     const [{ data: bullets }, { data: profile }] = await Promise.all([
