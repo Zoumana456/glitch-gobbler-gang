@@ -15,6 +15,7 @@ import { getMyShareForReport } from "@/lib/shares.functions";
 import { SharePeopleDialog } from "@/components/SharePeopleDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { BudgetView } from "@/components/budget/BudgetView";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
@@ -493,7 +494,7 @@ function ReportDetailPage() {
         </section>
       ))}
 
-      {r.conclusion && (
+      {r.doc_type !== "budget" && r.conclusion && (
         <section>
           <h2 className="text-xl font-semibold mb-3">Conclusion</h2>
           <RichText text={r.conclusion} />
