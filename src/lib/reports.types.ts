@@ -109,7 +109,15 @@ export type LoadedReport = {
   share_expires_at?: string | null;
   status?: ReportStatus | null;
   kind?: ReportKind | null;
+  doc_type?: DocType;
+  doc_number?: string;
+  currency?: string;
+  tax_rate?: number;
+  period_label?: string;
+  counterparty?: string;
+  budget_lines?: BudgetLine[];
 };
+
 
 
 export type ReportListItem = {
