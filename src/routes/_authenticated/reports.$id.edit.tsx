@@ -37,5 +37,7 @@ function EditReportPage() {
       </div>
     );
   }
+  if (q.data.doc_type === "budget") return <BudgetForm initial={q.data} />;
   return <ReportForm initial={q.data} />;
+
 }
