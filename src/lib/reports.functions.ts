@@ -415,6 +415,7 @@ export const upsertReport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     let reportId: string;
+    const docFields = docFieldsOf(data);
     if (data.id) {
       const { data: upd, error } = await supabase
         .from("reports")
@@ -423,6 +424,7 @@ export const upsertReport = createServerFn({ method: "POST" })
           title: data.title,
           intro: data.intro,
           conclusion: data.conclusion,
+          ...docFields,
         })
         .eq("id", data.id)
         .eq("author_id", userId)
@@ -432,6 +434,9 @@ export const upsertReport = createServerFn({ method: "POST" })
       if (!upd) throw new Error("Rapport introuvable ou non autorisé");
       reportId = upd.id;
     } else {
+      if (!docFields.doc_number && data.doc_type !== "report") {
+        docFields.doc_number = await nextDocNumber(supabase, userId, data.doc_type);
+      }
       const { data: ins, error } = await supabase
         .from("reports")
         .insert({
@@ -440,6 +445,7 @@ export const upsertReport = createServerFn({ method: "POST" })
           title: data.title,
           intro: data.intro,
           conclusion: data.conclusion,
+          ...docFields,
         })
         .select("id")
         .single();
@@ -449,6 +455,7 @@ export const upsertReport = createServerFn({ method: "POST" })
     await persistChildren(supabase, reportId, data);
     return { id: reportId };
   });
+
 
 export const deleteReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
