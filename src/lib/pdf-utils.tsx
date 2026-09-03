@@ -252,6 +252,9 @@ export async function generateReportPdfBlob(
   report: LoadedReport,
   approvals?: ApprovalEntry[],
 ): Promise<Blob> {
+  if (report.doc_type === "budget") {
+    return await pdf(<BudgetPdfDocument report={report} />).toBlob();
+  }
   const prepared = await inlineReportImages(report);
   return await pdf(
     <ReportPdfDocument report={prepared} approvals={approvals} />,
@@ -263,9 +266,11 @@ export async function downloadReportPdf(
   approvals?: ApprovalEntry[],
 ) {
   const blob = await generateReportPdfBlob(report, approvals);
-  const filename = `${sanitize(report.title)}-${report.report_date}.pdf`;
+  const prefix = report.doc_type === "budget" ? report.doc_number || "budget" : report.title;
+  const filename = `${sanitize(prefix)}-${report.report_date}.pdf`;
   triggerDownload(blob, filename);
 }
+
 
 
 export async function downloadReportsBundle(reports: LoadedReport[]) {
