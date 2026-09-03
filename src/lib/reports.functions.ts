@@ -815,7 +815,13 @@ export const getSharedReport = createServerFn({ method: "GET" })
       throw new Error("Lien expiré");
     }
 
-    const [{ data: sections }, { data: images }, { data: attachments }, { data: profile }] =
+    const [
+      { data: sections },
+      { data: images },
+      { data: attachments },
+      { data: profile },
+      { data: budgetLines },
+    ] =
       await Promise.all([
         supabaseAdmin
           .from("report_sections")
@@ -837,7 +843,15 @@ export const getSharedReport = createServerFn({ method: "GET" })
           .select("id, full_name")
           .eq("id", report.author_id)
           .maybeSingle(),
+        supabaseAdmin
+          .from("report_budget_lines")
+          .select(
+            "id, category, label, unit, quantity, unit_price, planned_amount, actual_amount, notes, position",
+          )
+          .eq("report_id", report.id)
+          .order("position", { ascending: true }),
       ]);
+
 
     const sectionIds = (sections ?? []).map((s: any) => s.id);
     const { data: bullets } = sectionIds.length
