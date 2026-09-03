@@ -4,9 +4,10 @@ import { BudgetForm } from "@/components/budget/BudgetForm";
 import type { DocType } from "@/lib/budget";
 
 export const Route = createFileRoute("/_authenticated/reports/new")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    type: (typeof search.type === "string" ? search.type : "report") as DocType,
+  validateSearch: (search: Record<string, unknown>): { type?: DocType } => ({
+    type: typeof search.type === "string" ? (search.type as DocType) : undefined,
   }),
+
   head: () => ({
     meta: [
       { title: "Nouveau document — DailyBrief" },
