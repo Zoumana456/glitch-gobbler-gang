@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import {
   budgetTotals,
   formatAmount,
@@ -69,8 +70,8 @@ export function BudgetView({ report }: { report: LoadedReport }) {
           </thead>
           <tbody>
             {groups.map((g) => (
-              <>
-                <tr key={`h-${g.category}`} className="bg-muted/30 border-t border-border">
+              <Fragment key={g.category}>
+                <tr className="bg-muted/30 border-t border-border">
                   <td colSpan={8} className="px-3 py-1.5 font-semibold text-xs uppercase tracking-wide">
                     {g.category}
                   </td>
@@ -92,7 +93,7 @@ export function BudgetView({ report }: { report: LoadedReport }) {
                     <td className="px-3 py-2 text-muted-foreground">{l.notes || ""}</td>
                   </tr>
                 ))}
-                <tr key={`s-${g.category}`} className="border-t border-border bg-muted/10 text-xs">
+                <tr className="border-t border-border bg-muted/10 text-xs">
                   <td colSpan={4} className="px-3 py-1.5 text-right text-muted-foreground">
                     Sous-total {g.category}
                   </td>
@@ -101,7 +102,7 @@ export function BudgetView({ report }: { report: LoadedReport }) {
                   <td className="px-3 py-1.5 text-right font-medium">{formatAmount(g.variance, currency)}</td>
                   <td />
                 </tr>
-              </>
+              </Fragment>
             ))}
             {lines.length === 0 && (
               <tr>
