@@ -526,6 +526,10 @@ export const duplicateReport = createServerFn({ method: "POST" })
     if (e1) throw new Error(e1.message);
     if (!src) throw new Error("Rapport introuvable");
 
+    const srcDocType = ((src as any).doc_type ?? "report") as string;
+    const newDocNumber =
+      srcDocType === "report" ? null : await nextDocNumber(supabase, userId, srcDocType);
+
     const { data: newRep, error: e2 } = await supabase
       .from("reports")
       .insert({
@@ -534,10 +538,30 @@ export const duplicateReport = createServerFn({ method: "POST" })
         title: `${src.title} (copie)`,
         intro: src.intro ?? "",
         conclusion: src.conclusion ?? "",
+        doc_type: srcDocType,
+        doc_number: newDocNumber,
+        currency: (src as any).currency ?? "XOF",
+        tax_rate: (src as any).tax_rate ?? 0,
+        period_label: (src as any).period_label ?? null,
+        counterparty: (src as any).counterparty ?? null,
       })
       .select("id")
       .single();
     if (e2) throw new Error(e2.message);
+
+    const { data: srcLines } = await supabase
+      .from("report_budget_lines")
+      .select(
+        "category, label, unit, quantity, unit_price, planned_amount, actual_amount, notes, position",
+      )
+      .eq("report_id", data.id)
+      .order("position", { ascending: true });
+    if (srcLines && srcLines.length > 0) {
+      await supabase
+        .from("report_budget_lines")
+        .insert(srcLines.map((l: any) => ({ ...l, report_id: newRep.id })));
+    }
+
 
     const { data: sections } = await supabase
       .from("report_sections")
