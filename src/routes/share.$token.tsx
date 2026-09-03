@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { BudgetView } from "@/components/budget/BudgetView";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getSharedReport, logSharedExport } from "@/lib/reports.functions";
@@ -202,7 +203,7 @@ function SharedReportPage() {
                   {a.label}
                 </a>
               ))}
-              {r.conclusion && (
+              {r.doc_type !== "budget" && r.conclusion && (
                 <a
                   href="#conclusion"
                   className="block px-2 py-1 rounded hover:bg-muted focus:bg-muted outline-none"
@@ -253,7 +254,9 @@ function SharedReportPage() {
             </Card>
           )}
 
-          {r.intro && (
+          {r.doc_type === "budget" && <BudgetView report={r} />}
+
+          {r.doc_type !== "budget" && r.intro && (
             <section id="intro" className="scroll-mt-24">
               <h2 className="text-xl font-semibold mb-3">Introduction</h2>
               <RichText text={r.intro} />

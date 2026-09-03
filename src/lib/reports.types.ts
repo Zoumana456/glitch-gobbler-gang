@@ -1,4 +1,18 @@
+import type { BudgetLine, DocType } from "./budget";
+
+export type { BudgetLine, DocType };
+
+export type DocMeta = {
+  doc_type: DocType;
+  doc_number: string;
+  currency: string;
+  tax_rate: number;
+  period_label: string;
+  counterparty: string;
+};
+
 export type ReportImagePayload = {
+
   id?: string;
   storage_path: string;
   section_id: string | null;
@@ -38,7 +52,15 @@ export type ReportPayload = {
   sections: ReportSectionPayload[];
   images: ReportImagePayload[];
   attachments: ReportAttachmentPayload[];
+  doc_type?: DocType;
+  doc_number?: string;
+  currency?: string;
+  tax_rate?: number;
+  period_label?: string;
+  counterparty?: string;
+  budget_lines?: BudgetLine[];
 };
+
 
 export type LoadedImage = {
   id: string;
@@ -87,7 +109,15 @@ export type LoadedReport = {
   share_expires_at?: string | null;
   status?: ReportStatus | null;
   kind?: ReportKind | null;
+  doc_type?: DocType;
+  doc_number?: string;
+  currency?: string;
+  tax_rate?: number;
+  period_label?: string;
+  counterparty?: string;
+  budget_lines?: BudgetLine[];
 };
+
 
 
 export type ReportListItem = {
@@ -100,7 +130,10 @@ export type ReportListItem = {
   created_at: string;
   status?: ReportStatus;
   kind?: ReportKind;
+  doc_type?: DocType;
+  doc_number?: string | null;
 };
+
 
 // ============ Hiérarchie & circuit de validation ============
 

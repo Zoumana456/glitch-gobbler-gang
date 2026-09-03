@@ -13,6 +13,13 @@ import { REPORT_STATUS_LABEL, levelLabel } from "./reports.types";
 import type { ReportMinute } from "./minutes.functions";
 
 import { formatLongDate } from "./date-utils";
+import {
+  budgetTotals,
+  formatAmount,
+  groupBudgetLines,
+  linePlanned,
+  lineVariance,
+} from "./budget";
 
 const styles = StyleSheet.create({
   page: {
@@ -252,6 +259,9 @@ export async function generateReportPdfBlob(
   report: LoadedReport,
   approvals?: ApprovalEntry[],
 ): Promise<Blob> {
+  if (report.doc_type === "budget") {
+    return await pdf(<BudgetPdfDocument report={report} />).toBlob();
+  }
   const prepared = await inlineReportImages(report);
   return await pdf(
     <ReportPdfDocument report={prepared} approvals={approvals} />,
@@ -263,9 +273,11 @@ export async function downloadReportPdf(
   approvals?: ApprovalEntry[],
 ) {
   const blob = await generateReportPdfBlob(report, approvals);
-  const filename = `${sanitize(report.title)}-${report.report_date}.pdf`;
+  const prefix = report.doc_type === "budget" ? report.doc_number || "budget" : report.title;
+  const filename = `${sanitize(prefix)}-${report.report_date}.pdf`;
   triggerDownload(blob, filename);
 }
+
 
 
 export async function downloadReportsBundle(reports: LoadedReport[]) {
@@ -482,4 +494,175 @@ export async function downloadMinutePdf(
 ) {
   const blob = await generateMinutePdfBlob(minute, reportTitle);
   triggerDownload(blob, `${sanitize(minute.number || "pv")}.pdf`);
+}
+
+// ============== Fiche de budget ==============
+
+const bStyles = StyleSheet.create({
+  page: {
+    paddingTop: 56,
+    paddingBottom: 50,
+    paddingHorizontal: 34,
+    fontFamily: "Helvetica",
+    fontSize: 9,
+    color: "#1f2937",
+    lineHeight: 1.4,
+  },
+  header: { marginBottom: 14, borderBottom: "2 solid #111827", paddingBottom: 10 },
+  docKind: { fontSize: 9, color: "#6b7280", letterSpacing: 1 },
+  title: { fontSize: 16, fontWeight: 700, color: "#111827", marginTop: 3 },
+  metaGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 6 },
+  metaCell: { width: "50%", flexDirection: "row", marginBottom: 2 },
+  metaLabel: { width: 74, color: "#6b7280" },
+  metaValue: { flex: 1 },
+  h2: { fontSize: 10, fontWeight: 700, marginTop: 12, marginBottom: 5, color: "#111827" },
+  note: { textAlign: "justify", marginBottom: 5 },
+  row: { flexDirection: "row", borderBottom: "0.5 solid #e5e7eb", minHeight: 18 },
+  headRow: { flexDirection: "row", backgroundColor: "#f3f4f6", borderBottom: "1 solid #9ca3af" },
+  catRow: { flexDirection: "row", backgroundColor: "#eef2ff" },
+  totalRow: { flexDirection: "row", borderTop: "1 solid #111827", backgroundColor: "#f9fafb" },
+  cell: { paddingVertical: 3, paddingHorizontal: 3 },
+  cLabel: { width: "26%" },
+  cUnit: { width: "8%" },
+  cQty: { width: "7%", textAlign: "right" },
+  cPu: { width: "12%", textAlign: "right" },
+  cPlan: { width: "13%", textAlign: "right" },
+  cReal: { width: "12%", textAlign: "right" },
+  cVar: { width: "12%", textAlign: "right" },
+  cNotes: { width: "10%" },
+  bold: { fontWeight: 700 },
+});
+
+function BudgetPdfDocument({ report }: { report: LoadedReport }) {
+  const lines = report.budget_lines ?? [];
+  const currency = report.currency ?? "XOF";
+  const taxRate = report.tax_rate ?? 0;
+  const groups = groupBudgetLines(lines);
+  const totals = budgetTotals(lines, taxRate);
+  const fmt = (n: number) => formatAmount(n, currency);
+
+  return (
+    <Document>
+      <Page size="A4" orientation="landscape" style={bStyles.page}>
+        <View fixed style={styles.runningFooter}>
+          <Text>{report.doc_number || "Budget"}</Text>
+          <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
+        </View>
+
+        <View style={bStyles.header}>
+          <Text style={bStyles.docKind}>FICHE DE BUDGET</Text>
+          <Text style={bStyles.title}>{report.title}</Text>
+          <View style={bStyles.metaGrid}>
+            <View style={bStyles.metaCell}>
+              <Text style={bStyles.metaLabel}>Numéro</Text>
+              <Text style={bStyles.metaValue}>{report.doc_number || "—"}</Text>
+            </View>
+            <View style={bStyles.metaCell}>
+              <Text style={bStyles.metaLabel}>Date</Text>
+              <Text style={bStyles.metaValue}>{formatLongDate(report.report_date)}</Text>
+            </View>
+            <View style={bStyles.metaCell}>
+              <Text style={bStyles.metaLabel}>Période</Text>
+              <Text style={bStyles.metaValue}>{report.period_label || "—"}</Text>
+            </View>
+            <View style={bStyles.metaCell}>
+              <Text style={bStyles.metaLabel}>Entité</Text>
+              <Text style={bStyles.metaValue}>{report.counterparty || "—"}</Text>
+            </View>
+            <View style={bStyles.metaCell}>
+              <Text style={bStyles.metaLabel}>Devise</Text>
+              <Text style={bStyles.metaValue}>{currency}</Text>
+            </View>
+            <View style={bStyles.metaCell}>
+              <Text style={bStyles.metaLabel}>Auteur</Text>
+              <Text style={bStyles.metaValue}>{report.author_name}</Text>
+            </View>
+          </View>
+        </View>
+
+        {report.intro ? (
+          <>
+            <Text style={bStyles.h2}>Contexte / hypothèses</Text>
+            <Text style={bStyles.note}>{report.intro}</Text>
+          </>
+        ) : null}
+
+        <View style={bStyles.headRow}>
+          <Text style={[bStyles.cell, bStyles.cLabel, bStyles.bold]}>Rubrique</Text>
+          <Text style={[bStyles.cell, bStyles.cUnit, bStyles.bold]}>Unité</Text>
+          <Text style={[bStyles.cell, bStyles.cQty, bStyles.bold]}>Qté</Text>
+          <Text style={[bStyles.cell, bStyles.cPu, bStyles.bold]}>P.U.</Text>
+          <Text style={[bStyles.cell, bStyles.cPlan, bStyles.bold]}>Prévu</Text>
+          <Text style={[bStyles.cell, bStyles.cReal, bStyles.bold]}>Réalisé</Text>
+          <Text style={[bStyles.cell, bStyles.cVar, bStyles.bold]}>Écart</Text>
+          <Text style={[bStyles.cell, bStyles.cNotes, bStyles.bold]}>Obs.</Text>
+        </View>
+
+        {groups.map((g) => (
+          <View key={g.category} wrap={false}>
+            <View style={bStyles.catRow}>
+              <Text style={[bStyles.cell, bStyles.bold, { width: "100%" }]}>{g.category}</Text>
+            </View>
+            {g.lines.map((l, i) => (
+              <View key={l.id ?? `${g.category}-${i}`} style={bStyles.row}>
+                <Text style={[bStyles.cell, bStyles.cLabel]}>{l.label || "—"}</Text>
+                <Text style={[bStyles.cell, bStyles.cUnit]}>{l.unit || "—"}</Text>
+                <Text style={[bStyles.cell, bStyles.cQty]}>{l.quantity || "—"}</Text>
+                <Text style={[bStyles.cell, bStyles.cPu]}>{fmt(l.unit_price)}</Text>
+                <Text style={[bStyles.cell, bStyles.cPlan]}>{fmt(linePlanned(l))}</Text>
+                <Text style={[bStyles.cell, bStyles.cReal]}>{fmt(l.actual_amount)}</Text>
+                <Text style={[bStyles.cell, bStyles.cVar]}>{fmt(lineVariance(l))}</Text>
+                <Text style={[bStyles.cell, bStyles.cNotes]}>{l.notes || ""}</Text>
+              </View>
+            ))}
+            <View style={bStyles.row}>
+              <Text style={[bStyles.cell, { width: "53%", textAlign: "right", color: "#6b7280" }]}>
+                {`Sous-total ${g.category}`}
+              </Text>
+              <Text style={[bStyles.cell, bStyles.cPlan, bStyles.bold]}>{fmt(g.planned)}</Text>
+              <Text style={[bStyles.cell, bStyles.cReal, bStyles.bold]}>{fmt(g.actual)}</Text>
+              <Text style={[bStyles.cell, bStyles.cVar, bStyles.bold]}>{fmt(g.variance)}</Text>
+              <Text style={[bStyles.cell, bStyles.cNotes]} />
+            </View>
+          </View>
+        ))}
+
+        <View style={bStyles.totalRow}>
+          <Text style={[bStyles.cell, { width: "53%", textAlign: "right" }, bStyles.bold]}>
+            Total prévu
+          </Text>
+          <Text style={[bStyles.cell, bStyles.cPlan, bStyles.bold]}>{fmt(totals.planned)}</Text>
+          <Text style={[bStyles.cell, bStyles.cReal, bStyles.bold]}>{fmt(totals.actual)}</Text>
+          <Text style={[bStyles.cell, bStyles.cVar, bStyles.bold]}>{fmt(totals.variance)}</Text>
+          <Text style={[bStyles.cell, bStyles.cNotes]} />
+        </View>
+
+        {taxRate > 0 ? (
+          <>
+            <View style={bStyles.row}>
+              <Text style={[bStyles.cell, { width: "53%", textAlign: "right", color: "#6b7280" }]}>
+                {`TVA ${taxRate}%`}
+              </Text>
+              <Text style={[bStyles.cell, bStyles.cPlan]}>{fmt(totals.taxAmount)}</Text>
+              <Text style={[bStyles.cell, { width: "34%" }]} />
+            </View>
+            <View style={bStyles.totalRow}>
+              <Text style={[bStyles.cell, { width: "53%", textAlign: "right" }, bStyles.bold]}>
+                Total TTC
+              </Text>
+              <Text style={[bStyles.cell, bStyles.cPlan, bStyles.bold]}>{fmt(totals.totalWithTax)}</Text>
+              <Text style={[bStyles.cell, { width: "34%" }]} />
+            </View>
+          </>
+        ) : null}
+
+        {report.conclusion ? (
+          <>
+            <Text style={bStyles.h2}>Commentaires / recommandations</Text>
+            <Text style={bStyles.note}>{report.conclusion}</Text>
+          </>
+        ) : null}
+      </Page>
+    </Document>
+  );
 }

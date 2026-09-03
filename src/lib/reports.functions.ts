@@ -38,6 +38,17 @@ const sectionSchema = z.object({
   position: z.number().int().default(0),
   bullets: z.array(bulletSchema).default([]),
 });
+const budgetLineSchema = z.object({
+  category: z.string().max(120).default(""),
+  label: z.string().max(300).default(""),
+  unit: z.string().max(40).default(""),
+  quantity: z.number().default(0),
+  unit_price: z.number().default(0),
+  planned_amount: z.number().default(0),
+  actual_amount: z.number().default(0),
+  notes: z.string().max(500).default(""),
+  position: z.number().int().default(0),
+});
 const reportInputSchema = z.object({
   id: z.string().uuid().nullable().default(null),
   report_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -47,9 +58,51 @@ const reportInputSchema = z.object({
   sections: z.array(sectionSchema).default([]),
   images: z.array(imageSchema).default([]),
   attachments: z.array(attachmentSchema).default([]),
+  doc_type: z
+    .enum(["report", "budget", "quote", "proforma", "invoice"])
+    .default("report"),
+  doc_number: z.string().max(60).default(""),
+  currency: z.string().max(8).default("XOF"),
+  tax_rate: z.number().min(0).max(100).default(0),
+  period_label: z.string().max(120).default(""),
+  counterparty: z.string().max(200).default(""),
+  budget_lines: z.array(budgetLineSchema).default([]),
 });
 
 type ReportInput = z.infer<typeof reportInputSchema>;
+
+function docFieldsOf(data: ReportInput) {
+  return {
+    doc_type: data.doc_type,
+    doc_number: data.doc_number || null,
+    currency: data.currency || "XOF",
+    tax_rate: data.tax_rate ?? 0,
+    period_label: data.period_label || null,
+    counterparty: data.counterparty || null,
+  };
+}
+
+async function nextDocNumber(
+  supabase: any,
+  userId: string,
+  docType: string,
+): Promise<string> {
+  const { buildDocNumber, DOC_TYPE_PREFIX } = await import("./budget");
+  const year = new Date().getFullYear();
+  const prefix = `${(DOC_TYPE_PREFIX as any)[docType] ?? "DOC"}-${year}-`;
+  const { data } = await supabase
+    .from("reports")
+    .select("doc_number")
+    .eq("author_id", userId)
+    .eq("doc_type", docType)
+    .like("doc_number", `${prefix}%`)
+    .order("doc_number", { ascending: false })
+    .limit(1);
+  const last = (data ?? [])[0]?.doc_number as string | undefined;
+  const seq = last ? Number(last.slice(prefix.length)) + 1 : 1;
+  return buildDocNumber(docType as any, year, Number.isFinite(seq) ? seq : 1);
+}
+
 
 async function signBucket(
   supabase: any,
@@ -81,7 +134,7 @@ export const listReports = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("reports")
-      .select("id, author_id, report_date, title, intro, created_at")
+      .select("id, author_id, report_date, title, intro, created_at, doc_type, doc_number")
       .order("report_date", { ascending: false })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -105,7 +158,10 @@ export const listReports = createServerFn({ method: "GET" })
       title: r.title,
       intro: r.intro ?? "",
       created_at: r.created_at,
+      doc_type: (r.doc_type ?? "report") as any,
+      doc_number: r.doc_number ?? null,
     }));
+
   });
 
 export const getReport = createServerFn({ method: "GET" })
@@ -113,7 +169,13 @@ export const getReport = createServerFn({ method: "GET" })
   .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<LoadedReport> => {
     const { supabase } = context;
-    const [{ data: report, error: e1 }, { data: sections }, { data: images }, { data: attachments }] =
+    const [
+      { data: report, error: e1 },
+      { data: sections },
+      { data: images },
+      { data: attachments },
+      { data: budgetLines },
+    ] =
       await Promise.all([
         supabase.from("reports").select("*").eq("id", data.id).maybeSingle(),
         supabase
@@ -131,9 +193,17 @@ export const getReport = createServerFn({ method: "GET" })
           .select("id, storage_path, section_id, position, file_name, mime_type, size_bytes")
           .eq("report_id", data.id)
           .order("position", { ascending: true }),
+        supabase
+          .from("report_budget_lines")
+          .select(
+            "id, category, label, unit, quantity, unit_price, planned_amount, actual_amount, notes, position",
+          )
+          .eq("report_id", data.id)
+          .order("position", { ascending: true }),
       ]);
     if (e1) throw new Error(e1.message);
     if (!report) throw new Error("Rapport introuvable");
+
 
     const sectionIds = (sections ?? []).map((s: any) => s.id);
     const [{ data: bullets }, { data: profile }] = await Promise.all([
@@ -219,8 +289,33 @@ export const getReport = createServerFn({ method: "GET" })
       sections: loadedSections,
       general_images: generalImages,
       general_attachments: generalAttachments,
-    };
+      status: report.status ?? null,
+      kind: report.kind ?? null,
+      doc_type: (report.doc_type ?? "report") as any,
+      doc_number: report.doc_number ?? "",
+      currency: report.currency ?? "XOF",
+      tax_rate: Number(report.tax_rate ?? 0),
+      period_label: report.period_label ?? "",
+      counterparty: report.counterparty ?? "",
+      budget_lines: mapBudgetLines(budgetLines),
+    } as LoadedReport;
   });
+
+function mapBudgetLines(rows: any[] | null | undefined) {
+  return (rows ?? []).map((l: any) => ({
+    id: l.id,
+    category: l.category ?? "",
+    label: l.label ?? "",
+    unit: l.unit ?? "",
+    quantity: Number(l.quantity ?? 0),
+    unit_price: Number(l.unit_price ?? 0),
+    planned_amount: Number(l.planned_amount ?? 0),
+    actual_amount: Number(l.actual_amount ?? 0),
+    notes: l.notes ?? "",
+    position: Number(l.position ?? 0),
+  }));
+}
+
 
 async function persistChildren(
   supabase: any,
@@ -231,6 +326,27 @@ async function persistChildren(
   await supabase.from("report_sections").delete().eq("report_id", reportId);
   await supabase.from("report_images").delete().eq("report_id", reportId);
   await supabase.from("report_attachments").delete().eq("report_id", reportId);
+  await supabase.from("report_budget_lines").delete().eq("report_id", reportId);
+
+  const budgetInserts = (input.budget_lines ?? [])
+    .filter((l) => (l.label ?? "").trim() || l.quantity || l.unit_price || l.planned_amount || l.actual_amount)
+    .map((l, idx) => ({
+      report_id: reportId,
+      category: l.category ?? "",
+      label: l.label ?? "",
+      unit: l.unit ?? "",
+      quantity: l.quantity ?? 0,
+      unit_price: l.unit_price ?? 0,
+      planned_amount: l.planned_amount ?? 0,
+      actual_amount: l.actual_amount ?? 0,
+      notes: l.notes ?? "",
+      position: idx,
+    }));
+  if (budgetInserts.length > 0) {
+    const { error } = await supabase.from("report_budget_lines").insert(budgetInserts);
+    if (error) throw new Error(error.message);
+  }
+
 
   // Insert sections and gather created IDs (ordered by position)
   const sectionInserts = input.sections.map((s, idx) => ({
@@ -299,6 +415,7 @@ export const upsertReport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     let reportId: string;
+    const docFields = docFieldsOf(data);
     if (data.id) {
       const { data: upd, error } = await supabase
         .from("reports")
@@ -307,6 +424,7 @@ export const upsertReport = createServerFn({ method: "POST" })
           title: data.title,
           intro: data.intro,
           conclusion: data.conclusion,
+          ...docFields,
         })
         .eq("id", data.id)
         .eq("author_id", userId)
@@ -316,6 +434,9 @@ export const upsertReport = createServerFn({ method: "POST" })
       if (!upd) throw new Error("Rapport introuvable ou non autorisé");
       reportId = upd.id;
     } else {
+      if (!docFields.doc_number && data.doc_type !== "report") {
+        docFields.doc_number = await nextDocNumber(supabase, userId, data.doc_type);
+      }
       const { data: ins, error } = await supabase
         .from("reports")
         .insert({
@@ -324,6 +445,7 @@ export const upsertReport = createServerFn({ method: "POST" })
           title: data.title,
           intro: data.intro,
           conclusion: data.conclusion,
+          ...docFields,
         })
         .select("id")
         .single();
@@ -333,6 +455,7 @@ export const upsertReport = createServerFn({ method: "POST" })
     await persistChildren(supabase, reportId, data);
     return { id: reportId };
   });
+
 
 export const deleteReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -403,6 +526,10 @@ export const duplicateReport = createServerFn({ method: "POST" })
     if (e1) throw new Error(e1.message);
     if (!src) throw new Error("Rapport introuvable");
 
+    const srcDocType = ((src as any).doc_type ?? "report") as string;
+    const newDocNumber =
+      srcDocType === "report" ? null : await nextDocNumber(supabase, userId, srcDocType);
+
     const { data: newRep, error: e2 } = await supabase
       .from("reports")
       .insert({
@@ -411,10 +538,30 @@ export const duplicateReport = createServerFn({ method: "POST" })
         title: `${src.title} (copie)`,
         intro: src.intro ?? "",
         conclusion: src.conclusion ?? "",
+        doc_type: srcDocType,
+        doc_number: newDocNumber,
+        currency: (src as any).currency ?? "XOF",
+        tax_rate: (src as any).tax_rate ?? 0,
+        period_label: (src as any).period_label ?? null,
+        counterparty: (src as any).counterparty ?? null,
       })
       .select("id")
       .single();
     if (e2) throw new Error(e2.message);
+
+    const { data: srcLines } = await supabase
+      .from("report_budget_lines")
+      .select(
+        "category, label, unit, quantity, unit_price, planned_amount, actual_amount, notes, position",
+      )
+      .eq("report_id", data.id)
+      .order("position", { ascending: true });
+    if (srcLines && srcLines.length > 0) {
+      await supabase
+        .from("report_budget_lines")
+        .insert(srcLines.map((l: any) => ({ ...l, report_id: newRep.id })));
+    }
+
 
     const { data: sections } = await supabase
       .from("report_sections")
@@ -692,7 +839,13 @@ export const getSharedReport = createServerFn({ method: "GET" })
       throw new Error("Lien expiré");
     }
 
-    const [{ data: sections }, { data: images }, { data: attachments }, { data: profile }] =
+    const [
+      { data: sections },
+      { data: images },
+      { data: attachments },
+      { data: profile },
+      { data: budgetLines },
+    ] =
       await Promise.all([
         supabaseAdmin
           .from("report_sections")
@@ -714,7 +867,15 @@ export const getSharedReport = createServerFn({ method: "GET" })
           .select("id, full_name")
           .eq("id", report.author_id)
           .maybeSingle(),
+        supabaseAdmin
+          .from("report_budget_lines")
+          .select(
+            "id, category, label, unit, quantity, unit_price, planned_amount, actual_amount, notes, position",
+          )
+          .eq("report_id", report.id)
+          .order("position", { ascending: true }),
       ]);
+
 
     const sectionIds = (sections ?? []).map((s: any) => s.id);
     const { data: bullets } = sectionIds.length
@@ -797,7 +958,15 @@ export const getSharedReport = createServerFn({ method: "GET" })
       general_images: generalImages,
       general_attachments: generalAttachments,
       share_expires_at: (report.share_expires_at as string | null) ?? null,
+      doc_type: ((report as any).doc_type ?? "report") as any,
+      doc_number: (report as any).doc_number ?? "",
+      currency: (report as any).currency ?? "XOF",
+      tax_rate: Number((report as any).tax_rate ?? 0),
+      period_label: (report as any).period_label ?? "",
+      counterparty: (report as any).counterparty ?? "",
+      budget_lines: mapBudgetLines(budgetLines as any),
     } as LoadedReport;
+
   });
 
 export const logSharedExport = createServerFn({ method: "POST" })
