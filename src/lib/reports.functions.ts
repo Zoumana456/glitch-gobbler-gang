@@ -289,8 +289,33 @@ export const getReport = createServerFn({ method: "GET" })
       sections: loadedSections,
       general_images: generalImages,
       general_attachments: generalAttachments,
-    };
+      status: report.status ?? null,
+      kind: report.kind ?? null,
+      doc_type: (report.doc_type ?? "report") as any,
+      doc_number: report.doc_number ?? "",
+      currency: report.currency ?? "XOF",
+      tax_rate: Number(report.tax_rate ?? 0),
+      period_label: report.period_label ?? "",
+      counterparty: report.counterparty ?? "",
+      budget_lines: mapBudgetLines(budgetLines),
+    } as LoadedReport;
   });
+
+function mapBudgetLines(rows: any[] | null | undefined) {
+  return (rows ?? []).map((l: any) => ({
+    id: l.id,
+    category: l.category ?? "",
+    label: l.label ?? "",
+    unit: l.unit ?? "",
+    quantity: Number(l.quantity ?? 0),
+    unit_price: Number(l.unit_price ?? 0),
+    planned_amount: Number(l.planned_amount ?? 0),
+    actual_amount: Number(l.actual_amount ?? 0),
+    notes: l.notes ?? "",
+    position: Number(l.position ?? 0),
+  }));
+}
+
 
 async function persistChildren(
   supabase: any,
