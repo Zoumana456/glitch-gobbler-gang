@@ -38,6 +38,17 @@ const sectionSchema = z.object({
   position: z.number().int().default(0),
   bullets: z.array(bulletSchema).default([]),
 });
+const budgetLineSchema = z.object({
+  category: z.string().max(120).default(""),
+  label: z.string().max(300).default(""),
+  unit: z.string().max(40).default(""),
+  quantity: z.number().default(0),
+  unit_price: z.number().default(0),
+  planned_amount: z.number().default(0),
+  actual_amount: z.number().default(0),
+  notes: z.string().max(500).default(""),
+  position: z.number().int().default(0),
+});
 const reportInputSchema = z.object({
   id: z.string().uuid().nullable().default(null),
   report_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -47,9 +58,51 @@ const reportInputSchema = z.object({
   sections: z.array(sectionSchema).default([]),
   images: z.array(imageSchema).default([]),
   attachments: z.array(attachmentSchema).default([]),
+  doc_type: z
+    .enum(["report", "budget", "quote", "proforma", "invoice"])
+    .default("report"),
+  doc_number: z.string().max(60).default(""),
+  currency: z.string().max(8).default("XOF"),
+  tax_rate: z.number().min(0).max(100).default(0),
+  period_label: z.string().max(120).default(""),
+  counterparty: z.string().max(200).default(""),
+  budget_lines: z.array(budgetLineSchema).default([]),
 });
 
 type ReportInput = z.infer<typeof reportInputSchema>;
+
+function docFieldsOf(data: ReportInput) {
+  return {
+    doc_type: data.doc_type,
+    doc_number: data.doc_number || null,
+    currency: data.currency || "XOF",
+    tax_rate: data.tax_rate ?? 0,
+    period_label: data.period_label || null,
+    counterparty: data.counterparty || null,
+  };
+}
+
+async function nextDocNumber(
+  supabase: any,
+  userId: string,
+  docType: string,
+): Promise<string> {
+  const { buildDocNumber, DOC_TYPE_PREFIX } = await import("./budget");
+  const year = new Date().getFullYear();
+  const prefix = `${(DOC_TYPE_PREFIX as any)[docType] ?? "DOC"}-${year}-`;
+  const { data } = await supabase
+    .from("reports")
+    .select("doc_number")
+    .eq("author_id", userId)
+    .eq("doc_type", docType)
+    .like("doc_number", `${prefix}%`)
+    .order("doc_number", { ascending: false })
+    .limit(1);
+  const last = (data ?? [])[0]?.doc_number as string | undefined;
+  const seq = last ? Number(last.slice(prefix.length)) + 1 : 1;
+  return buildDocNumber(docType as any, year, Number.isFinite(seq) ? seq : 1);
+}
+
 
 async function signBucket(
   supabase: any,
