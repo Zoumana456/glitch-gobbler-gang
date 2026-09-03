@@ -285,8 +285,14 @@ function ReportsListPage() {
               Télécharger ({selected.size})
             </Button>
           )}
+          <Button variant="outline" asChild>
+            <Link to="/reports/new" search={{ type: "budget" }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau budget
+            </Link>
+          </Button>
           <Button asChild>
-            <Link to="/reports/new">
+            <Link to="/reports/new" search={{}}>
               <Plus className="h-4 w-4 mr-2" />
               Nouveau rapport
             </Link>
@@ -401,7 +407,7 @@ function ReportsListPage() {
               Créez votre premier rapport d'activité.
             </p>
             <Button asChild>
-              <Link to="/reports/new">
+              <Link to="/reports/new" search={{}}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nouveau rapport
               </Link>
