@@ -432,10 +432,10 @@ function ReportDetailPage() {
         isMine={isMine}
         isCurrentApprover={(r as any).current_approver_id === user.id}
       />
+      {r.doc_type === "budget" && <BudgetView report={r} />}
 
+      {r.doc_type !== "budget" && r.intro && (
 
-
-      {r.intro && (
         <section>
           <h2 className="text-xl font-semibold mb-3">Introduction</h2>
           <RichText text={r.intro} />
