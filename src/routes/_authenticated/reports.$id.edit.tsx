@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getReport } from "@/lib/reports.functions";
 import { ReportForm } from "@/components/ReportForm";
+import { BudgetForm } from "@/components/budget/BudgetForm";
 import { Skeleton } from "@/components/ui/skeleton";
+
 
 export const Route = createFileRoute("/_authenticated/reports/$id/edit")({
   head: () => ({
