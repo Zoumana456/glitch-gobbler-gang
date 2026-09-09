@@ -1201,7 +1201,7 @@ export type Database = {
           half_end?: boolean
           half_start?: boolean
           id?: string
-          leave_type: string
+          leave_type?: string
           manager_id?: string | null
           proof_path?: string | null
           reason?: string | null
