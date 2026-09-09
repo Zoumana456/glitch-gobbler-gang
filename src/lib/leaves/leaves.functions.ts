@@ -250,6 +250,7 @@ export const createLeaveRequest = createServerFn({ method: "POST" })
       .insert({
         company_id: companyId,
         user_id: context.userId,
+        employee_id: context.userId,
         type_id: data.typeId,
         start_date: data.startDate,
         end_date: data.endDate,
