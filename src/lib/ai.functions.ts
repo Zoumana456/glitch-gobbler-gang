@@ -433,3 +433,172 @@ export const aiGenerateFull = createServerFn({ method: "POST" })
     });
     return extractedSchema.parse(parseJsonLoose(text));
   });
+
+// ----- Extract from MULTIPLE PDFs -----
+
+const MAX_PDFS = 10;
+const MAX_PDF_BYTES = 20 * 1024 * 1024;
+
+const multiPdfInput = z.object({
+  files: z
+    .array(
+      z.object({
+        filename: z.string().default("document.pdf"),
+        base64: z.string().min(10),
+        mimeType: z.string().default("application/pdf"),
+      }),
+    )
+    .min(1)
+    .max(MAX_PDFS),
+  mode: z.enum(["merge", "per-document"]).default("merge"),
+  style: z.string().optional(),
+});
+
+export type MultiPdfFileStatus = {
+  filename: string;
+  ok: boolean;
+  error?: string;
+};
+
+export type MultiPdfResult = {
+  report: ExtractedReport;
+  perFile: MultiPdfFileStatus[];
+};
+
+function base64Bytes(b64: string): number {
+  return Math.floor((b64.length * 3) / 4);
+}
+
+async function extractOnePdf(
+  file: { filename: string; base64: string; mimeType: string },
+  style?: string,
+): Promise<ExtractedReport> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const text = await callAI({
+        model: DEFAULT_MODEL,
+        system:
+          "Tu analyses des rapports PDF en français et en extrais la structure. Réponds uniquement avec un JSON strict." +
+          styleClause(style),
+        json: true,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  "Extrait la structure de ce document en JSON exact :\n" +
+                  REPORT_JSON_SHAPE +
+                  "\nUtilise le français. Aucun texte hors JSON.",
+              },
+              {
+                type: "file",
+                file: {
+                  filename: file.filename,
+                  file_data: `data:${file.mimeType};base64,${file.base64}`,
+                },
+              },
+            ],
+          },
+        ],
+      });
+      return extractedSchema.parse(parseJsonLoose(text));
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      // Only retry transient failures (rate limit / upstream errors).
+      const transient = /Limite de requêtes|\(5\d\d\)/.test(msg);
+      if (!transient) break;
+      await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("Lecture du PDF impossible");
+}
+
+export const aiExtractFromPdfs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => multiPdfInput.parse(d))
+  .handler(async ({ data }): Promise<MultiPdfResult> => {
+    const perFile: MultiPdfFileStatus[] = [];
+    const extracted: { filename: string; report: ExtractedReport }[] = [];
+
+    // Sequential: keeps us under the gateway's shared rate-limit budget.
+    for (const f of data.files) {
+      if (base64Bytes(f.base64) > MAX_PDF_BYTES) {
+        perFile.push({ filename: f.filename, ok: false, error: "Fichier trop volumineux (max 20 Mo)" });
+        continue;
+      }
+      try {
+        const r = await extractOnePdf(f, data.style);
+        extracted.push({ filename: f.filename, report: r });
+        perFile.push({ filename: f.filename, ok: true });
+      } catch (e) {
+        perFile.push({
+          filename: f.filename,
+          ok: false,
+          error: e instanceof Error ? e.message : "Lecture impossible",
+        });
+      }
+    }
+
+    if (extracted.length === 0) {
+      return {
+        report: { title: "", intro: "", conclusion: "", sections: [] },
+        perFile,
+      };
+    }
+
+    if (data.mode === "per-document" || extracted.length === 1) {
+      if (extracted.length === 1) {
+        const only = extracted[0]!;
+        if (data.mode === "merge") return { report: only.report, perFile };
+      }
+      const report: ExtractedReport = {
+        title: extracted[0]!.report.title || "Rapport consolidé",
+        intro: "",
+        conclusion: "",
+        sections: extracted.map((e) => {
+          const r = e.report;
+          const bullets = [
+            ...r.sections.flatMap((s) => [
+              ...(s.title ? [s.title + (s.description ? " : " + s.description : "")] : s.description ? [s.description] : []),
+              ...s.bullets,
+            ]),
+            ...(r.conclusion ? ["Conclusion : " + r.conclusion] : []),
+          ];
+          return {
+            title: r.title || e.filename,
+            description: r.intro,
+            bullets,
+          };
+        }),
+      };
+      return { report, perFile };
+    }
+
+    // merge mode with several documents: consolidation pass
+    const corpus = extracted
+      .map((e, i) => `--- DOCUMENT ${i + 1} (${e.filename}) ---\n${JSON.stringify(e.report)}`)
+      .join("\n\n");
+
+    const text = await callAI({
+      model: PRO_MODEL,
+      system:
+        "Tu consolides plusieurs documents en un seul rapport professionnel en français, sans inventer de faits, sans doublons." +
+        styleClause(data.style),
+      json: true,
+      messages: [
+        {
+          role: "user",
+          content:
+            "Fusionne ces documents en un rapport unique cohérent. Renvoie ce JSON exact, sans texte hors JSON :\n" +
+            REPORT_JSON_SHAPE +
+            "\n\nDOCUMENTS :\n" +
+            corpus,
+        },
+      ],
+    });
+    return { report: extractedSchema.parse(parseJsonLoose(text)), perFile };
+  });

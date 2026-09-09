@@ -1169,42 +1169,87 @@ export type Database = {
       }
       leave_requests: {
         Row: {
+          company_id: string | null
           created_at: string | null
+          current_approver_id: string | null
+          days_count: number
+          decided_at: string | null
           employee_id: string
           end_date: string
+          half_end: boolean
+          half_start: boolean
           id: string
           leave_type: string
           manager_id: string | null
+          proof_path: string | null
           reason: string | null
           start_date: string
           status: string | null
+          submitted_at: string | null
+          type_id: string | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
+          current_approver_id?: string | null
+          days_count?: number
+          decided_at?: string | null
           employee_id: string
           end_date: string
-          id?: string
-          leave_type: string
-          manager_id?: string | null
-          reason?: string | null
-          start_date: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          employee_id?: string
-          end_date?: string
+          half_end?: boolean
+          half_start?: boolean
           id?: string
           leave_type?: string
           manager_id?: string | null
+          proof_path?: string | null
+          reason?: string | null
+          start_date: string
+          status?: string | null
+          submitted_at?: string | null
+          type_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          current_approver_id?: string | null
+          days_count?: number
+          decided_at?: string | null
+          employee_id?: string
+          end_date?: string
+          half_end?: boolean
+          half_start?: boolean
+          id?: string
+          leave_type?: string
+          manager_id?: string | null
+          proof_path?: string | null
           reason?: string | null
           start_date?: string
           status?: string | null
+          submitted_at?: string | null
+          type_id?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leave_types: {
         Row: {
