@@ -398,6 +398,134 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_companies: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          id: string
+          industry: string | null
+          name: string
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          industry?: string | null
+          name: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          industry?: string | null
+          name?: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      crm_contacts: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+          phone: string | null
+          position: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          phone?: string | null
+          position?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string | null
+          position?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_deals: {
+        Row: {
+          company_id: string | null
+          contact_id: string | null
+          created_at: string | null
+          currency: string | null
+          expected_close_date: string | null
+          id: string
+          stage: string | null
+          title: string
+          updated_at: string | null
+          value: number | null
+        }
+        Insert: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          expected_close_date?: string | null
+          id?: string
+          stage?: string | null
+          title: string
+          updated_at?: string | null
+          value?: number | null
+        }
+        Update: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          expected_close_date?: string | null
+          id?: string
+          stage?: string | null
+          title?: string
+          updated_at?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_deals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_deals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_accounts: {
         Row: {
           auth_type: string
@@ -788,6 +916,176 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          author_id: string
+          created_at: string | null
+          description: string | null
+          end_time: string
+          event_type: string | null
+          id: string
+          location: string | null
+          start_time: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          created_at?: string | null
+          description?: string | null
+          end_time: string
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          start_time: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          created_at?: string | null
+          description?: string | null
+          end_time?: string
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          start_time?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      expense_reports: {
+        Row: {
+          amount: number
+          author_id: string
+          category: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          manager_id: string | null
+          receipt_url: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          author_id: string
+          category?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          expense_date: string
+          id?: string
+          manager_id?: string | null
+          receipt_url?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          author_id?: string
+          category?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          manager_id?: string | null
+          receipt_url?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          category: string | null
+          cost_price: number | null
+          created_at: string | null
+          current_stock: number | null
+          description: string | null
+          id: string
+          min_stock_alert: number | null
+          name: string
+          reference: string | null
+          unit: string | null
+          unit_price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string | null
+          current_stock?: number | null
+          description?: string | null
+          id?: string
+          min_stock_alert?: number | null
+          name: string
+          reference?: string | null
+          unit?: string | null
+          unit_price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string | null
+          current_stock?: number | null
+          description?: string | null
+          id?: string
+          min_stock_alert?: number | null
+          name?: string
+          reference?: string | null
+          unit?: string | null
+          unit_price?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      inventory_movements: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          item_id: string
+          movement_type: string
+          quantity: number
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          item_id: string
+          movement_type: string
+          quantity: number
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          movement_type?: string
+          quantity?: number
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_approvals: {
         Row: {
           approver_id: string
@@ -816,15 +1114,7 @@ export type Database = {
           level?: number
           request_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "leave_approvals_request_id_fkey"
-            columns: ["request_id"]
-            isOneToOne: false
-            referencedRelation: "leave_requests"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       leave_balances: {
         Row: {
@@ -879,78 +1169,42 @@ export type Database = {
       }
       leave_requests: {
         Row: {
-          company_id: string
-          created_at: string
-          current_approver_id: string | null
-          days_count: number
-          decided_at: string | null
+          created_at: string | null
+          employee_id: string
           end_date: string
-          half_end: boolean
-          half_start: boolean
           id: string
-          proof_path: string | null
+          leave_type: string
+          manager_id: string | null
           reason: string | null
           start_date: string
-          status: string
-          submitted_at: string | null
-          type_id: string
-          updated_at: string
-          user_id: string
+          status: string | null
+          updated_at: string | null
         }
         Insert: {
-          company_id: string
-          created_at?: string
-          current_approver_id?: string | null
-          days_count?: number
-          decided_at?: string | null
+          created_at?: string | null
+          employee_id: string
           end_date: string
-          half_end?: boolean
-          half_start?: boolean
           id?: string
-          proof_path?: string | null
+          leave_type: string
+          manager_id?: string | null
           reason?: string | null
           start_date: string
-          status?: string
-          submitted_at?: string | null
-          type_id: string
-          updated_at?: string
-          user_id: string
+          status?: string | null
+          updated_at?: string | null
         }
         Update: {
-          company_id?: string
-          created_at?: string
-          current_approver_id?: string | null
-          days_count?: number
-          decided_at?: string | null
+          created_at?: string | null
+          employee_id?: string
           end_date?: string
-          half_end?: boolean
-          half_start?: boolean
           id?: string
-          proof_path?: string | null
+          leave_type?: string
+          manager_id?: string | null
           reason?: string | null
           start_date?: string
-          status?: string
-          submitted_at?: string | null
-          type_id?: string
-          updated_at?: string
-          user_id?: string
+          status?: string | null
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "leave_requests_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leave_requests_type_id_fkey"
-            columns: ["type_id"]
-            isOneToOne: false
-            referencedRelation: "leave_types"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       leave_types: {
         Row: {
