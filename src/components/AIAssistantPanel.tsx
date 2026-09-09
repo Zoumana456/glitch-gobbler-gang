@@ -38,8 +38,12 @@ import {
   aiExtractFromImage,
   aiExtractFromDocx,
   extractReportFromPdf,
+  aiExtractFromPdfs,
   type ExtractedReport,
+  type MultiPdfFileStatus,
 } from "@/lib/ai.functions";
+
+type PdfMergeMode = "merge" | "per-document";
 
 type Message = { role: "user" | "assistant"; content: string };
 
