@@ -45,6 +45,26 @@ import {
 
 type PdfMergeMode = "merge" | "per-document";
 
+const MAX_PDF_FILES = 10;
+const MAX_PDF_BYTES = 20 * 1024 * 1024;
+
+type PendingPdf = {
+  name: string;
+  status: "pending" | "running" | "done" | "error";
+  error?: string;
+};
+
+function mergeDrafts(prev: ExtractedReport, add: ExtractedReport): ExtractedReport {
+  const hasPrev = Boolean(prev.title || prev.intro || prev.conclusion || prev.sections.length);
+  if (!hasPrev) return add;
+  return {
+    title: prev.title || add.title,
+    intro: prev.intro || add.intro,
+    conclusion: prev.conclusion || add.conclusion,
+    sections: [...prev.sections, ...add.sections],
+  };
+}
+
 type Message = { role: "user" | "assistant"; content: string };
 
 export type AIStyle =
@@ -107,6 +127,7 @@ export function AIAssistantPanel({
   const extractImg = useServerFn(aiExtractFromImage);
   const extractDocx = useServerFn(aiExtractFromDocx);
   const extractPdf = useServerFn(extractReportFromPdf);
+  const extractPdfs = useServerFn(aiExtractFromPdfs);
 
   const [history, setHistory] = useState<Message[]>([
     {
@@ -125,6 +146,10 @@ export function AIAssistantPanel({
   const [autoPlayIndex, setAutoPlayIndex] = useState<number | null>(null);
   // Bumping this triggers the DictationButton to auto-start (after TTS ends).
   const [micTrigger, setMicTrigger] = useState<number | null>(null);
+  const [pdfMode, setPdfMode] = useState<PdfMergeMode>("merge");
+  const [pendingFiles, setPendingFiles] = useState<PendingPdf[]>([]);
+  const [undoDraft, setUndoDraft] = useState<ExtractedReport | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const voiceModeRef = useRef(voiceMode);
   useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
 
@@ -266,10 +291,99 @@ export function AIAssistantPanel({
     }
   }
 
+  function undoImport() {
+    if (!undoDraft) return;
+    applyDraft(undoDraft);
+    setUndoDraft(null);
+    setPendingFiles([]);
+    toast.success("Import annulé");
+  }
+
+  async function handlePdfFiles(list: File[]) {
+    if (busy) return;
+    const pdfs = list.filter(
+      (f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
+    );
+    if (pdfs.length === 0) {
+      toast.error("Aucun PDF valide dans la sélection");
+      return;
+    }
+    if (pdfs.length === 1) {
+      await handleImport(pdfs[0]!);
+      return;
+    }
+    if (pdfs.length > MAX_PDF_FILES) {
+      toast.error(`Maximum ${MAX_PDF_FILES} PDF par import`);
+      return;
+    }
+    const tooBig = pdfs.filter((f) => f.size > MAX_PDF_BYTES);
+    if (tooBig.length > 0) {
+      toast.error(`Fichier trop volumineux (max 20 Mo) : ${tooBig.map((f) => f.name).join(", ")}`);
+      return;
+    }
+
+    setPendingFiles(pdfs.map((f) => ({ name: f.name, status: "running" as const })));
+    setBusy(true);
+    const before = getDraft();
+    try {
+      const files = await Promise.all(
+        pdfs.map(async (f) => ({
+          filename: f.name,
+          base64: await fileToBase64(f),
+          mimeType: "application/pdf",
+        })),
+      );
+      const res = await extractPdfs({
+        data: { files, mode: pdfMode, style: style === "free" ? undefined : style },
+      });
+      setPendingFiles(
+        res.perFile.map((p: MultiPdfFileStatus) => ({
+          name: p.filename,
+          status: p.ok ? ("done" as const) : ("error" as const),
+          error: p.error,
+        })),
+      );
+      const okCount = res.perFile.filter((p: MultiPdfFileStatus) => p.ok).length;
+      const failCount = res.perFile.length - okCount;
+      if (okCount === 0) {
+        toast.error("Aucun document n'a pu être lu");
+        return;
+      }
+      setUndoDraft(before);
+      applyDraft(mergeDrafts(before, res.report));
+      toast.success(
+        `${okCount} document(s) importé(s)` + (failCount > 0 ? `, ${failCount} échec(s)` : ""),
+      );
+    } catch (e: any) {
+      setPendingFiles((prev) =>
+        prev.map((p) => ({ ...p, status: "error" as const, error: e?.message })),
+      );
+      toast.error(e?.message ?? "Import impossible");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 z-40 w-full sm:w-[420px] bg-background border-l border-border shadow-2xl flex flex-col">
+    <div
+      className={
+        "fixed inset-y-0 right-0 z-40 w-full sm:w-[420px] bg-background border-l border-border shadow-2xl flex flex-col" +
+        (dragOver ? " ring-2 ring-primary" : "")
+      }
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const files = Array.from(e.dataTransfer.files ?? []);
+        if (files.length > 0) void handlePdfFiles(files);
+      }}
+    >
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
@@ -362,10 +476,11 @@ export function AIAssistantPanel({
             <input
               type="file"
               accept="application/pdf"
+              multiple
               className="hidden"
               onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleImport(f);
+                const files = Array.from(e.target.files ?? []);
+                if (files.length > 0) void handlePdfFiles(files);
                 e.target.value = "";
               }}
             />
@@ -374,6 +489,53 @@ export function AIAssistantPanel({
             </div>
           </label>
         </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground shrink-0">PDF multiples :</span>
+          <Select value={pdfMode} onValueChange={(v) => setPdfMode(v as PdfMergeMode)}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="merge">Fusionner en un rapport</SelectItem>
+              <SelectItem value="per-document">Une section par document</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Jusqu'à {MAX_PDF_FILES} PDF (20 Mo max chacun) — sélection multiple ou glisser-déposer.
+        </p>
+        {pendingFiles.length > 0 && (
+          <ul className="space-y-1 text-xs">
+            {pendingFiles.map((f, i) => (
+              <li key={i} className="flex items-center gap-2">
+                <span className="truncate flex-1">{f.name}</span>
+                <span
+                  className={
+                    f.status === "error"
+                      ? "text-destructive shrink-0"
+                      : f.status === "done"
+                        ? "text-primary shrink-0"
+                        : "text-muted-foreground shrink-0"
+                  }
+                  title={f.error}
+                >
+                  {f.status === "pending"
+                    ? "en attente"
+                    : f.status === "running"
+                      ? "lecture…"
+                      : f.status === "done"
+                        ? "lu"
+                        : (f.error ?? "erreur")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {undoDraft && (
+          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={undoImport}>
+            Annuler l'import
+          </Button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
