@@ -526,38 +526,173 @@ export type Database = {
           },
         ]
       }
+      document_folders: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_folders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_id: string
+          file_name: string
+          id: string
+          mime_type: string | null
+          size_bytes: number
+          storage_path: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          file_name: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number
+          storage_path: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          file_name?: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number
+          storage_path?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           author_id: string | null
           category: string
+          company_id: string | null
           created_at: string | null
+          description: string | null
           file_url: string
+          folder_id: string | null
           id: string
           metadata: Json | null
+          mime_type: string | null
+          report_id: string | null
           size_bytes: number
           title: string
+          updated_at: string
+          version: number
+          visibility: string
         }
         Insert: {
           author_id?: string | null
           category?: string
+          company_id?: string | null
           created_at?: string | null
+          description?: string | null
           file_url: string
+          folder_id?: string | null
           id?: string
           metadata?: Json | null
+          mime_type?: string | null
+          report_id?: string | null
           size_bytes?: number
           title: string
+          updated_at?: string
+          version?: number
+          visibility?: string
         }
         Update: {
           author_id?: string | null
           category?: string
+          company_id?: string | null
           created_at?: string | null
+          description?: string | null
           file_url?: string
+          folder_id?: string | null
           id?: string
           metadata?: Json | null
+          mime_type?: string | null
+          report_id?: string | null
           size_bytes?: number
           title?: string
+          updated_at?: string
+          version?: number
+          visibility?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_accounts: {
         Row: {
@@ -993,8 +1128,12 @@ export type Database = {
           amount: number
           author_id: string
           category: string | null
+          company_id: string | null
           created_at: string | null
           currency: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision_comment: string | null
           description: string | null
           expense_date: string
           id: string
@@ -1008,8 +1147,12 @@ export type Database = {
           amount: number
           author_id: string
           category?: string | null
+          company_id?: string | null
           created_at?: string | null
           currency?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_comment?: string | null
           description?: string | null
           expense_date: string
           id?: string
@@ -1023,8 +1166,12 @@ export type Database = {
           amount?: number
           author_id?: string
           category?: string | null
+          company_id?: string | null
           created_at?: string | null
           currency?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_comment?: string | null
           description?: string | null
           expense_date?: string
           id?: string
@@ -1034,7 +1181,15 @@ export type Database = {
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expense_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_items: {
         Row: {
