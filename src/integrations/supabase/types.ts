@@ -526,6 +526,39 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          author_id: string | null
+          category: string
+          created_at: string | null
+          file_url: string
+          id: string
+          metadata: Json | null
+          size_bytes: number
+          title: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string
+          created_at?: string | null
+          file_url: string
+          id?: string
+          metadata?: Json | null
+          size_bytes?: number
+          title: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          created_at?: string | null
+          file_url?: string
+          id?: string
+          metadata?: Json | null
+          size_bytes?: number
+          title?: string
+        }
+        Relationships: []
+      }
       email_accounts: {
         Row: {
           auth_type: string
