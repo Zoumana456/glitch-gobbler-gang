@@ -46,6 +46,7 @@ import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authentica
 import { Route as AuthenticatedLeavesValidationsRouteImport } from './routes/_authenticated/leaves.validations'
 import { Route as AuthenticatedLeavesNewRouteImport } from './routes/_authenticated/leaves.new'
 import { Route as AuthenticatedLeavesCalendrierRouteImport } from './routes/_authenticated/leaves.calendrier'
+import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
 import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
@@ -253,6 +254,12 @@ const AuthenticatedLeavesCalendrierRoute =
     path: '/leaves/calendrier',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDocumentsIdRoute =
+  AuthenticatedDocumentsIdRouteImport.update({
+    id: '/documents/$id',
+    path: '/documents/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCompanyHierarchieRoute =
   AuthenticatedCompanyHierarchieRouteImport.update({
     id: '/hierarchie',
@@ -323,6 +330,7 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/leaves/calendrier': typeof AuthenticatedLeavesCalendrierRoute
   '/leaves/new': typeof AuthenticatedLeavesNewRoute
   '/leaves/validations': typeof AuthenticatedLeavesValidationsRoute
@@ -369,6 +377,7 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/leaves/calendrier': typeof AuthenticatedLeavesCalendrierRoute
   '/leaves/new': typeof AuthenticatedLeavesNewRoute
   '/leaves/validations': typeof AuthenticatedLeavesValidationsRoute
@@ -417,6 +426,7 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
+  '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/leaves/calendrier': typeof AuthenticatedLeavesCalendrierRoute
   '/_authenticated/leaves/new': typeof AuthenticatedLeavesNewRoute
   '/_authenticated/leaves/validations': typeof AuthenticatedLeavesValidationsRoute
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/documents/$id'
     | '/leaves/calendrier'
     | '/leaves/new'
     | '/leaves/validations'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/company/applications'
     | '/company/hierarchie'
+    | '/documents/$id'
     | '/leaves/calendrier'
     | '/leaves/new'
     | '/leaves/validations'
@@ -559,6 +571,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
+    | '/_authenticated/documents/$id'
     | '/_authenticated/leaves/calendrier'
     | '/_authenticated/leaves/new'
     | '/_authenticated/leaves/validations'
@@ -867,6 +880,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeavesCalendrierRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/documents/$id': {
+      id: '/_authenticated/documents/$id'
+      path: '/documents/$id'
+      fullPath: '/documents/$id'
+      preLoaderRoute: typeof AuthenticatedDocumentsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/company/hierarchie': {
       id: '/_authenticated/company/hierarchie'
       path: '/hierarchie'
@@ -973,6 +993,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedDocumentsIdRoute: typeof AuthenticatedDocumentsIdRoute
   AuthenticatedLeavesCalendrierRoute: typeof AuthenticatedLeavesCalendrierRoute
   AuthenticatedLeavesNewRoute: typeof AuthenticatedLeavesNewRoute
   AuthenticatedLeavesValidationsRoute: typeof AuthenticatedLeavesValidationsRoute
@@ -1003,6 +1024,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedDocumentsIdRoute: AuthenticatedDocumentsIdRoute,
   AuthenticatedLeavesCalendrierRoute: AuthenticatedLeavesCalendrierRoute,
   AuthenticatedLeavesNewRoute: AuthenticatedLeavesNewRoute,
   AuthenticatedLeavesValidationsRoute: AuthenticatedLeavesValidationsRoute,
