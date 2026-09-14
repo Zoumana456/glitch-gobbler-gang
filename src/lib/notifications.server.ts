@@ -7,7 +7,11 @@ export type NotificationType =
   | "task_completed"
   | "leave_submitted"
   | "leave_approved"
-  | "leave_rejected";
+  | "leave_rejected"
+  | "expense_submitted"
+  | "expense_approved"
+  | "expense_rejected"
+  | "document_shared";
 
 export type NotificationDraft = {
   user_id: string;
