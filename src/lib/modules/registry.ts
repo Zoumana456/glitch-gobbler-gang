@@ -44,6 +44,43 @@ export type AppModule = {
 
 export const APP_MODULES: AppModule[] = [
   {
+    code: "dashboard",
+    name: "Tableau de bord",
+    description:
+      "Vue consolidée : rapports, tâches, congés, dépenses et documents sur un écran.",
+    icon: Gauge,
+    tone: "bg-primary/10 text-primary",
+    entry: "/dashboard",
+    core: true,
+    screens: [{ to: "/dashboard", label: "Tableau de bord", icon: Gauge }],
+  },
+  {
+    code: "documents",
+    name: "Documents",
+    description:
+      "Bibliothèque d'entreprise : dossiers, catégories, versions et recherche.",
+    icon: FolderOpen,
+    tone: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+    entry: "/documents",
+    core: false,
+    screens: [{ to: "/documents", label: "Documents", icon: FolderOpen }],
+  },
+  {
+    code: "expenses",
+    name: "Notes de frais",
+    description:
+      "Dépenses professionnelles avec justificatif et validation hiérarchique.",
+    icon: Receipt,
+    tone: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    entry: "/expenses",
+    core: false,
+    screens: [
+      { to: "/expenses", label: "Mes notes de frais", icon: Receipt },
+      { to: "/expenses/new", label: "Nouvelle note", icon: FilePlus2 },
+      { to: "/expenses/validations", label: "À valider", icon: ShieldCheck },
+    ],
+  },
+  {
     code: "reports",
     name: "Rapports",
     description: "Rapports journaliers, validation hiérarchique et export PDF.",
