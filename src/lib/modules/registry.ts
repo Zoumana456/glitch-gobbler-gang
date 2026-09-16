@@ -18,6 +18,9 @@ import {
   CalendarClock,
   CalendarCheck2,
   CalendarRange,
+  FolderOpen,
+  Receipt,
+  Gauge,
 } from "lucide-react";
 
 export type ModuleScreen = {
