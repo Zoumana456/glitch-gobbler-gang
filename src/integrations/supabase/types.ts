@@ -2590,7 +2590,6 @@ export type Database = {
     Functions: {
       assert_not_admin_only: { Args: { _user_id: string }; Returns: undefined }
       assert_not_banned: { Args: { _user_id: string }; Returns: undefined }
-      can_access_project: { Args: { _project: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
