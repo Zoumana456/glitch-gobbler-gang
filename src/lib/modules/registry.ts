@@ -21,6 +21,7 @@ import {
   FolderOpen,
   Receipt,
   Gauge,
+  Briefcase,
 } from "lucide-react";
 
 export type ModuleScreen = {
@@ -53,6 +54,20 @@ export const APP_MODULES: AppModule[] = [
     entry: "/dashboard",
     core: true,
     screens: [{ to: "/dashboard", label: "Tableau de bord", icon: Gauge }],
+  },
+  {
+    code: "projects",
+    name: "Projets",
+    description:
+      "Montage et pilotage de projets : jalons, équipe, budget, documents, Tableau & Kanban.",
+    icon: Briefcase,
+    tone: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
+    entry: "/projects",
+    core: false,
+    screens: [
+      { to: "/projects", label: "Portefeuille", icon: Briefcase },
+      { to: "/projects/new", label: "Nouveau projet", icon: FilePlus2 },
+    ],
   },
   {
     code: "documents",
