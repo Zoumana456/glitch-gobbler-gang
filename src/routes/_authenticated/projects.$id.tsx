@@ -18,6 +18,7 @@ import {
   PROJECT_STATUSES, STATUS_LABEL, PRIORITY_LABEL, HEALTH_LABEL, HEALTH_TONE, MILESTONE_LABEL, fmtMoney,
   type Project,
 } from "@/lib/projects";
+import { ProjectAssistant } from "@/components/projects/ProjectAssistant";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   head: () => ({
@@ -81,10 +82,20 @@ function ProjectPage() {
           <TabsTrigger value="team">Équipe ({data.members.length})</TabsTrigger>
           <TabsTrigger value="budget">Budget</TabsTrigger>
           <TabsTrigger value="files">Documents ({data.files.length})</TabsTrigger>
+          <TabsTrigger value="ai">Assistante IA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="print:block">
           <Overview p={p} onSave={patch} />
+        </TabsContent>
+
+        <TabsContent value="ai">
+          <ProjectAssistant projectId={id} onAddMilestones={async (list) => {
+            for (const [i, m] of list.entries()) {
+              await addRow("project_milestones", { project_id: id, title: m.title, due_date: m.due_date, responsible: m.responsible, position: data.milestones.length + i });
+            }
+            refresh();
+          }} />
         </TabsContent>
 
         <TabsContent value="milestones">
