@@ -65,7 +65,7 @@ export function ProjectAssistant({
           <Bot className="h-5 w-5 text-primary" />
           <h2 className="font-semibold">Assistante de pilotage</h2>
           {msgs.length > 0 && (
-            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setMsgs([])}>Effacer</Button>
+            <Button variant="ghost" size="sm" className="ml-auto mr-6" onClick={() => setMsgs([])}>Effacer</Button>
           )}
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -77,7 +77,7 @@ export function ProjectAssistant({
             <Button key={q} variant="outline" size="sm" disabled={busy} onClick={() => send(q)}>{q}</Button>
           ))}
         </div>
-        <div className="max-h-[480px] space-y-3 overflow-y-auto">
+        <div className="max-h-[calc(100vh-320px)] space-y-3 overflow-y-auto">
           {msgs.length === 0 && (
             <p className="text-sm text-muted-foreground">
               Posez une question sur le projet : l'assistante connaît ses jalons, son équipe, son budget et ses documents.
