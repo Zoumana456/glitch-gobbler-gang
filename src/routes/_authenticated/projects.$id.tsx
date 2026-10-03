@@ -19,6 +19,8 @@ import {
   type Project,
 } from "@/lib/projects";
 import { ProjectAssistant } from "@/components/projects/ProjectAssistant";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Bot } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   head: () => ({
@@ -55,6 +57,20 @@ function ProjectPage() {
       <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
         <Button variant="ghost" size="sm" asChild><Link to="/projects"><ArrowLeft className="mr-1 h-4 w-4" />Projets</Link></Button>
         <div className="flex gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button size="sm"><Bot className="mr-1 h-4 w-4" />Assistante IA</Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full overflow-y-auto p-0 sm:max-w-xl">
+              <SheetHeader className="sr-only"><SheetTitle>Assistante de pilotage</SheetTitle></SheetHeader>
+              <ProjectAssistant projectId={id} onAddMilestones={async (list) => {
+                for (const [i, m] of list.entries()) {
+                  await addRow("project_milestones", { project_id: id, title: m.title, due_date: m.due_date, responsible: m.responsible, position: data.milestones.length + i });
+                }
+                refresh();
+              }} />
+            </SheetContent>
+          </Sheet>
           <Button variant="outline" size="sm" onClick={() => window.print()}><FileDown className="mr-1 h-4 w-4" />Exporter PDF</Button>
           <Button variant="outline" size="sm" onClick={async () => {
             if (!confirm("Supprimer définitivement ce projet ?")) return;
@@ -82,20 +98,10 @@ function ProjectPage() {
           <TabsTrigger value="team">Équipe ({data.members.length})</TabsTrigger>
           <TabsTrigger value="budget">Budget</TabsTrigger>
           <TabsTrigger value="files">Documents ({data.files.length})</TabsTrigger>
-          <TabsTrigger value="ai">Assistante IA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="print:block">
           <Overview p={p} onSave={patch} />
-        </TabsContent>
-
-        <TabsContent value="ai">
-          <ProjectAssistant projectId={id} onAddMilestones={async (list) => {
-            for (const [i, m] of list.entries()) {
-              await addRow("project_milestones", { project_id: id, title: m.title, due_date: m.due_date, responsible: m.responsible, position: data.milestones.length + i });
-            }
-            refresh();
-          }} />
         </TabsContent>
 
         <TabsContent value="milestones">

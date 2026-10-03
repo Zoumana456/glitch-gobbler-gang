@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
-import { Bot, Loader2, Plus, Send } from "lucide-react";
+import { Bot, FileText, Loader2, Plus, Send, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,21 +59,25 @@ export function ProjectAssistant({
   }
 
   return (
-    <Card>
+    <Card className="border-0 shadow-none">
       <CardContent className="space-y-4 p-4">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
           <h2 className="font-semibold">Assistante de pilotage</h2>
           {msgs.length > 0 && (
-            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setMsgs([])}>Effacer</Button>
+            <Button variant="ghost" size="sm" className="ml-auto mr-6" onClick={() => setMsgs([])}>Effacer</Button>
           )}
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button disabled={busy} onClick={() => send(QUICK[0])}><Stethoscope className="mr-1 h-4 w-4" />Diagnostic</Button>
+          <Button variant="secondary" disabled={busy} onClick={() => send(QUICK[3])}><FileText className="mr-1 h-4 w-4" />Note COPIL</Button>
+        </div>
         <div className="flex flex-wrap gap-2">
-          {QUICK.map((q) => (
+          {QUICK.filter((_, i) => i !== 0 && i !== 3).map((q) => (
             <Button key={q} variant="outline" size="sm" disabled={busy} onClick={() => send(q)}>{q}</Button>
           ))}
         </div>
-        <div className="max-h-[480px] space-y-3 overflow-y-auto">
+        <div className="max-h-[calc(100vh-320px)] space-y-3 overflow-y-auto">
           {msgs.length === 0 && (
             <p className="text-sm text-muted-foreground">
               Posez une question sur le projet : l'assistante connaît ses jalons, son équipe, son budget et ses documents.
