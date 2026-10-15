@@ -258,7 +258,6 @@ function SharedReportPage() {
 
           {r.doc_type !== "budget" && r.intro && (
             <section id="intro" className="scroll-mt-24">
-              <h2 className="text-xl font-semibold mb-3">Introduction</h2>
               <RichText text={r.intro} />
             </section>
           )}
@@ -332,7 +331,6 @@ function SharedReportPage() {
 
           {r.conclusion && (
             <section id="conclusion" className="scroll-mt-24">
-              <h2 className="text-xl font-semibold mb-3">Conclusion</h2>
               <RichText text={r.conclusion} />
             </section>
           )}

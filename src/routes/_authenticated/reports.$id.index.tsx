@@ -438,14 +438,13 @@ function ReportDetailPage() {
       {r.doc_type !== "budget" && r.intro && (
 
         <section>
-          <h2 className="text-xl font-semibold mb-3">Introduction</h2>
           <RichText text={r.intro} />
         </section>
       )}
 
       {r.sections.map((s) => (
         <section key={s.id} className="space-y-4">
-          <h2 className="text-xl font-semibold">{s.title || "Section"}</h2>
+          {s.title && <h2 className="text-xl font-semibold">{s.title}</h2>}
           {s.description && <RichText text={s.description} />}
           {s.bullets.length > 0 && (
             <ul className="list-disc pl-6 space-y-3">
@@ -496,7 +495,6 @@ function ReportDetailPage() {
 
       {r.doc_type !== "budget" && r.conclusion && (
         <section>
-          <h2 className="text-xl font-semibold mb-3">Conclusion</h2>
           <RichText text={r.conclusion} />
         </section>
       )}
