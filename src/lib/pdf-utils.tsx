@@ -133,14 +133,13 @@ function ReportPdfDocument({
 
         {report.intro && (
           <View style={styles.section}>
-            <Text style={styles.h2}>Introduction</Text>
-            <Paragraphs text={report.intro} />
+                        <Paragraphs text={report.intro} />
           </View>
         )}
 
         {report.sections.map((s) => (
           <View key={s.id} style={styles.section}>
-            <Text style={styles.h2}>{s.title || "Section"}</Text>
+            {s.title ? <Text style={styles.h2}>{s.title}</Text> : null}
             {s.description && <Paragraphs text={s.description} />}
             {s.bullets.length > 0 && (
               <View style={{ marginTop: 4 }}>
@@ -171,8 +170,7 @@ function ReportPdfDocument({
 
         {report.conclusion && (
           <View style={styles.section}>
-            <Text style={styles.h2}>Conclusion</Text>
-            <Paragraphs text={report.conclusion} />
+                        <Paragraphs text={report.conclusion} />
           </View>
         )}
 

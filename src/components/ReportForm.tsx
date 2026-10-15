@@ -646,7 +646,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
       <Card>
         <CardContent className="py-5 space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <Label className="text-base">Introduction</Label>
+            <Label className="text-base">Paragraphe d'ouverture</Label>
             <div className="flex items-center gap-2">
               <DictationButton
                 label="Dicter l'intro"
@@ -790,7 +790,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
       <Card>
         <CardContent className="py-5 space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <Label className="text-base">Conclusion</Label>
+            <Label className="text-base">Paragraphe de clôture</Label>
             <div className="flex items-center gap-2">
               <DictationButton
                 label="Dicter"
