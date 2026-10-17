@@ -93,7 +93,7 @@ function CompanyApplicationsPage() {
       )}
 
       <div className="space-y-3">
-        {APP_MODULES.map((m) => {
+        {APP_MODULES.filter((m) => !m.hiddenFromLauncher).map((m) => {
           const Icon = m.icon;
           const enabled = m.core || !disabled.has(m.code);
           return (

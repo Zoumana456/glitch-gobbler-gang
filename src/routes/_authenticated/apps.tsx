@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyModules } from "@/lib/modules.functions";
-import { visibleModules } from "@/lib/modules/registry";
+import { launcherModules } from "@/lib/modules/registry";
 import { Input } from "@/components/ui/input";
 import { useMemo, useState } from "react";
 import { LayoutGrid, Settings2 } from "lucide-react";
@@ -32,7 +32,7 @@ function AppsLauncher() {
   const [q, setQ] = useState("");
 
   const modules = useMemo(() => {
-    const list = visibleModules(state?.disabled);
+    const list = launcherModules(state?.disabled);
     const needle = q.trim().toLowerCase();
     if (!needle) return list;
     return list.filter(
