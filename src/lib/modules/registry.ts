@@ -40,6 +40,8 @@ export type AppModule = {
   entry: string;
   /** un module "core" ne peut pas être désactivé */
   core: boolean;
+  /** masqué du lanceur /apps (page système accessible ailleurs) */
+  hiddenFromLauncher?: boolean;
   screens: ModuleScreen[];
 };
 
@@ -176,6 +178,7 @@ export const APP_MODULES: AppModule[] = [
     core: true,
     screens: [
       { to: "/company", label: "Entreprise", icon: Building2 },
+      { to: "/company/hierarchie", label: "Organigramme", icon: Network },
       { to: "/company/applications", label: "Gérer les applications", icon: LayoutGrid },
     ],
   },
@@ -187,6 +190,7 @@ export const APP_MODULES: AppModule[] = [
     tone: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
     entry: "/company/hierarchie",
     core: true,
+    hiddenFromLauncher: true,
     screens: [
       { to: "/company/hierarchie", label: "Organigramme", icon: Network },
       { to: "/reports/direction", label: "Vue direction", icon: BarChart3 },
@@ -200,6 +204,7 @@ export const APP_MODULES: AppModule[] = [
     tone: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
     entry: "/plans",
     core: true,
+    hiddenFromLauncher: true,
     screens: [{ to: "/plans", label: "Plans", icon: Package }],
   },
   {
@@ -210,6 +215,7 @@ export const APP_MODULES: AppModule[] = [
     tone: "bg-muted text-foreground",
     entry: "/profile",
     core: true,
+    hiddenFromLauncher: true,
     screens: [{ to: "/profile", label: "Profil", icon: UserCircle2 }],
   },
 ];
@@ -239,4 +245,9 @@ export function visibleModules(
 ): AppModule[] {
   const disabled = new Set(disabledCodes ?? []);
   return APP_MODULES.filter((m) => m.core || !disabled.has(m.code));
+}
+
+/** Modules affichés dans le lanceur (hors pages système). */
+export function launcherModules(disabledCodes: string[] | undefined | null): AppModule[] {
+  return visibleModules(disabledCodes).filter((m) => !m.hiddenFromLauncher);
 }
