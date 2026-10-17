@@ -248,8 +248,6 @@ function SharedReportPage() {
 
           {r.sections.map((s, i) => {
             const anchor = sectionAnchors[i]?.anchor ?? `sec-${i}`;
-            const empty =
-              !s.description && s.bullets.length === 0 && s.images.length === 0 && (s.attachments?.length ?? 0) === 0;
             return (
               <section
                 key={s.id}
