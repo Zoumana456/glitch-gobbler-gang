@@ -8,6 +8,8 @@ import {
   pdf,
 } from "@react-pdf/renderer";
 import { PDFDocument } from "pdf-lib";
+import { Font } from "@react-pdf/renderer";
+Font.registerHyphenationCallback((word) => [word]);
 import type { ApprovalEntry, LoadedReport } from "./reports.types";
 import { REPORT_STATUS_LABEL, levelLabel } from "./reports.types";
 import type { ReportMinute } from "./minutes.functions";
@@ -57,7 +59,7 @@ const styles = StyleSheet.create({
   },
   header: { marginBottom: 28, borderBottom: "2 solid #2563eb", paddingBottom: 14 },
   date: { fontSize: 10, color: "#6b7280", marginBottom: 4 },
-  title: { fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 6 },
+  title: { fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 6, lineHeight: 1.3 },
   author: { fontSize: 10, color: "#6b7280" },
   section: { marginBottom: 26 },
   h2: {
@@ -191,6 +193,23 @@ function ReportPdfDocument({
             </View>
           </View>
         )}
+        {(() => {
+          const atts = [
+            ...report.sections.flatMap((s) => s.attachments ?? []),
+            ...(report.general_attachments ?? []),
+          ];
+          return atts.length > 0 ? (
+            <View style={styles.section}>
+              <Text style={styles.h2}>Pièces jointes</Text>
+              {atts.map((a) => (
+                <View style={styles.bullet} key={a.id}>
+                  <Text style={styles.bulletDot}>•</Text>
+                  <Text style={styles.bulletText}>{a.file_name}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null;
+        })()}
         {approvals && approvals.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.h2}>Fil de validation</Text>

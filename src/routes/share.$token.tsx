@@ -92,7 +92,7 @@ function SharedReportPage() {
     if (!d) return [] as { id: string; label: string; anchor: string }[];
     return d.sections.map((s, i) => ({
       id: s.id,
-      label: s.title || `Section ${i + 1}`,
+      label: s.title || "",
       anchor: `sec-${slugify(s.title, String(i + 1))}-${i}`,
     }));
   }, [query.data]);
@@ -177,7 +177,7 @@ function SharedReportPage() {
       </header>
 
       <div className="max-w-6xl w-full mx-auto px-4 md:px-8 py-8 flex-1 grid gap-8 lg:grid-cols-[220px_1fr]">
-        {sectionAnchors.length > 0 && (
+        {sectionAnchors.some((a) => a.label) && (
           <aside className="hidden lg:block">
             <nav
               aria-label="Table des matières"
@@ -186,15 +186,7 @@ function SharedReportPage() {
               <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
                 Sommaire
               </div>
-              {r.intro && (
-                <a
-                  href="#intro"
-                  className="block px-2 py-1 rounded hover:bg-muted focus:bg-muted outline-none"
-                >
-                  Introduction
-                </a>
-              )}
-              {sectionAnchors.map((a) => (
+              {sectionAnchors.filter((a) => a.label).map((a) => (
                 <a
                   key={a.id}
                   href={`#${a.anchor}`}
@@ -203,14 +195,6 @@ function SharedReportPage() {
                   {a.label}
                 </a>
               ))}
-              {r.doc_type !== "budget" && r.conclusion && (
-                <a
-                  href="#conclusion"
-                  className="block px-2 py-1 rounded hover:bg-muted focus:bg-muted outline-none"
-                >
-                  Conclusion
-                </a>
-              )}
               {r.general_images.length > 0 && (
                 <a
                   href="#images"
@@ -264,17 +248,13 @@ function SharedReportPage() {
 
           {r.sections.map((s, i) => {
             const anchor = sectionAnchors[i]?.anchor ?? `sec-${i}`;
-            const empty =
-              !s.description && s.bullets.length === 0 && s.images.length === 0 && (s.attachments?.length ?? 0) === 0;
             return (
               <section
                 key={s.id}
                 id={anchor}
                 className="space-y-4 scroll-mt-24"
               >
-                <h2 className="text-xl font-semibold">
-                  {s.title || `Section ${i + 1}`}
-                </h2>
+                {s.title && <h2 className="text-xl font-semibold">{s.title}</h2>}
                 {s.description && <RichText text={s.description} />}
                 {s.bullets.length > 0 && (
                   <ul className="list-disc pl-6 space-y-3">
@@ -320,16 +300,11 @@ function SharedReportPage() {
                 {s.attachments && s.attachments.length > 0 && (
                   <AttachmentsView attachments={s.attachments} title="" />
                 )}
-                {empty && (
-                  <p className="text-sm text-muted-foreground italic">
-                    Section vide.
-                  </p>
-                )}
               </section>
             );
           })}
 
-          {r.conclusion && (
+          {r.doc_type !== "budget" && r.conclusion && (
             <section id="conclusion" className="scroll-mt-24">
               <RichText text={r.conclusion} />
             </section>
@@ -390,7 +365,7 @@ function SharedReportPage() {
       </div>
 
       <footer className="border-t border-border py-4 text-center text-xs text-muted-foreground">
-        Rapport partagé en lecture seule · Généré via Lovable Rapports
+        Rapport partagé en lecture seule · Généré via DailyBrief
       </footer>
     </div>
   );
