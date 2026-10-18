@@ -75,9 +75,9 @@ const styles = StyleSheet.create({
   bullet: { flexDirection: "row", marginBottom: 10 },
   bulletDot: { width: 12 },
   bulletText: { flex: 1 },
-  imageRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
-  imageBox: { width: 160, marginBottom: 6 },
-  image: { width: 160, height: 120, objectFit: "cover", borderRadius: 4 },
+  imageRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 12 },
+  imageBox: { width: "48.5%", marginBottom: 12 },
+  image: { width: "100%", height: 190, objectFit: "contain", backgroundColor: "#f3f4f6", borderRadius: 4 },
   imageCaption: { fontSize: 9, color: "#4b5563", marginTop: 3, textAlign: "center" },
 });
 
@@ -238,6 +238,26 @@ async function urlToDataUrl(url: string): Promise<string | null> {
     const res = await fetch(url);
     if (!res.ok) return null;
     const blob = await res.blob();
+    // Redraw via canvas: the browser applies EXIF orientation, so phone
+    // photos come out upright, and output is a clean JPEG for the PDF.
+    try {
+      const bmp = await createImageBitmap(blob, { imageOrientation: "from-image" });
+      const max = 1600;
+      const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bmp.width * scale);
+      canvas.height = Math.round(bmp.height * scale);
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+        bmp.close?.();
+        return canvas.toDataURL("image/jpeg", 0.88);
+      }
+    } catch {
+      /* fall back to raw data */
+    }
     return await new Promise<string | null>((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () =>
