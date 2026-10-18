@@ -10,6 +10,8 @@ import {
 import { PDFDocument } from "pdf-lib";
 import { Font } from "@react-pdf/renderer";
 Font.registerHyphenationCallback((word) => [word]);
+const REPORT_LOGO_URL = () =>
+  `${typeof window !== "undefined" ? window.location.origin : ""}/logo-mbc.png`;
 import type { ApprovalEntry, LoadedReport } from "./reports.types";
 import { REPORT_STATUS_LABEL, levelLabel } from "./reports.types";
 import type { ReportMinute } from "./minutes.functions";
