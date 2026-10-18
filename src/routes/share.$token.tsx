@@ -209,8 +209,11 @@ function SharedReportPage() {
 
         <main className="min-w-0 space-y-10 scroll-smooth">
           <div className="border-b border-border pb-4">
-            <div className="text-sm text-primary font-medium">
-              {formatLongDate(r.report_date)}
+            <div className="flex items-center justify-between gap-4 mb-3">
+              <img src="/logo-mbc.png" alt="Logo MBC" className="h-14 w-auto" />
+              <div className="text-sm text-primary font-medium">
+                {formatLongDate(r.report_date)}
+              </div>
             </div>
             <h1 className="text-3xl font-bold tracking-tight mt-1">
               {r.title}

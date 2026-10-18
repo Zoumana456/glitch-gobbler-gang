@@ -10,6 +10,8 @@ import {
 import { PDFDocument } from "pdf-lib";
 import { Font } from "@react-pdf/renderer";
 Font.registerHyphenationCallback((word) => [word]);
+const REPORT_LOGO_URL = () =>
+  `${typeof window !== "undefined" ? window.location.origin : ""}/logo-mbc.png`;
 import type { ApprovalEntry, LoadedReport } from "./reports.types";
 import { REPORT_STATUS_LABEL, levelLabel } from "./reports.types";
 import type { ReportMinute } from "./minutes.functions";
@@ -111,10 +113,13 @@ function ReportPdfDocument({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <View fixed style={styles.runningHeader}>
-          <Text>{report.title}</Text>
-          <Text>{formatLongDate(report.report_date)}</Text>
-        </View>
+        <View
+          fixed
+          style={styles.runningHeader}
+          render={({ pageNumber }) =>
+            pageNumber > 1 ? <Text>{report.title}</Text> : null
+          }
+        />
         <View fixed style={styles.runningFooter}>
           <Text>Par {report.author_name}</Text>
           <Text
@@ -124,12 +129,12 @@ function ReportPdfDocument({
           />
         </View>
         <View style={styles.header}>
-          <Text style={styles.date}>{formatLongDate(report.report_date)}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <Image src={REPORT_LOGO_URL()} style={{ width: 70, height: 60, objectFit: "contain" }} />
+            <Text style={styles.date}>{formatLongDate(report.report_date)}</Text>
+          </View>
           <Text style={styles.title}>{report.title}</Text>
-          <Text style={styles.author}>
-            Par {report.author_name}
-            {report.status ? ` — ${REPORT_STATUS_LABEL[report.status]}` : ""}
-          </Text>
+          <Text style={styles.author}>Par {report.author_name}</Text>
         </View>
 
 

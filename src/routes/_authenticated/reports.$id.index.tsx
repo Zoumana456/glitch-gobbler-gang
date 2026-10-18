@@ -415,8 +415,11 @@ function ReportDetailPage() {
       </div>
 
       <div className="border-b border-border pb-4">
-        <div className="text-sm text-primary font-medium">
-          {formatLongDate(r.report_date)}
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <img src="/logo-mbc.png" alt="Logo MBC" className="h-14 w-auto" />
+          <div className="text-sm text-primary font-medium">
+            {formatLongDate(r.report_date)}
+          </div>
         </div>
         <h1 className="text-3xl font-bold tracking-tight mt-1">{r.title}</h1>
         <div className="text-sm text-muted-foreground mt-2 flex flex-wrap items-center gap-2">
