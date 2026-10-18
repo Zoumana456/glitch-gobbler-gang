@@ -160,9 +160,9 @@ function ReportPdfDocument({
             )}
             {s.images.length > 0 && (
               <View style={styles.imageRow}>
-                {s.images.map((img) =>
+                {s.images.map((img, i) =>
                   img.url ? (
-                    <View key={img.id} style={styles.imageBox}>
+                    <View key={img.id} style={i % 4 === 3 ? [styles.imageBox, { marginRight: 0 }] : styles.imageBox}>
                       <Image src={img.url} style={styles.image} />
                       {img.caption ? (
                         <Text style={styles.imageCaption}>{img.caption}</Text>
@@ -185,9 +185,9 @@ function ReportPdfDocument({
           <View style={styles.section}>
             <Text style={styles.h2}>Images</Text>
             <View style={styles.imageRow}>
-              {report.general_images.map((img) =>
+              {report.general_images.map((img, i) =>
                 img.url ? (
-                  <View key={img.id} style={styles.imageBox}>
+                  <View key={img.id} style={i % 4 === 3 ? [styles.imageBox, { marginRight: 0 }] : styles.imageBox}>
                     <Image src={img.url} style={styles.image} />
                     {img.caption ? (
                       <Text style={styles.imageCaption}>{img.caption}</Text>
