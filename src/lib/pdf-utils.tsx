@@ -75,9 +75,9 @@ const styles = StyleSheet.create({
   bullet: { flexDirection: "row", marginBottom: 10 },
   bulletDot: { width: 12 },
   bulletText: { flex: 1 },
-  imageRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 12 },
-  imageBox: { width: "48.5%", marginBottom: 12 },
-  image: { width: "100%", height: 190, objectFit: "contain", backgroundColor: "#f3f4f6", borderRadius: 4 },
+  imageRow: { flexDirection: "row", flexWrap: "wrap", marginTop: 12 },
+  imageBox: { width: "23.5%", marginRight: "2%", marginBottom: 10 },
+  image: { width: "100%", height: 115, objectFit: "cover", backgroundColor: "#f3f4f6", borderRadius: 6 },
   imageCaption: { fontSize: 9, color: "#4b5563", marginTop: 3, textAlign: "center" },
 });
 
@@ -160,9 +160,9 @@ function ReportPdfDocument({
             )}
             {s.images.length > 0 && (
               <View style={styles.imageRow}>
-                {s.images.map((img) =>
+                {s.images.map((img, i) =>
                   img.url ? (
-                    <View key={img.id} style={styles.imageBox}>
+                    <View key={img.id} style={i % 4 === 3 ? [styles.imageBox, { marginRight: 0 }] : styles.imageBox}>
                       <Image src={img.url} style={styles.image} />
                       {img.caption ? (
                         <Text style={styles.imageCaption}>{img.caption}</Text>
@@ -185,9 +185,9 @@ function ReportPdfDocument({
           <View style={styles.section}>
             <Text style={styles.h2}>Images</Text>
             <View style={styles.imageRow}>
-              {report.general_images.map((img) =>
+              {report.general_images.map((img, i) =>
                 img.url ? (
-                  <View key={img.id} style={styles.imageBox}>
+                  <View key={img.id} style={i % 4 === 3 ? [styles.imageBox, { marginRight: 0 }] : styles.imageBox}>
                     <Image src={img.url} style={styles.image} />
                     {img.caption ? (
                       <Text style={styles.imageCaption}>{img.caption}</Text>
