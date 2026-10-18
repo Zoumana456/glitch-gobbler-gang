@@ -285,12 +285,6 @@ function ReportsListPage() {
               Télécharger ({selected.size})
             </Button>
           )}
-          <Button variant="outline" asChild>
-            <Link to="/reports/new" search={{ type: "budget" }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouveau budget
-            </Link>
-          </Button>
           <Button asChild>
             <Link to="/reports/new" search={{}}>
               <Plus className="h-4 w-4 mr-2" />
