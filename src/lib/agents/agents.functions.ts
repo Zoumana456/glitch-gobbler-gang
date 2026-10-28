@@ -95,7 +95,7 @@ export const advanceAgentRun = createServerFn({ method: "POST" })
       const res = await executeStep(next.task_type, run as unknown as RunRow, sb as any);
       const state = { ...((run.state as any) ?? {}), [next.task_type]: res.output };
       await sb.from("agent_tasks").update({ status: "done", output: res.output as any, error_message: null, completed_at: new Date().toISOString() }).eq("id", next.id);
-      const patch: Record<string, any> = { state };
+      const patch: any = { state };
       if (res.quality) patch.quality_status = res.quality;
       if (res.reportId) patch.result_report_id = res.reportId;
       await sb.from("report_runs").update(patch).eq("id", run.id);
