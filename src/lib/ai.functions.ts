@@ -345,6 +345,12 @@ const chatReplySchema = z.object({
   reply: z.string().default(""),
   updatedDraft: extractedSchema.nullable().optional(),
   missingInfo: z.array(z.string()).default([]),
+  intent: z.string().optional(),
+  changes: z.array(z.string()).default([]),
+  clarification: z
+    .object({ question: z.string().default(""), options: z.array(z.string()).default([]) })
+    .nullable()
+    .optional(),
 });
 export type AIChatReply = z.infer<typeof chatReplySchema>;
 
@@ -359,49 +365,75 @@ const EDIT_RULES =
   "7) Garde le fil de la conversation : comprends les références implicites (« comme tout à l'heure », « ce point-là ») grâce à l'historique. " +
   "Dans reply, dis brièvement ce que tu as compris et ce que tu as changé.";
 
+const PATCH_TOOLS =
+  "OUTILS DE RETOUCHE (tu ne réécris jamais le rapport, tu émets des opérations atomiques appliquées par le système) :\n" +
+  '- {"op":"set_title","value"} | {"op":"set_intro","value"} | {"op":"append_intro","value"} | {"op":"set_conclusion","value"} | {"op":"append_conclusion","value"}\n' +
+  '- {"op":"add_section","title","description","bullets":[...]} (ajoutée à la fin)\n' +
+  '- {"op":"update_section","index","title"?,"description"?} (remplace seulement les champs fournis)\n' +
+  '- {"op":"append_to_section","index","text"?,"bullets"?}\n' +
+  '- {"op":"remove_section","index"} (UNIQUEMENT sur demande explicite)\n' +
+  '- {"op":"add_bullet","index","value"} | {"op":"update_bullet","index","bullet_index","value"} | {"op":"remove_bullet","index","bullet_index"}\n' +
+  '- {"op":"replace_text","find","replace"} (correction précise d\'un mot ou d\'une phrase exacte)\n' +
+  "Les index sont 0-based et se réfèrent aux sections du brouillon fourni (numérotées [n]).";
+
+const AGENT_LOOP =
+  "PROCESSUS (comme un agent professionnel) : comprendre → décider → agir → rendre compte.\n" +
+  "- intent ∈ question | add | edit | delete | create | clarify.\n" +
+  "- Si la demande est AMBIGUË ou qu'il manque une information indispensable (quelle partie ? quel chiffre ? quelle date ?), n'agis pas : intent=clarify, operations=[], " +
+  'et remplis clarification={"question": "...", "options": ["2 à 4 réponses courtes cliquables"]}. Ne pose qu\'UNE question, la plus utile.\n' +
+  "- Si l'utilisateur change de sujet ou pose une question générale, réponds simplement (intent=question, operations=[]).\n" +
+  "- Rapport vide et demande de rédaction : utilise set_title/set_intro/add_section/set_conclusion (intent=create).\n" +
+  "- N'invente jamais de chiffres, noms ou dates : demande-les ou laisse « [à compléter] ».\n" +
+  "- reply : 1 à 3 phrases, ce que tu as compris et fait. Pas de liste des opérations (le système l'affiche).";
+
+function draftForPrompt(d: z.infer<typeof reportShape> | undefined): string {
+  if (!d) return "(rapport vide)";
+  const secs = (d.sections ?? [])
+    .map((s: any, i: number) => `[${i}] ${JSON.stringify({ title: s.title, description: s.description, bullets: s.bullets ?? [] })}`)
+    .join("\n");
+  return `title: ${JSON.stringify(d.title ?? "")}\nintro: ${JSON.stringify(d.intro ?? "")}\nsections:\n${secs || "(aucune)"}\nconclusion: ${JSON.stringify(d.conclusion ?? "")}`;
+}
+
 export const aiChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => chatInput.parse(d))
   .handler(async ({ data }): Promise<AIChatReply> => {
+    const { applyPatch } = await import("./report-patch");
     const system =
-      "Tu es un assistant de rédaction de rapports professionnels en français, comparable à Manus AI. " +
-      "Tu aides l'utilisateur à structurer, corriger et compléter son rapport. " +
-      "Si tu manques d'informations importantes, pose des questions ciblées avant de rédiger. " +
-      "À chaque message, réponds STRICTEMENT en JSON :\n" +
-      '{"reply": "ta réponse en markdown à afficher à l\'utilisateur", ' +
-      '"updatedDraft": null | ' + REPORT_JSON_SHAPE + ", " +
-      '"missingInfo": [string]}\n' +
-      "Mets updatedDraft à null si aucun changement au rapport n'est proposé. " +
-      "Sinon renvoie le rapport COMPLET mis à jour." +
-      EDIT_RULES +
+      "Tu es l'agent de rédaction de rapports professionnels de DailyBrief, en français. " +
+      "Tu travailles comme un agent de développement : tu comprends l'intention, tu poses une question si nécessaire, puis tu fais des retouches chirurgicales.\n" +
+      EDIT_RULES + "\n" + PATCH_TOOLS + "\n" + AGENT_LOOP + "\n" +
+      "Réponds STRICTEMENT en JSON : " +
+      '{"intent": string, "reply": string, "operations": [ ... ], "clarification": null | {"question": string, "options": [string]}, "missingInfo": [string]}' +
       styleClause(data.style);
 
     const messages: AIMessage[] = [];
-    if (data.reportDraft) {
-      messages.push({
-        role: "user",
-        content:
-          "État courant du rapport (référence, ne pas répéter dans reply) :\n" +
-          JSON.stringify(data.reportDraft),
-      });
-      messages.push({
-        role: "assistant",
-        content:
-          '{"reply":"Compris, je tiens compte du brouillon.","updatedDraft":null,"missingInfo":[]}',
-      });
-    }
-    for (const m of data.history) {
-      messages.push({ role: m.role, content: m.content });
-    }
-    messages.push({ role: "user", content: data.userMessage });
-
-    const text = await callAI({
-      model: DEFAULT_MODEL,
-      system,
-      json: true,
-      messages,
+    for (const m of data.history.slice(-16)) messages.push({ role: m.role, content: m.content });
+    messages.push({
+      role: "user",
+      content: `ÉTAT ACTUEL DU RAPPORT (source de vérité, ne pas répéter) :\n${draftForPrompt(data.reportDraft)}\n\nDEMANDE : ${data.userMessage}`,
     });
-    return chatReplySchema.parse(parseJsonLoose(text));
+
+    const text = await callAI({ model: DEFAULT_MODEL, system, json: true, messages });
+    const raw: any = parseJsonLoose(text) ?? {};
+    const ops = Array.isArray(raw.operations) ? raw.operations : [];
+    const clar = raw.clarification && typeof raw.clarification === "object" && raw.clarification.question
+      ? { question: String(raw.clarification.question), options: (Array.isArray(raw.clarification.options) ? raw.clarification.options : []).map(String).slice(0, 4) }
+      : null;
+    let updatedDraft: ExtractedReport | null = null;
+    let changes: string[] = [];
+    if (ops.length && !clar) {
+      const r = applyPatch(data.reportDraft as any, ops);
+      if (r.applied.length) { updatedDraft = r.draft; changes = r.applied; }
+    }
+    return {
+      reply: String(raw.reply ?? "") || (clar ? clar.question : "C'est noté."),
+      updatedDraft,
+      missingInfo: Array.isArray(raw.missingInfo) ? raw.missingInfo.map(String) : [],
+      intent: typeof raw.intent === "string" ? raw.intent : undefined,
+      changes,
+      clarification: clar,
+    };
   });
 
 // ----- Generate the full report -----

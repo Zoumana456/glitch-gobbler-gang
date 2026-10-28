@@ -71,7 +71,7 @@ function mergeDrafts(prev: ExtractedReport, add: ExtractedReport): ExtractedRepo
   };
 }
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = { role: "user" | "assistant"; content: string; options?: string[]; changes?: string[] };
 
 export type AIStyle =
   | "free"
@@ -332,11 +332,12 @@ export function AIAssistantPanel({
       st.to("quality");
       const reply = res.reply || "…";
       const newIndex = nextHist.length;
-      setHistory([...nextHist, { role: "assistant", content: reply }]);
+      setHistory([...nextHist, { role: "assistant", content: reply, options: res.clarification?.options, changes: res.changes }]);
       if (voiceModeRef.current) setAutoPlayIndex(newIndex);
       if (res.updatedDraft) {
+        setUndoDraft(getDraft());
         applyDraft(res.updatedDraft);
-        toast.success("Brouillon mis à jour");
+        toast.success(`Rapport mis à jour (${res.changes.length} retouche${res.changes.length > 1 ? "s" : ""})`);
       }
       ok = true;
     } catch (e: any) {
@@ -752,15 +753,35 @@ export function AIAssistantPanel({
             }
           >
             {m.role === "assistant" ? (
-              <div className="flex items-start gap-2">
-                <div className="prose prose-sm max-w-none dark:prose-invert flex-1">
-                  <ReactMarkdown>{m.content}</ReactMarkdown>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <div className="prose prose-sm max-w-none dark:prose-invert flex-1">
+                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                  </div>
+                  <SpeakButton
+                    text={m.content}
+                    autoPlayKey={autoPlayIndex === i ? i : null}
+                    onEnded={autoPlayIndex === i ? handleTtsEnded : undefined}
+                  />
                 </div>
-                <SpeakButton
-                  text={m.content}
-                  autoPlayKey={autoPlayIndex === i ? i : null}
-                  onEnded={autoPlayIndex === i ? handleTtsEnded : undefined}
-                />
+                {m.changes && m.changes.length > 0 && (
+                  <ul className="rounded-md border border-border bg-background/60 px-2 py-1.5 text-xs space-y-0.5">
+                    {m.changes.map((c, j) => (
+                      <li key={j} className="flex items-center gap-1.5 text-muted-foreground">
+                        <span className="text-primary">✓</span> {c}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {m.options && m.options.length > 0 && i === history.length - 1 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {m.options.map((o, j) => (
+                      <Button key={j} type="button" size="sm" variant="outline" className="h-7 text-xs" disabled={busy} onClick={() => void send(o)}>
+                        {o}
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="whitespace-pre-wrap">{m.content}</div>
