@@ -190,6 +190,19 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
     }));
   }
 
+  async function addAgentImages(
+    imgs: { base64: string; mimeType: string; sectionIndex: number | null; caption: string; source: string }[],
+  ) {
+    for (const [i, img] of imgs.entries()) {
+      const bin = Uint8Array.from(atob(img.base64), (c) => c.charCodeAt(0));
+      const ext = (img.mimeType.split("/")[1] || "png").replace("jpeg", "jpg");
+      const file = new File([bin], `ia-image-${Date.now()}-${i}.${ext}`, { type: img.mimeType });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      await handleAddImages(dt.files, img.sectionIndex, img.caption);
+    }
+  }
+
   const saveMut = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -327,14 +340,14 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
   }
 
 
-  async function handleAddImages(files: FileList, sectionIdx: number | null) {
+  async function handleAddImages(files: FileList, sectionIdx: number | null, initialCaption = "") {
     const arr = Array.from(files);
     // Optimistic add with uploading state
     const optimistic: FormImage[] = arr.map((f) => ({
       key: nextKey(),
       storage_path: "",
       url: URL.createObjectURL(f),
-      caption: "",
+      caption: initialCaption,
       uploading: true,
     }));
     setForm((prev) => {
@@ -868,6 +881,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
         onClose={() => setAiOpen(false)}
         getDraft={getDraft}
         applyDraft={applyDraft}
+        addImages={addAgentImages}
         style={aiStyle}
         onStyleChange={setAiStyle}
       />

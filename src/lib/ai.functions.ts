@@ -602,3 +602,157 @@ export const aiExtractFromPdfs = createServerFn({ method: "POST" })
     });
     return { report: extractedSchema.parse(parseJsonLoose(text)), perFile };
   });
+
+// ----- Agent: documents en attente + consigne libre (fusion multi-rapports) -----
+
+const agentFile = z.object({
+  filename: z.string(),
+  mimeType: z.string(),
+  base64: z.string().min(10),
+});
+
+const agentInput = z.object({
+  instruction: z.string().min(1),
+  files: z.array(agentFile).max(15).default([]),
+  history: z.array(chatMsg).default([]),
+  reportDraft: reportShape.optional(),
+  style: z.string().optional(),
+});
+
+const agentReplySchema = z.object({
+  reply: z.string().default(""),
+  updatedDraft: extractedSchema.nullable().optional(),
+  imagePlacements: z
+    .array(
+      z.object({
+        imageIndex: z.number().int(),
+        sectionIndex: z.number().int().nullable().default(null),
+        caption: z.string().default(""),
+      }),
+    )
+    .default([]),
+});
+
+export type AgentImage = {
+  id: number;
+  source: string;
+  mimeType: string;
+  base64: string;
+};
+
+export type AgentReply = {
+  reply: string;
+  updatedDraft: ExtractedReport | null;
+  images: (AgentImage & { sectionIndex: number | null; caption: string })[];
+};
+
+export const aiAgentProcess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => agentInput.parse(d))
+  .handler(async ({ data }): Promise<AgentReply> => {
+    const content: any[] = [];
+    const images: AgentImage[] = [];
+    const docLines: string[] = [];
+
+    for (const f of data.files) {
+      const lower = f.filename.toLowerCase();
+      if (f.mimeType.startsWith("image/")) {
+        const id = images.length;
+        images.push({ id, source: f.filename, mimeType: f.mimeType, base64: f.base64 });
+        docLines.push(`- IMAGE #${id} : photo jointe « ${f.filename} »`);
+        content.push({ type: "text", text: `IMAGE #${id} (${f.filename}) :` });
+        content.push({ type: "image_url", image_url: { url: `data:${f.mimeType};base64,${f.base64}` } });
+      } else if (lower.endsWith(".docx")) {
+        const mammoth = await import("mammoth");
+        const buffer = Buffer.from(f.base64, "base64");
+        const { value: rawText } = await mammoth.extractRawText({ buffer });
+        // Extraire les vraies images intégrées au document Word
+        const embedded: AgentImage[] = [];
+        await mammoth.convertToHtml(
+          { buffer },
+          {
+            convertImage: mammoth.images.imgElement(async (image: any) => {
+              const b64 = await image.read("base64");
+              if (embedded.length < 20 && b64.length > 2000) {
+                embedded.push({
+                  id: images.length + embedded.length,
+                  source: f.filename,
+                  mimeType: image.contentType || "image/png",
+                  base64: b64,
+                });
+              }
+              return { src: "" };
+            }),
+          },
+        );
+        images.push(...embedded);
+        docLines.push(
+          `- DOCUMENT WORD « ${f.filename} »` +
+            (embedded.length ? ` (images intégrées : ${embedded.map((e) => "#" + e.id).join(", ")})` : ""),
+        );
+        content.push({
+          type: "text",
+          text: `CONTENU DU DOCUMENT « ${f.filename} » :\n${rawText.slice(0, 30_000)}`,
+        });
+      } else if (f.mimeType === "application/pdf" || lower.endsWith(".pdf")) {
+        docLines.push(`- DOCUMENT PDF « ${f.filename} »`);
+        content.push({ type: "text", text: `DOCUMENT PDF « ${f.filename} » :` });
+        content.push({
+          type: "file",
+          file: { filename: f.filename, file_data: `data:application/pdf;base64,${f.base64}` },
+        });
+      }
+    }
+
+    const system =
+      "Tu es un agent de rédaction de rapports professionnels en français. L'utilisateur t'a transmis des documents et te donne une consigne : exécute EXACTEMENT cette consigne (fusion de plusieurs rapports en un seul, synthèse, extraction, reformulation…). " +
+      "Pour une fusion : un seul rapport cohérent, sans doublons, faits regroupés par thème, aucun fait inventé. " +
+      "Style note administrative fluide : n'écris JAMAIS de titres 'Introduction', 'Développement' ou 'Conclusion'. " +
+      "Les images numérotées (#n) sont de VRAIES photos qui seront insérées dans le rapport : indique pour chaque image utile la section (index 0-based dans updatedDraft.sections, ou null pour la galerie générale) et une légende courte. Ignore logos/icônes décoratifs. " +
+      "Réponds STRICTEMENT en JSON : " +
+      '{"reply": "résumé markdown de ce que tu as fait", "updatedDraft": null | ' +
+      REPORT_JSON_SHAPE +
+      ', "imagePlacements": [{"imageIndex": number, "sectionIndex": number | null, "caption": string}]}. ' +
+      "updatedDraft = rapport COMPLET final, ou null si la consigne est une simple question." +
+      styleClause(data.style);
+
+    const messages: AIMessage[] = [];
+    for (const m of data.history.slice(-10)) messages.push({ role: m.role, content: m.content });
+    messages.push({
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text:
+            "Brouillon actuel du rapport :\n" +
+            JSON.stringify(data.reportDraft ?? null) +
+            "\n\nDocuments joints :\n" +
+            (docLines.join("\n") || "aucun"),
+        },
+        ...content,
+        { type: "text", text: "CONSIGNE DE L'UTILISATEUR :\n" + data.instruction },
+      ],
+    });
+
+    const text = await callAI({ model: PRO_MODEL, system, json: true, messages });
+    const parsed = agentReplySchema.parse(parseJsonLoose(text));
+    const sectionsCount = parsed.updatedDraft?.sections.length ?? 0;
+    const used = new Set<number>();
+    const placed = parsed.imagePlacements
+      .filter((p) => images[p.imageIndex] && !used.has(p.imageIndex) && used.add(p.imageIndex))
+      .map((p) => ({
+        ...images[p.imageIndex]!,
+        sectionIndex:
+          p.sectionIndex !== null && p.sectionIndex >= 0 && p.sectionIndex < sectionsCount
+            ? p.sectionIndex
+            : null,
+        caption: p.caption,
+      }));
+    // Les photos jointes directement sont toujours conservées
+    for (const img of images) {
+      if (!used.has(img.id) && img.source && data.files.some((f) => f.filename === img.source && f.mimeType.startsWith("image/"))) {
+        placed.push({ ...img, sectionIndex: null, caption: "" });
+      }
+    }
+    return { reply: parsed.reply, updatedDraft: parsed.updatedDraft ?? null, images: placed };
+  });
