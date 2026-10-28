@@ -190,6 +190,19 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
     }));
   }
 
+  async function addAgentImages(
+    imgs: { base64: string; mimeType: string; sectionIndex: number | null; caption: string; source: string }[],
+  ) {
+    for (const [i, img] of imgs.entries()) {
+      const bin = Uint8Array.from(atob(img.base64), (c) => c.charCodeAt(0));
+      const ext = (img.mimeType.split("/")[1] || "png").replace("jpeg", "jpg");
+      const file = new File([bin], `ia-image-${Date.now()}-${i}.${ext}`, { type: img.mimeType });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      await handleAddImages(dt.files, img.sectionIndex, img.caption);
+    }
+  }
+
   const saveMut = useMutation({
     mutationFn: async () => {
       const payload = {
