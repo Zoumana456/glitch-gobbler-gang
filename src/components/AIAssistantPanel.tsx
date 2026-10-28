@@ -26,7 +26,10 @@ import {
   Volume2,
   VolumeX,
   Paperclip,
+  Bot,
+  ChevronDown,
 } from "lucide-react";
+import { ReportAgentsPanel } from "./ReportAgentsPanel";
 import { DictationButton } from "./DictationButton";
 import { SpeakButton } from "./SpeakButton";
 import { toast } from "sonner";
@@ -136,6 +139,8 @@ export function AIAssistantPanel({
   const extractPdfs = useServerFn(aiExtractFromPdfs);
   const agent = useServerFn(aiAgentProcess);
   const [staged, setStaged] = useState<File[]>([]);
+  const [mode, setMode] = useState<"chat" | "agents">("chat");
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   const [history, setHistory] = useState<Message[]>([
     {
@@ -632,6 +637,7 @@ export function AIAssistantPanel({
           </Button>
         )}
       </div>
+      )}
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {issues && (
@@ -771,6 +777,7 @@ export function AIAssistantPanel({
           </Button>
         </div>
       </div>
+      </>)}
     </div>
   );
 }
