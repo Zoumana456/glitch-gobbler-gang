@@ -171,23 +171,47 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
   }
 
   function applyDraft(r: ExtractedReport) {
-    setForm((prev) => ({
-      ...prev,
-      title: r.title || prev.title,
-      intro: r.intro || prev.intro,
-      conclusion: r.conclusion || prev.conclusion,
-      sections:
-        r.sections.length > 0
-          ? r.sections.map((s) => ({
-              key: nextKey(),
-              title: s.title,
-              description: s.description,
-              bullets: s.bullets.map((c) => ({ key: nextKey(), content: c })),
-              images: [],
-              attachments: [],
-            }))
-          : prev.sections,
-    }));
+    setForm((prev) => {
+      if (!r.sections || r.sections.length === 0) {
+        return {
+          ...prev,
+          title: r.title || prev.title,
+          intro: r.intro || prev.intro,
+          conclusion: r.conclusion || prev.conclusion,
+        };
+      }
+      // Never lose media: match each new section to an old one (same title first, then same position).
+      const norm = (t: string) => (t || "").trim().toLowerCase();
+      const used = new Set<number>();
+      const pick = (s: { title: string }, i: number) => {
+        let idx = prev.sections.findIndex((p, j) => !used.has(j) && norm(p.title) && norm(p.title) === norm(s.title));
+        if (idx < 0 && i < prev.sections.length && !used.has(i)) idx = i;
+        if (idx >= 0) used.add(idx);
+        return idx >= 0 ? prev.sections[idx] : null;
+      };
+      const sections = r.sections.map((s, i) => {
+        const old = pick(s, i);
+        return {
+          key: old?.key ?? nextKey(),
+          title: s.title,
+          description: s.description,
+          bullets: s.bullets.map((c) => ({ key: nextKey(), content: c })),
+          images: old?.images ?? [],
+          attachments: old?.attachments ?? [],
+        };
+      });
+      const orphanImages = prev.sections.flatMap((p, j) => (used.has(j) ? [] : p.images));
+      const orphanAtt = prev.sections.flatMap((p, j) => (used.has(j) ? [] : p.attachments));
+      return {
+        ...prev,
+        title: r.title || prev.title,
+        intro: r.intro || prev.intro,
+        conclusion: r.conclusion || prev.conclusion,
+        sections,
+        general_images: [...prev.general_images, ...orphanImages],
+        general_attachments: [...prev.general_attachments, ...orphanAtt],
+      };
+    });
   }
 
   async function addAgentImages(
