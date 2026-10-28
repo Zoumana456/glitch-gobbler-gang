@@ -29,7 +29,8 @@ import {
   Bot,
   ChevronDown,
 } from "lucide-react";
-import { ReportAgentsPanel } from "./ReportAgentsPanel";
+import { AgentTeamCard, STEP_LABEL, detectDataMission, type AgentStep } from "./AgentTeamCard";
+import { startAgentRun, advanceAgentRun, getAgentRun } from "@/lib/agents/agents.functions";
 import { DictationButton } from "./DictationButton";
 import { SpeakButton } from "./SpeakButton";
 import { toast } from "sonner";
@@ -138,8 +139,11 @@ export function AIAssistantPanel({
   const extractPdf = useServerFn(extractReportFromPdf);
   const extractPdfs = useServerFn(aiExtractFromPdfs);
   const agent = useServerFn(aiAgentProcess);
+  const startRun = useServerFn(startAgentRun);
+  const advanceRun = useServerFn(advanceAgentRun);
+  const fetchRun = useServerFn(getAgentRun);
   const [staged, setStaged] = useState<File[]>([]);
-  const [mode, setMode] = useState<"chat" | "agents">("chat");
+  const [steps, setSteps] = useState<AgentStep[] | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
 
   const [history, setHistory] = useState<Message[]>([
