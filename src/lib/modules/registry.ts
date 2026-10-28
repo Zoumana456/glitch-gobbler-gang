@@ -22,6 +22,7 @@ import {
   Receipt,
   Gauge,
   Briefcase,
+  Bot,
 } from "lucide-react";
 
 export type ModuleScreen = {
@@ -46,6 +47,16 @@ export type AppModule = {
 };
 
 export const APP_MODULES: AppModule[] = [
+  {
+    code: "ai-center",
+    name: "Centre IA",
+    description: "Équipe d'agents IA pilotée par un Orchestrateur pour produire des rapports contrôlés.",
+    icon: Bot,
+    tone: "bg-primary/10 text-primary",
+    entry: "/ai-center",
+    core: false,
+    screens: [{ to: "/ai-center", label: "Centre IA", icon: Bot }],
+  },
   {
     code: "dashboard",
     name: "Tableau de bord",
