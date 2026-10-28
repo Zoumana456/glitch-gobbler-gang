@@ -552,7 +552,7 @@ export function AIAssistantPanel({
               className="hidden"
               onChange={(e) => {
                 const files = Array.from(e.target.files ?? []);
-                if (files.length > 0) void handlePdfFiles(files);
+                if (files.length > 0) stageFiles(files);
                 e.target.value = "";
               }}
             />
