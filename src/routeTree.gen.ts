@@ -24,6 +24,8 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
+import { Route as AuthenticatedAiCenterIndexRouteImport } from './routes/_authenticated/ai-center.index'
+import { Route as AuthenticatedAiCenterIdRouteImport } from './routes/_authenticated/ai-center.$id'
 import { Route as AuthenticatedCompanyIndexRouteImport } from './routes/_authenticated/company.index'
 import { Route as AuthenticatedCompanyApplicationsRouteImport } from './routes/_authenticated/company.applications'
 import { Route as AuthenticatedCompanyHierarchieRouteImport } from './routes/_authenticated/company.hierarchie'
@@ -136,6 +138,17 @@ const ShareTokenRoute = ShareTokenRouteImport.update({
   id: '/share/$token',
   path: '/share/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAiCenterIndexRoute =
+  AuthenticatedAiCenterIndexRouteImport.update({
+    id: '/ai-center/',
+    path: '/ai-center/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAiCenterIdRoute = AuthenticatedAiCenterIdRouteImport.update({
+  id: '/ai-center/$id',
+  path: '/ai-center/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCompanyIndexRoute =
   AuthenticatedCompanyIndexRouteImport.update({
@@ -369,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/ai-center/$id': typeof AuthenticatedAiCenterIdRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
@@ -391,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/new': typeof AuthenticatedTasksNewRoute
+  '/ai-center/': typeof AuthenticatedAiCenterIndexRoute
   '/company/': typeof AuthenticatedCompanyIndexRoute
   '/documents/': typeof AuthenticatedDocumentsIndexRoute
   '/expenses/': typeof AuthenticatedExpensesIndexRoute
@@ -422,6 +437,7 @@ export interface FileRoutesByTo {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/ai-center/$id': typeof AuthenticatedAiCenterIdRoute
   '/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
@@ -443,6 +459,7 @@ export interface FileRoutesByTo {
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/new': typeof AuthenticatedTasksNewRoute
+  '/ai-center': typeof AuthenticatedAiCenterIndexRoute
   '/company': typeof AuthenticatedCompanyIndexRoute
   '/documents': typeof AuthenticatedDocumentsIndexRoute
   '/expenses': typeof AuthenticatedExpensesIndexRoute
@@ -477,6 +494,7 @@ export interface FileRoutesById {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/share/$token': typeof ShareTokenRoute
+  '/_authenticated/ai-center/$id': typeof AuthenticatedAiCenterIdRoute
   '/_authenticated/company/applications': typeof AuthenticatedCompanyApplicationsRoute
   '/_authenticated/company/hierarchie': typeof AuthenticatedCompanyHierarchieRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
@@ -499,6 +517,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/new': typeof AuthenticatedTasksNewRoute
+  '/_authenticated/ai-center/': typeof AuthenticatedAiCenterIndexRoute
   '/_authenticated/company/': typeof AuthenticatedCompanyIndexRoute
   '/_authenticated/documents/': typeof AuthenticatedDocumentsIndexRoute
   '/_authenticated/expenses/': typeof AuthenticatedExpensesIndexRoute
@@ -533,6 +552,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/ai-center/$id'
     | '/company/applications'
     | '/company/hierarchie'
     | '/documents/$id'
@@ -555,6 +575,7 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/tasks/$id'
     | '/tasks/new'
+    | '/ai-center/'
     | '/company/'
     | '/documents/'
     | '/expenses/'
@@ -586,6 +607,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/ai-center/$id'
     | '/company/applications'
     | '/company/hierarchie'
     | '/documents/$id'
@@ -607,6 +629,7 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/tasks/$id'
     | '/tasks/new'
+    | '/ai-center'
     | '/company'
     | '/documents'
     | '/expenses'
@@ -640,6 +663,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/share/$token'
+    | '/_authenticated/ai-center/$id'
     | '/_authenticated/company/applications'
     | '/_authenticated/company/hierarchie'
     | '/_authenticated/documents/$id'
@@ -662,6 +686,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/new'
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/new'
+    | '/_authenticated/ai-center/'
     | '/_authenticated/company/'
     | '/_authenticated/documents/'
     | '/_authenticated/expenses/'
@@ -802,6 +827,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/share/$token'
       preLoaderRoute: typeof ShareTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/ai-center/': {
+      id: '/_authenticated/ai-center/'
+      path: '/ai-center'
+      fullPath: '/ai-center/'
+      preLoaderRoute: typeof AuthenticatedAiCenterIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-center/$id': {
+      id: '/_authenticated/ai-center/$id'
+      path: '/ai-center/$id'
+      fullPath: '/ai-center/$id'
+      preLoaderRoute: typeof AuthenticatedAiCenterIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/company/': {
       id: '/_authenticated/company/'
@@ -1112,6 +1151,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedAiCenterIdRoute: typeof AuthenticatedAiCenterIdRoute
   AuthenticatedDocumentsIdRoute: typeof AuthenticatedDocumentsIdRoute
   AuthenticatedExpensesNewRoute: typeof AuthenticatedExpensesNewRoute
   AuthenticatedExpensesValidationsRoute: typeof AuthenticatedExpensesValidationsRoute
@@ -1132,6 +1172,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
   AuthenticatedTasksIdRoute: typeof AuthenticatedTasksIdRoute
   AuthenticatedTasksNewRoute: typeof AuthenticatedTasksNewRoute
+  AuthenticatedAiCenterIndexRoute: typeof AuthenticatedAiCenterIndexRoute
   AuthenticatedDocumentsIndexRoute: typeof AuthenticatedDocumentsIndexRoute
   AuthenticatedExpensesIndexRoute: typeof AuthenticatedExpensesIndexRoute
   AuthenticatedLeavesIndexRoute: typeof AuthenticatedLeavesIndexRoute
@@ -1149,6 +1190,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedAiCenterIdRoute: AuthenticatedAiCenterIdRoute,
   AuthenticatedDocumentsIdRoute: AuthenticatedDocumentsIdRoute,
   AuthenticatedExpensesNewRoute: AuthenticatedExpensesNewRoute,
   AuthenticatedExpensesValidationsRoute: AuthenticatedExpensesValidationsRoute,
@@ -1169,6 +1211,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
   AuthenticatedTasksIdRoute: AuthenticatedTasksIdRoute,
   AuthenticatedTasksNewRoute: AuthenticatedTasksNewRoute,
+  AuthenticatedAiCenterIndexRoute: AuthenticatedAiCenterIndexRoute,
   AuthenticatedDocumentsIndexRoute: AuthenticatedDocumentsIndexRoute,
   AuthenticatedExpensesIndexRoute: AuthenticatedExpensesIndexRoute,
   AuthenticatedLeavesIndexRoute: AuthenticatedLeavesIndexRoute,
