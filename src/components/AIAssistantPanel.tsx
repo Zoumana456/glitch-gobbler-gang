@@ -25,6 +25,7 @@ import {
   ListChecks,
   Volume2,
   VolumeX,
+  Paperclip,
 } from "lucide-react";
 import { DictationButton } from "./DictationButton";
 import { SpeakButton } from "./SpeakButton";
@@ -289,6 +290,15 @@ export function AIAssistantPanel({
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleMixedFiles(list: File[]) {
+    if (busy) return;
+    const isPdf = (f: File) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
+    const pdfs = list.filter(isPdf);
+    const others = list.filter((f) => !isPdf(f));
+    for (const f of others) await handleImport(f);
+    if (pdfs.length > 0) await handlePdfFiles(pdfs);
   }
 
   function undoImport() {
@@ -607,11 +617,30 @@ export function AIAssistantPanel({
           }}
         />
         <div className="flex justify-between items-center gap-2">
-          <DictationButton
-            onTranscript={handleDictated}
-            label={voiceMode ? "Parler" : "Dicter"}
-            autoStartTrigger={micTrigger}
-          />
+          <div className="flex items-center gap-2">
+            <label title="Joindre des documents (PDF, Word, images)">
+              <input
+                type="file"
+                multiple
+                accept="application/pdf,.pdf,.docx,image/*"
+                className="hidden"
+                aria-label="Joindre des documents"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  e.target.value = "";
+                  if (files.length > 0) void handleMixedFiles(files);
+                }}
+              />
+              <div className={`border border-input rounded-md h-8 px-2 flex items-center text-xs cursor-pointer hover:bg-accent ${busy ? "opacity-50 pointer-events-none" : ""}`}>
+                <Paperclip className="h-3.5 w-3.5 mr-1" /> Documents
+              </div>
+            </label>
+            <DictationButton
+              onTranscript={handleDictated}
+              label={voiceMode ? "Parler" : "Dicter"}
+              autoStartTrigger={micTrigger}
+            />
+          </div>
           <Button size="sm" disabled={busy || !input.trim()} onClick={() => void send()}>
             <Send className="h-3.5 w-3.5 mr-1.5" />
             Envoyer
