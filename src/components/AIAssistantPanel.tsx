@@ -29,7 +29,8 @@ import {
   Bot,
   ChevronDown,
 } from "lucide-react";
-import { ReportAgentsPanel } from "./ReportAgentsPanel";
+import { AgentTeamCard, STEP_LABEL, detectDataMission, type AgentStep } from "./AgentTeamCard";
+import { startAgentRun, advanceAgentRun, getAgentRun } from "@/lib/agents/agents.functions";
 import { DictationButton } from "./DictationButton";
 import { SpeakButton } from "./SpeakButton";
 import { toast } from "sonner";
@@ -138,8 +139,11 @@ export function AIAssistantPanel({
   const extractPdf = useServerFn(extractReportFromPdf);
   const extractPdfs = useServerFn(aiExtractFromPdfs);
   const agent = useServerFn(aiAgentProcess);
+  const startRun = useServerFn(startAgentRun);
+  const advanceRun = useServerFn(advanceAgentRun);
+  const fetchRun = useServerFn(getAgentRun);
   const [staged, setStaged] = useState<File[]>([]);
-  const [mode, setMode] = useState<"chat" | "agents">("chat");
+  const [steps, setSteps] = useState<AgentStep[] | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
 
   const [history, setHistory] = useState<Message[]>([
@@ -177,6 +181,69 @@ export function AIAssistantPanel({
     setStaged((prev) => [...prev, ...ok.filter((f) => f.size <= MAX_PDF_BYTES)].slice(0, 15));
   }
 
+  function initSteps(keys: string[]) {
+    const s: AgentStep[] = keys.map((k, i) => ({ key: k, label: STEP_LABEL[k] ?? k, status: i === 0 ? "running" : "pending" }));
+    setSteps(s);
+    return {
+      to(key: string) {
+        setSteps((prev) => {
+          if (!prev) return prev;
+          const idx = prev.findIndex((p) => p.key === key);
+          return prev.map((p, i) => ({ ...p, status: i < idx ? "done" : i === idx ? "running" : "pending" }));
+        });
+      },
+      finish(ok: boolean) {
+        setSteps((prev) => prev && prev.map((p) => (ok ? { ...p, status: "done" } : p.status === "running" ? { ...p, status: "failed" } : p)));
+        setTimeout(() => setSteps(null), ok ? 2500 : 6000);
+      },
+    };
+  }
+
+  async function runDataMission(msg: string, m: NonNullable<ReturnType<typeof detectDataMission>>, nextHist: Message[]) {
+    const now = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const { id } = await startRun({
+      data: {
+        report_type: m.report_type,
+        title: getDraft().title || "Rapport",
+        instructions: msg,
+        period_start: iso(new Date(now.getFullYear(), now.getMonth(), 1)),
+        period_end: iso(now),
+        sources: m.sources,
+      },
+    });
+    const sync = async () => {
+      const r = await fetchRun({ data: { id } });
+      setSteps(r.tasks.map((t: any) => ({
+        key: t.task_type,
+        label: STEP_LABEL[t.task_type] ?? t.task_type,
+        status: t.status === "done" ? "done" : t.status === "failed" ? "failed" : t.status === "running" || t.status === "retrying" ? "running" : "pending",
+      })));
+      return r;
+    };
+    await sync();
+    for (let i = 0; i < 20; i++) {
+      const res = await advanceRun({ data: { id } });
+      await sync();
+      if (res.done) break;
+    }
+    const final = await sync();
+    const w = (final.run.state as any)?.write;
+    if (w && ["completed", "completed_with_warnings"].includes(final.run.status)) {
+      setUndoDraft(getDraft());
+      applyDraft({
+        title: w.title,
+        intro: w.intro,
+        conclusion: w.conclusion,
+        sections: (w.sections ?? []).map((s: any) => ({ title: s.title, description: s.text, bullets: [] })),
+      } as ExtractedReport);
+      setHistory([...nextHist, { role: "assistant", content: "✅ Les agents ont terminé : chiffres collectés, analysés, contrôlés puis rédigés. Le rapport est inséré dans le formulaire. Dites-moi ce qu'il faut ajuster." }]);
+      setTimeout(() => setSteps(null), 2500);
+    } else {
+      throw new Error(final.run.error_summary || "La mission des agents a échoué");
+    }
+  }
+
   async function sendWithDocs(msg: string) {
     const files = staged;
     const label = `${msg}\n\n📎 ${files.map((f) => f.name).join(", ")}`;
@@ -185,7 +252,10 @@ export function AIAssistantPanel({
     setInput("");
     setBusy(true);
     const before = getDraft();
+    const st = initSteps(["plan", "collect", "write", "quality", "generate"]);
+    let ok = false;
     try {
+      st.to("collect");
       const payload = await Promise.all(
         files.map(async (f) => ({
           filename: f.name,
@@ -193,6 +263,7 @@ export function AIAssistantPanel({
           base64: await fileToBase64(f),
         })),
       );
+      st.to("write");
       const res = await agent({
         data: {
           instruction: msg,
@@ -202,7 +273,9 @@ export function AIAssistantPanel({
           style: style === "free" ? undefined : style,
         },
       });
+      st.to("quality");
       setHistory([...nextHist, { role: "assistant", content: res.reply || "Terminé." }]);
+      st.to("generate");
       if (res.updatedDraft) {
         setUndoDraft(before);
         applyDraft(res.updatedDraft);
@@ -212,10 +285,12 @@ export function AIAssistantPanel({
         await addImages(res.images);
         toast.success(`Rapport mis à jour, ${res.images.length} image(s) ajoutée(s)`);
       } else if (res.updatedDraft) toast.success("Rapport mis à jour");
+      ok = true;
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur IA");
       setHistory([...nextHist, { role: "assistant", content: "⚠️ " + (e?.message ?? "Erreur IA") }]);
     } finally {
+      st.finish(ok);
       setBusy(false);
     }
   }
@@ -228,7 +303,24 @@ export function AIAssistantPanel({
     const nextHist: Message[] = [...history, { role: "user", content: msg }];
     setHistory(nextHist);
     setBusy(true);
+    const mission = detectDataMission(msg);
+    if (mission) {
+      try {
+        await runDataMission(msg, mission, nextHist);
+      } catch (e: any) {
+        toast.error(e?.message ?? "Erreur agents");
+        setSteps((p) => p && p.map((s) => (s.status === "running" ? { ...s, status: "failed" } : s)));
+        setTimeout(() => setSteps(null), 6000);
+        setHistory([...nextHist, { role: "assistant", content: "⚠️ " + (e?.message ?? "Erreur agents") }]);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    const st = initSteps(["plan", "write", "quality"]);
+    let ok = false;
     try {
+      st.to("write");
       const res = await chat({
         data: {
           history,
@@ -237,14 +329,16 @@ export function AIAssistantPanel({
           style: style === "free" ? undefined : style,
         },
       });
+      st.to("quality");
       const reply = res.reply || "…";
-      const newIndex = nextHist.length; // index of the assistant message we're about to push
+      const newIndex = nextHist.length;
       setHistory([...nextHist, { role: "assistant", content: reply }]);
       if (voiceModeRef.current) setAutoPlayIndex(newIndex);
       if (res.updatedDraft) {
         applyDraft(res.updatedDraft);
         toast.success("Brouillon mis à jour");
       }
+      ok = true;
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur IA");
       setHistory([
@@ -252,6 +346,7 @@ export function AIAssistantPanel({
         { role: "assistant", content: "⚠️ " + (e?.message ?? "Erreur IA") },
       ]);
     } finally {
+      st.finish(ok);
       setBusy(false);
     }
   }
@@ -484,28 +579,13 @@ export function AIAssistantPanel({
       </div>
 
 
-      <div className="px-4 pt-3 pb-2 border-b border-border space-y-2">
-        <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1">
-          <button type="button" onClick={() => setMode("chat")} className={`rounded px-2 py-1 text-xs font-medium ${mode === "chat" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>
-            Chat & documents
-          </button>
-          <button type="button" onClick={() => setMode("agents")} className={`rounded px-2 py-1 text-xs font-medium inline-flex items-center justify-center gap-1 ${mode === "agents" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>
-            <Bot className="h-3.5 w-3.5" /> Agents IA
-          </button>
-        </div>
-        {mode === "chat" && (
-          <button type="button" onClick={() => setToolsOpen((v) => !v)} className="w-full flex items-center justify-between text-xs font-medium py-1 hover:text-primary" aria-expanded={toolsOpen}>
-            <span className="inline-flex items-center gap-1.5"><Wand2 className="h-3.5 w-3.5" /> Options & outils</span>
-            <ChevronDown className={`h-4 w-4 transition-transform ${toolsOpen ? "rotate-180" : ""}`} />
-          </button>
-        )}
+      <div className="px-4 pt-2 pb-2 border-b border-border">
+        <button type="button" onClick={() => setToolsOpen((v) => !v)} className="w-full flex items-center justify-between text-xs font-medium py-1 hover:text-primary" aria-expanded={toolsOpen}>
+          <span className="inline-flex items-center gap-1.5"><Wand2 className="h-3.5 w-3.5" /> Options & outils</span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${toolsOpen ? "rotate-180" : ""}`} />
+        </button>
       </div>
 
-      {mode === "agents" ? (
-        <div className="flex-1 overflow-y-auto px-4 py-3">
-          <ReportAgentsPanel applyDraft={applyDraft} getDraft={getDraft} />
-        </div>
-      ) : (<>
       {toolsOpen && (
       <div className="px-4 py-3 border-b border-border space-y-2">
         <div className="flex items-center gap-2">
@@ -687,7 +767,8 @@ export function AIAssistantPanel({
             )}
           </div>
         ))}
-        {busy && (
+        {steps && <AgentTeamCard steps={steps} />}
+        {busy && !steps && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> L'assistant réfléchit…
           </div>
@@ -777,7 +858,6 @@ export function AIAssistantPanel({
           </Button>
         </div>
       </div>
-      </>)}
     </div>
   );
 }
