@@ -40,6 +40,7 @@ import {
   aiExtractFromDocx,
   extractReportFromPdf,
   aiExtractFromPdfs,
+  aiAgentProcess,
   type ExtractedReport,
   type MultiPdfFileStatus,
 } from "@/lib/ai.functions";
@@ -110,9 +111,13 @@ export function AIAssistantPanel({
   onClose,
   getDraft,
   applyDraft,
+  addImages,
   style,
   onStyleChange,
 }: {
+  addImages?: (
+    imgs: { base64: string; mimeType: string; sectionIndex: number | null; caption: string; source: string }[],
+  ) => Promise<void>;
   open: boolean;
   onClose: () => void;
   getDraft: () => ExtractedReport;
@@ -129,6 +134,8 @@ export function AIAssistantPanel({
   const extractDocx = useServerFn(aiExtractFromDocx);
   const extractPdf = useServerFn(extractReportFromPdf);
   const extractPdfs = useServerFn(aiExtractFromPdfs);
+  const agent = useServerFn(aiAgentProcess);
+  const [staged, setStaged] = useState<File[]>([]);
 
   const [history, setHistory] = useState<Message[]>([
     {
@@ -154,9 +161,64 @@ export function AIAssistantPanel({
   const voiceModeRef = useRef(voiceMode);
   useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
 
+  function stageFiles(list: File[]) {
+    const ok = list.filter((f) => {
+      const n = f.name.toLowerCase();
+      return f.type.startsWith("image/") || n.endsWith(".pdf") || n.endsWith(".docx");
+    });
+    if (ok.length < list.length) toast.error("Formats acceptés : PDF, Word (.docx), images");
+    const big = ok.filter((f) => f.size > MAX_PDF_BYTES);
+    if (big.length) toast.error(`Trop volumineux (max 20 Mo) : ${big.map((f) => f.name).join(", ")}`);
+    setStaged((prev) => [...prev, ...ok.filter((f) => f.size <= MAX_PDF_BYTES)].slice(0, 15));
+  }
+
+  async function sendWithDocs(msg: string) {
+    const files = staged;
+    const label = `${msg}\n\n📎 ${files.map((f) => f.name).join(", ")}`;
+    const nextHist: Message[] = [...history, { role: "user", content: label }];
+    setHistory(nextHist);
+    setInput("");
+    setBusy(true);
+    const before = getDraft();
+    try {
+      const payload = await Promise.all(
+        files.map(async (f) => ({
+          filename: f.name,
+          mimeType: f.type || (f.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "application/octet-stream"),
+          base64: await fileToBase64(f),
+        })),
+      );
+      const res = await agent({
+        data: {
+          instruction: msg,
+          files: payload,
+          history,
+          reportDraft: before,
+          style: style === "free" ? undefined : style,
+        },
+      });
+      setHistory([...nextHist, { role: "assistant", content: res.reply || "Terminé." }]);
+      if (res.updatedDraft) {
+        setUndoDraft(before);
+        applyDraft(res.updatedDraft);
+      }
+      setStaged([]);
+      if (res.images.length && addImages) {
+        await addImages(res.images);
+        toast.success(`Rapport mis à jour, ${res.images.length} image(s) ajoutée(s)`);
+      } else if (res.updatedDraft) toast.success("Rapport mis à jour");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur IA");
+      setHistory([...nextHist, { role: "assistant", content: "⚠️ " + (e?.message ?? "Erreur IA") }]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function send(overrideText?: string) {
     const msg = (overrideText ?? input).trim();
     if (!msg || busy) return;
+    if (staged.length > 0) return sendWithDocs(msg);
     if (!overrideText) setInput("");
     const nextHist: Message[] = [...history, { role: "user", content: msg }];
     setHistory(nextHist);
@@ -391,7 +453,7 @@ export function AIAssistantPanel({
         e.preventDefault();
         setDragOver(false);
         const files = Array.from(e.dataTransfer.files ?? []);
-        if (files.length > 0) void handlePdfFiles(files);
+        if (files.length > 0) stageFiles(files);
       }}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -604,6 +666,45 @@ export function AIAssistantPanel({
       </div>
 
       <div className="border-t border-border p-3 space-y-2">
+        {staged.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-1.5">
+              {staged.map((f, i) => (
+                <span key={i} className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs max-w-full">
+                  {f.type.startsWith("image/") ? <ImageIcon className="h-3 w-3 shrink-0" /> : <FileText className="h-3 w-3 shrink-0" />}
+                  <span className="truncate max-w-[160px]">{f.name}</span>
+                  <button
+                    type="button"
+                    aria-label={`Retirer ${f.name}`}
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => setStaged((p) => p.filter((_, j) => j !== i))}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Documents en attente — écrivez ce que l'assistant doit en faire, puis Envoyer.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                "Fusionne ces rapports en un seul rapport complet, sans doublons, et insère les photos aux bons endroits.",
+                "Résume les points clés de ces documents.",
+                "Extrais uniquement les problèmes rencontrés et les actions à mener.",
+              ].map((t, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-[11px] hover:bg-primary/10"
+                  onClick={() => setInput(t)}
+                >
+                  {i === 0 ? "Fusionner en 1 rapport" : i === 1 ? "Résumer" : "Problèmes & actions"}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <Textarea
           rows={2}
           placeholder={voiceMode ? "Mode conversation actif — parlez ou tapez…" : "Décrivez votre activité, une question, un ajout…"}
@@ -628,7 +729,7 @@ export function AIAssistantPanel({
                 onChange={(e) => {
                   const files = Array.from(e.target.files ?? []);
                   e.target.value = "";
-                  if (files.length > 0) void handleMixedFiles(files);
+                  if (files.length > 0) stageFiles(files);
                 }}
               />
               <div className={`border border-input rounded-md h-8 px-2 flex items-center text-xs cursor-pointer hover:bg-accent ${busy ? "opacity-50 pointer-events-none" : ""}`}>
