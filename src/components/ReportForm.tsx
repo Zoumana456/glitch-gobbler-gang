@@ -340,14 +340,14 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
   }
 
 
-  async function handleAddImages(files: FileList, sectionIdx: number | null) {
+  async function handleAddImages(files: FileList, sectionIdx: number | null, initialCaption = "") {
     const arr = Array.from(files);
     // Optimistic add with uploading state
     const optimistic: FormImage[] = arr.map((f) => ({
       key: nextKey(),
       storage_path: "",
       url: URL.createObjectURL(f),
-      caption: "",
+      caption: initialCaption,
       uploading: true,
     }));
     setForm((prev) => {
@@ -881,6 +881,7 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
         onClose={() => setAiOpen(false)}
         getDraft={getDraft}
         applyDraft={applyDraft}
+        addImages={addAgentImages}
         style={aiStyle}
         onStyleChange={setAiStyle}
       />
