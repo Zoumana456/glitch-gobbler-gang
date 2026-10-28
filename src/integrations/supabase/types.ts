@@ -50,6 +50,98 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_tasks: {
+        Row: {
+          agent_code: string
+          attempt_count: number
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          output: Json | null
+          position: number
+          run_id: string
+          started_at: string | null
+          status: string
+          task_type: string
+        }
+        Insert: {
+          agent_code: string
+          attempt_count?: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          output?: Json | null
+          position?: number
+          run_id: string
+          started_at?: string | null
+          status?: string
+          task_type: string
+        }
+        Update: {
+          agent_code?: string
+          attempt_count?: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          output?: Json | null
+          position?: number
+          run_id?: string
+          started_at?: string | null
+          status?: string
+          task_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_tasks_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "report_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_agents: {
+        Row: {
+          code: string
+          configuration: Json
+          created_at: string
+          description: string
+          id: string
+          is_enabled: boolean
+          name: string
+          position: number
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          configuration?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          is_enabled?: boolean
+          name: string
+          position?: number
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          configuration?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          position?: number
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           billing_cycle: string
@@ -2118,6 +2210,121 @@ export type Database = {
             columns: ["section_id"]
             isOneToOne: false
             referencedRelation: "report_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_run_audit_logs: {
+        Row: {
+          actor_id: string | null
+          actor_type: string
+          created_at: string
+          event_details: Json
+          event_type: string
+          id: string
+          run_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_type: string
+          created_at?: string
+          event_details?: Json
+          event_type: string
+          id?: string
+          run_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_type?: string
+          created_at?: string
+          event_details?: Json
+          event_type?: string
+          id?: string
+          run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_run_audit_logs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "report_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_runs: {
+        Row: {
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          current_step: string | null
+          error_summary: string | null
+          id: string
+          input_parameters: Json
+          instructions: string
+          period_end: string
+          period_start: string
+          quality_status: string | null
+          report_type: string
+          requested_by: string
+          result_report_id: string | null
+          sources: string[]
+          started_at: string | null
+          state: Json
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_step?: string | null
+          error_summary?: string | null
+          id?: string
+          input_parameters?: Json
+          instructions?: string
+          period_end: string
+          period_start: string
+          quality_status?: string | null
+          report_type: string
+          requested_by: string
+          result_report_id?: string | null
+          sources?: string[]
+          started_at?: string | null
+          state?: Json
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_step?: string | null
+          error_summary?: string | null
+          id?: string
+          input_parameters?: Json
+          instructions?: string
+          period_end?: string
+          period_start?: string
+          quality_status?: string | null
+          report_type?: string
+          requested_by?: string
+          result_report_id?: string | null
+          sources?: string[]
+          started_at?: string | null
+          state?: Json
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_runs_result_report_id_fkey"
+            columns: ["result_report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
             referencedColumns: ["id"]
           },
         ]
