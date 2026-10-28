@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- AI report agents: orchestrator advances one agent_tasks step per server call (src/lib/agents); numbers are computed deterministically, AI only plans and writes — keeps runs traceable and within worker time limits.
