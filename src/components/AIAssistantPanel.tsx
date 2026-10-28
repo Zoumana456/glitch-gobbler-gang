@@ -177,6 +177,69 @@ export function AIAssistantPanel({
     setStaged((prev) => [...prev, ...ok.filter((f) => f.size <= MAX_PDF_BYTES)].slice(0, 15));
   }
 
+  function initSteps(keys: string[]) {
+    const s: AgentStep[] = keys.map((k, i) => ({ key: k, label: STEP_LABEL[k] ?? k, status: i === 0 ? "running" : "pending" }));
+    setSteps(s);
+    return {
+      to(key: string) {
+        setSteps((prev) => {
+          if (!prev) return prev;
+          const idx = prev.findIndex((p) => p.key === key);
+          return prev.map((p, i) => ({ ...p, status: i < idx ? "done" : i === idx ? "running" : "pending" }));
+        });
+      },
+      finish(ok: boolean) {
+        setSteps((prev) => prev && prev.map((p) => (ok ? { ...p, status: "done" } : p.status === "running" ? { ...p, status: "failed" } : p)));
+        setTimeout(() => setSteps(null), ok ? 2500 : 6000);
+      },
+    };
+  }
+
+  async function runDataMission(msg: string, m: NonNullable<ReturnType<typeof detectDataMission>>, nextHist: Message[]) {
+    const now = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const { id } = await startRun({
+      data: {
+        report_type: m.report_type,
+        title: getDraft().title || "Rapport",
+        instructions: msg,
+        period_start: iso(new Date(now.getFullYear(), now.getMonth(), 1)),
+        period_end: iso(now),
+        sources: m.sources,
+      },
+    });
+    const sync = async () => {
+      const r = await fetchRun({ data: { id } });
+      setSteps(r.tasks.map((t: any) => ({
+        key: t.task_type,
+        label: STEP_LABEL[t.task_type] ?? t.task_type,
+        status: t.status === "done" ? "done" : t.status === "failed" ? "failed" : t.status === "running" || t.status === "retrying" ? "running" : "pending",
+      })));
+      return r;
+    };
+    await sync();
+    for (let i = 0; i < 20; i++) {
+      const res = await advanceRun({ data: { id } });
+      await sync();
+      if (res.done) break;
+    }
+    const final = await sync();
+    const w = (final.run.state as any)?.write;
+    if (w && ["completed", "completed_with_warnings"].includes(final.run.status)) {
+      setUndoDraft(getDraft());
+      applyDraft({
+        title: w.title,
+        intro: w.intro,
+        conclusion: w.conclusion,
+        sections: (w.sections ?? []).map((s: any) => ({ title: s.title, description: s.text, bullets: [] })),
+      } as ExtractedReport);
+      setHistory([...nextHist, { role: "assistant", content: "✅ Les agents ont terminé : chiffres collectés, analysés, contrôlés puis rédigés. Le rapport est inséré dans le formulaire. Dites-moi ce qu'il faut ajuster." }]);
+      setTimeout(() => setSteps(null), 2500);
+    } else {
+      throw new Error(final.run.error_summary || "La mission des agents a échoué");
+    }
+  }
+
   async function sendWithDocs(msg: string) {
     const files = staged;
     const label = `${msg}\n\n📎 ${files.map((f) => f.name).join(", ")}`;
@@ -185,7 +248,10 @@ export function AIAssistantPanel({
     setInput("");
     setBusy(true);
     const before = getDraft();
+    const st = initSteps(["plan", "collect", "write", "quality", "generate"]);
+    let ok = false;
     try {
+      st.to("collect");
       const payload = await Promise.all(
         files.map(async (f) => ({
           filename: f.name,
@@ -193,6 +259,7 @@ export function AIAssistantPanel({
           base64: await fileToBase64(f),
         })),
       );
+      st.to("write");
       const res = await agent({
         data: {
           instruction: msg,
@@ -202,7 +269,9 @@ export function AIAssistantPanel({
           style: style === "free" ? undefined : style,
         },
       });
+      st.to("quality");
       setHistory([...nextHist, { role: "assistant", content: res.reply || "Terminé." }]);
+      st.to("generate");
       if (res.updatedDraft) {
         setUndoDraft(before);
         applyDraft(res.updatedDraft);
@@ -212,10 +281,12 @@ export function AIAssistantPanel({
         await addImages(res.images);
         toast.success(`Rapport mis à jour, ${res.images.length} image(s) ajoutée(s)`);
       } else if (res.updatedDraft) toast.success("Rapport mis à jour");
+      ok = true;
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur IA");
       setHistory([...nextHist, { role: "assistant", content: "⚠️ " + (e?.message ?? "Erreur IA") }]);
     } finally {
+      st.finish(ok);
       setBusy(false);
     }
   }
@@ -228,7 +299,24 @@ export function AIAssistantPanel({
     const nextHist: Message[] = [...history, { role: "user", content: msg }];
     setHistory(nextHist);
     setBusy(true);
+    const mission = detectDataMission(msg);
+    if (mission) {
+      try {
+        await runDataMission(msg, mission, nextHist);
+      } catch (e: any) {
+        toast.error(e?.message ?? "Erreur agents");
+        setSteps((p) => p && p.map((s) => (s.status === "running" ? { ...s, status: "failed" } : s)));
+        setTimeout(() => setSteps(null), 6000);
+        setHistory([...nextHist, { role: "assistant", content: "⚠️ " + (e?.message ?? "Erreur agents") }]);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    const st = initSteps(["plan", "write", "quality"]);
+    let ok = false;
     try {
+      st.to("write");
       const res = await chat({
         data: {
           history,
@@ -237,14 +325,16 @@ export function AIAssistantPanel({
           style: style === "free" ? undefined : style,
         },
       });
+      st.to("quality");
       const reply = res.reply || "…";
-      const newIndex = nextHist.length; // index of the assistant message we're about to push
+      const newIndex = nextHist.length;
       setHistory([...nextHist, { role: "assistant", content: reply }]);
       if (voiceModeRef.current) setAutoPlayIndex(newIndex);
       if (res.updatedDraft) {
         applyDraft(res.updatedDraft);
         toast.success("Brouillon mis à jour");
       }
+      ok = true;
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur IA");
       setHistory([
@@ -252,6 +342,7 @@ export function AIAssistantPanel({
         { role: "assistant", content: "⚠️ " + (e?.message ?? "Erreur IA") },
       ]);
     } finally {
+      st.finish(ok);
       setBusy(false);
     }
   }
