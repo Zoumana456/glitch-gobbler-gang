@@ -348,6 +348,17 @@ const chatReplySchema = z.object({
 });
 export type AIChatReply = z.infer<typeof chatReplySchema>;
 
+const EDIT_RULES =
+  " RÈGLES D'AGENT (comme un agent de code : modifier par retouches ciblées, jamais tout réécrire) : " +
+  "1) Identifie d'abord l'intention : AJOUT, MODIFICATION ciblée, SUPPRESSION explicite, ou QUESTION/changement de sujet. " +
+  "2) AJOUT : recopie À L'IDENTIQUE tout le contenu existant (titre, intro, chaque section, chaque puce, conclusion) et insère seulement le nouveau contenu au bon endroit. " +
+  "3) MODIFICATION : ne change QUE l'élément visé ; tout le reste est recopié mot pour mot, dans le même ordre, avec les mêmes titres de section. " +
+  "4) SUPPRESSION : uniquement si l'utilisateur le demande explicitement. " +
+  "5) QUESTION, avis ou changement de sujet : réponds dans reply et mets updatedDraft à null ; ne touche pas au rapport. " +
+  "6) Ne réordonne et ne renomme jamais les sections sans demande : les photos y sont rattachées. " +
+  "7) Garde le fil de la conversation : comprends les références implicites (« comme tout à l'heure », « ce point-là ») grâce à l'historique. " +
+  "Dans reply, dis brièvement ce que tu as compris et ce que tu as changé.";
+
 export const aiChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => chatInput.parse(d))
@@ -362,6 +373,7 @@ export const aiChat = createServerFn({ method: "POST" })
       '"missingInfo": [string]}\n' +
       "Mets updatedDraft à null si aucun changement au rapport n'est proposé. " +
       "Sinon renvoie le rapport COMPLET mis à jour." +
+      EDIT_RULES +
       styleClause(data.style);
 
     const messages: AIMessage[] = [];
@@ -713,11 +725,12 @@ export const aiAgentProcess = createServerFn({ method: "POST" })
       '{"reply": "résumé markdown de ce que tu as fait", "updatedDraft": null | ' +
       REPORT_JSON_SHAPE +
       ', "imagePlacements": [{"imageIndex": number, "sectionIndex": number | null, "caption": string}]}. ' +
-      "updatedDraft = rapport COMPLET final, ou null si la consigne est une simple question." +
+      "updatedDraft = rapport COMPLET final, ou null si la consigne est une simple question. Si le brouillon actuel n'est pas vide et que la consigne n'est pas une fusion/réécriture explicite, intègre les documents EN AJOUT au contenu existant." +
+      EDIT_RULES +
       styleClause(data.style);
 
     const messages: AIMessage[] = [];
-    for (const m of data.history.slice(-10)) messages.push({ role: m.role, content: m.content });
+    for (const m of data.history.slice(-16)) messages.push({ role: m.role, content: m.content });
     messages.push({
       role: "user",
       content: [
