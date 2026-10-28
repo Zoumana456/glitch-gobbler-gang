@@ -484,28 +484,13 @@ export function AIAssistantPanel({
       </div>
 
 
-      <div className="px-4 pt-3 pb-2 border-b border-border space-y-2">
-        <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1">
-          <button type="button" onClick={() => setMode("chat")} className={`rounded px-2 py-1 text-xs font-medium ${mode === "chat" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>
-            Chat & documents
-          </button>
-          <button type="button" onClick={() => setMode("agents")} className={`rounded px-2 py-1 text-xs font-medium inline-flex items-center justify-center gap-1 ${mode === "agents" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>
-            <Bot className="h-3.5 w-3.5" /> Agents IA
-          </button>
-        </div>
-        {mode === "chat" && (
-          <button type="button" onClick={() => setToolsOpen((v) => !v)} className="w-full flex items-center justify-between text-xs font-medium py-1 hover:text-primary" aria-expanded={toolsOpen}>
-            <span className="inline-flex items-center gap-1.5"><Wand2 className="h-3.5 w-3.5" /> Options & outils</span>
-            <ChevronDown className={`h-4 w-4 transition-transform ${toolsOpen ? "rotate-180" : ""}`} />
-          </button>
-        )}
+      <div className="px-4 pt-2 pb-2 border-b border-border">
+        <button type="button" onClick={() => setToolsOpen((v) => !v)} className="w-full flex items-center justify-between text-xs font-medium py-1 hover:text-primary" aria-expanded={toolsOpen}>
+          <span className="inline-flex items-center gap-1.5"><Wand2 className="h-3.5 w-3.5" /> Options & outils</span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${toolsOpen ? "rotate-180" : ""}`} />
+        </button>
       </div>
 
-      {mode === "agents" ? (
-        <div className="flex-1 overflow-y-auto px-4 py-3">
-          <ReportAgentsPanel applyDraft={applyDraft} getDraft={getDraft} />
-        </div>
-      ) : (<>
       {toolsOpen && (
       <div className="px-4 py-3 border-b border-border space-y-2">
         <div className="flex items-center gap-2">
@@ -687,7 +672,8 @@ export function AIAssistantPanel({
             )}
           </div>
         ))}
-        {busy && (
+        {steps && <AgentTeamCard steps={steps} />}
+        {busy && !steps && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> L'assistant réfléchit…
           </div>
@@ -777,7 +763,6 @@ export function AIAssistantPanel({
           </Button>
         </div>
       </div>
-      </>)}
     </div>
   );
 }
