@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   date: { fontSize: 10, color: "#6b7280", marginBottom: 4 },
   title: { fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 6, lineHeight: 1.3 },
   author: { fontSize: 10, color: "#6b7280" },
-  section: { marginBottom: 26 },
+  section: { marginBottom: 16 },
   h2: {
     fontSize: 14,
     fontWeight: 700,
@@ -181,26 +181,44 @@ function ReportPdfDocument({
           </View>
         )}
 
-        {report.sections.map((s) => (
-          <View key={s.id} style={styles.section}>
-            {s.title ? <Text style={styles.h2} minPresenceAhead={80}>{s.title}</Text> : null}
-            {s.description && <Paragraphs text={s.description} />}
-            {s.bullets.length > 0 && (
-              <View style={{ marginTop: 4 }}>
-                {s.bullets.map((b) => (
-                  <View style={styles.bullet} key={b.id} wrap={false}>
-                    <Text style={styles.bulletDot}>•</Text>
-                    <Text style={styles.bulletText}>{b.content}</Text>
+        {report.sections.map((s) => {
+          const paras = s.description ? splitParagraphs(s.description) : [];
+          const rest = s.title ? paras.slice(1) : paras;
+          const list = s.images.filter((i) => i.url);
+          const rows: PdfImg[][] = [];
+          for (let i = 0; i < list.length; i += 4) rows.push(list.slice(i, i + 4));
+          return [
+            s.title ? (
+              <View key={`${s.id}-h`} wrap={false} style={{ marginTop: 10 }}>
+                <Text style={styles.h2}>{s.title}</Text>
+                {paras[0] ? <Text style={styles.para}>{paras[0]}</Text> : null}
+              </View>
+            ) : null,
+            ...rest.map((p, i) => (
+              <Text key={`${s.id}-p${i}`} style={styles.para}>{p}</Text>
+            )),
+            ...s.bullets.map((b) => (
+              <View style={styles.bullet} key={b.id} wrap={false}>
+                <Text style={styles.bulletDot}>•</Text>
+                <Text style={styles.bulletText}>{b.content}</Text>
+              </View>
+            )),
+            ...rows.map((row, r) => (
+              <View key={`${s.id}-r${r}`} wrap={false} style={{ flexDirection: "row", marginTop: r === 0 ? 8 : 0, marginBottom: 10 }}>
+                {row.map((img, i) => (
+                  <View key={img.id} style={[styles.imageBox, { marginBottom: 0 }, i === 3 ? { marginRight: 0 } : {}]}>
+                    <Image src={img.url} style={styles.image} />
+                    {img.caption ? <Text style={styles.imageCaption}>{img.caption}</Text> : null}
                   </View>
                 ))}
               </View>
-            )}
-            {s.images.length > 0 && <ImageGrid images={s.images} />}
-            {s.attachments && s.attachments.length > 0 && (
-              <AttachmentList items={s.attachments} />
-            )}
-          </View>
-        ))}
+            )),
+            s.attachments && s.attachments.length > 0 ? (
+              <AttachmentList key={`${s.id}-a`} items={s.attachments} />
+            ) : null,
+            <View key={`${s.id}-end`} style={{ height: 8 }} />,
+          ];
+        })}
 
         {report.conclusion && (
           <View style={styles.section}>
@@ -218,18 +236,6 @@ function ReportPdfDocument({
           <View style={styles.section}>
             <Text style={styles.h2} minPresenceAhead={30}>Pièces jointes</Text>
             <AttachmentList items={report.general_attachments} />
-          </View>
-        )}
-        {approvals && approvals.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.h2}>Fil de validation</Text>
-            {approvals.map((a) => (
-              <Text key={a.id} style={styles.para}>
-                {`${formatLongDate(a.decided_at.slice(0, 10))} — ${a.approver_name} (${levelLabel(a.level)}) : ${
-                  a.decision === "approved" ? "validé" : a.decision === "rejected" ? "rejeté" : a.decision
-                }${a.comment ? ` — ${a.comment}` : ""}`}
-              </Text>
-            ))}
           </View>
         )}
       </Page>
