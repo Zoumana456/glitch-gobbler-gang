@@ -102,6 +102,43 @@ function Paragraphs({ text }: { text: string }) {
   );
 }
 
+type PdfImg = { id: string; url: string; caption?: string | null };
+
+/** Same layout as the web page: rows of 4 square photos, captions under each.
+ *  A row never splits across two pages, so photos keep their order and position. */
+function ImageGrid({ images }: { images: PdfImg[] }) {
+  const list = images.filter((i) => i.url);
+  const rows: PdfImg[][] = [];
+  for (let i = 0; i < list.length; i += 4) rows.push(list.slice(i, i + 4));
+  return (
+    <View style={{ marginTop: 12 }}>
+      {rows.map((row, r) => (
+        <View key={r} wrap={false} style={{ flexDirection: "row", marginBottom: 10 }}>
+          {row.map((img, i) => (
+            <View key={img.id} style={[styles.imageBox, { marginBottom: 0 }, i === 3 ? { marginRight: 0 } : {}]}>
+              <Image src={img.url} style={styles.image} />
+              {img.caption ? <Text style={styles.imageCaption}>{img.caption}</Text> : null}
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function AttachmentList({ items }: { items: { id: string; file_name: string }[] }) {
+  return (
+    <View style={{ marginTop: 8 }}>
+      {items.map((a) => (
+        <View style={styles.bullet} key={a.id} wrap={false}>
+          <Text style={styles.bulletDot}>•</Text>
+          <Text style={styles.bulletText}>{a.file_name}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function ReportPdfDocument({
   report,
   approvals,
@@ -146,75 +183,43 @@ function ReportPdfDocument({
 
         {report.sections.map((s) => (
           <View key={s.id} style={styles.section}>
-            {s.title ? <Text style={styles.h2}>{s.title}</Text> : null}
+            {s.title ? <Text style={styles.h2} minPresenceAhead={80}>{s.title}</Text> : null}
             {s.description && <Paragraphs text={s.description} />}
             {s.bullets.length > 0 && (
               <View style={{ marginTop: 4 }}>
                 {s.bullets.map((b) => (
-                  <View style={styles.bullet} key={b.id}>
+                  <View style={styles.bullet} key={b.id} wrap={false}>
                     <Text style={styles.bulletDot}>•</Text>
                     <Text style={styles.bulletText}>{b.content}</Text>
                   </View>
                 ))}
               </View>
             )}
-            {s.images.length > 0 && (
-              <View style={styles.imageRow}>
-                {s.images.map((img, i) =>
-                  img.url ? (
-                    <View key={img.id} style={i % 4 === 3 ? [styles.imageBox, { marginRight: 0 }] : styles.imageBox}>
-                      <Image src={img.url} style={styles.image} />
-                      {img.caption ? (
-                        <Text style={styles.imageCaption}>{img.caption}</Text>
-                      ) : null}
-                    </View>
-                  ) : null,
-                )}
-              </View>
+            {s.images.length > 0 && <ImageGrid images={s.images} />}
+            {s.attachments && s.attachments.length > 0 && (
+              <AttachmentList items={s.attachments} />
             )}
           </View>
         ))}
 
         {report.conclusion && (
           <View style={styles.section}>
-                        <Paragraphs text={report.conclusion} />
+            <Paragraphs text={report.conclusion} />
           </View>
         )}
 
         {report.general_images.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.h2}>Images</Text>
-            <View style={styles.imageRow}>
-              {report.general_images.map((img, i) =>
-                img.url ? (
-                  <View key={img.id} style={i % 4 === 3 ? [styles.imageBox, { marginRight: 0 }] : styles.imageBox}>
-                    <Image src={img.url} style={styles.image} />
-                    {img.caption ? (
-                      <Text style={styles.imageCaption}>{img.caption}</Text>
-                    ) : null}
-                  </View>
-                ) : null,
-              )}
-            </View>
+            <Text style={styles.h2} minPresenceAhead={130}>Images</Text>
+            <ImageGrid images={report.general_images} />
           </View>
         )}
-        {(() => {
-          const atts = [
-            ...report.sections.flatMap((s) => s.attachments ?? []),
-            ...(report.general_attachments ?? []),
-          ];
-          return atts.length > 0 ? (
-            <View style={styles.section}>
-              <Text style={styles.h2}>Pièces jointes</Text>
-              {atts.map((a) => (
-                <View style={styles.bullet} key={a.id}>
-                  <Text style={styles.bulletDot}>•</Text>
-                  <Text style={styles.bulletText}>{a.file_name}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null;
-        })()}
+        {report.general_attachments && report.general_attachments.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.h2} minPresenceAhead={30}>Pièces jointes</Text>
+            <AttachmentList items={report.general_attachments} />
+          </View>
+        )}
         {approvals && approvals.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.h2}>Fil de validation</Text>
