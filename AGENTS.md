@@ -9,3 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 - AI report agents: orchestrator advances one agent_tasks step per server call (src/lib/agents); numbers are computed deterministically, AI only plans and writes — keeps runs traceable and within worker time limits.
+- Report assistant edits drafts via atomic patch operations applied by src/lib/report-patch.ts (AI never rewrites the full report) — guarantees untouched content and photos survive edits.
