@@ -131,7 +131,7 @@ function AttachmentList({ items }: { items: { id: string; file_name: string }[] 
     <View style={{ marginTop: 8 }}>
       {items.map((a) => (
         <View style={styles.bullet} key={a.id} wrap={false}>
-          <Text style={styles.bulletDot}>📎</Text>
+          <Text style={styles.bulletDot}>•</Text>
           <Text style={styles.bulletText}>{a.file_name}</Text>
         </View>
       ))}
