@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   date: { fontSize: 10, color: "#6b7280", marginBottom: 4 },
   title: { fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 6, lineHeight: 1.3 },
   author: { fontSize: 10, color: "#6b7280" },
-  section: { marginBottom: 26 },
+  section: { marginBottom: 16 },
   h2: {
     fontSize: 14,
     fontWeight: 700,
@@ -183,8 +183,23 @@ function ReportPdfDocument({
 
         {report.sections.map((s) => (
           <View key={s.id} style={styles.section}>
-            {s.title ? <Text style={styles.h2} minPresenceAhead={80}>{s.title}</Text> : null}
-            {s.description && <Paragraphs text={s.description} />}
+            {s.title ? (
+              <View wrap={false}>
+                <Text style={styles.h2}>{s.title}</Text>
+                {s.description ? (
+                  <Text style={styles.para}>{splitParagraphs(s.description)[0]}</Text>
+                ) : null}
+              </View>
+            ) : null}
+            {s.description && (
+              <Paragraphs
+                text={
+                  s.title
+                    ? splitParagraphs(s.description).slice(1).join("\n\n")
+                    : s.description
+                }
+              />
+            )}
             {s.bullets.length > 0 && (
               <View style={{ marginTop: 4 }}>
                 {s.bullets.map((b) => (
@@ -218,18 +233,6 @@ function ReportPdfDocument({
           <View style={styles.section}>
             <Text style={styles.h2} minPresenceAhead={30}>Pièces jointes</Text>
             <AttachmentList items={report.general_attachments} />
-          </View>
-        )}
-        {approvals && approvals.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.h2}>Fil de validation</Text>
-            {approvals.map((a) => (
-              <Text key={a.id} style={styles.para}>
-                {`${formatLongDate(a.decided_at.slice(0, 10))} — ${a.approver_name} (${levelLabel(a.level)}) : ${
-                  a.decision === "approved" ? "validé" : a.decision === "rejected" ? "rejeté" : a.decision
-                }${a.comment ? ` — ${a.comment}` : ""}`}
-              </Text>
-            ))}
           </View>
         )}
       </Page>
