@@ -181,41 +181,44 @@ function ReportPdfDocument({
           </View>
         )}
 
-        {report.sections.map((s) => (
-          <View key={s.id} style={styles.section}>
-            {s.title ? (
-              <View wrap={false}>
+        {report.sections.map((s) => {
+          const paras = s.description ? splitParagraphs(s.description) : [];
+          const rest = s.title ? paras.slice(1) : paras;
+          const list = s.images.filter((i) => i.url);
+          const rows: PdfImg[][] = [];
+          for (let i = 0; i < list.length; i += 4) rows.push(list.slice(i, i + 4));
+          return [
+            s.title ? (
+              <View key={`${s.id}-h`} wrap={false} style={{ marginTop: 10 }}>
                 <Text style={styles.h2}>{s.title}</Text>
-                {s.description ? (
-                  <Text style={styles.para}>{splitParagraphs(s.description)[0]}</Text>
-                ) : null}
+                {paras[0] ? <Text style={styles.para}>{paras[0]}</Text> : null}
               </View>
-            ) : null}
-            {s.description && (
-              <Paragraphs
-                text={
-                  s.title
-                    ? splitParagraphs(s.description).slice(1).join("\n\n")
-                    : s.description
-                }
-              />
-            )}
-            {s.bullets.length > 0 && (
-              <View style={{ marginTop: 4 }}>
-                {s.bullets.map((b) => (
-                  <View style={styles.bullet} key={b.id} wrap={false}>
-                    <Text style={styles.bulletDot}>•</Text>
-                    <Text style={styles.bulletText}>{b.content}</Text>
+            ) : null,
+            ...rest.map((p, i) => (
+              <Text key={`${s.id}-p${i}`} style={styles.para}>{p}</Text>
+            )),
+            ...s.bullets.map((b) => (
+              <View style={styles.bullet} key={b.id} wrap={false}>
+                <Text style={styles.bulletDot}>•</Text>
+                <Text style={styles.bulletText}>{b.content}</Text>
+              </View>
+            )),
+            ...rows.map((row, r) => (
+              <View key={`${s.id}-r${r}`} wrap={false} style={{ flexDirection: "row", marginTop: r === 0 ? 8 : 0, marginBottom: 10 }}>
+                {row.map((img, i) => (
+                  <View key={img.id} style={[styles.imageBox, { marginBottom: 0 }, i === 3 ? { marginRight: 0 } : {}]}>
+                    <Image src={img.url} style={styles.image} />
+                    {img.caption ? <Text style={styles.imageCaption}>{img.caption}</Text> : null}
                   </View>
                 ))}
               </View>
-            )}
-            {s.images.length > 0 && <ImageGrid images={s.images} />}
-            {s.attachments && s.attachments.length > 0 && (
-              <AttachmentList items={s.attachments} />
-            )}
-          </View>
-        ))}
+            )),
+            s.attachments && s.attachments.length > 0 ? (
+              <AttachmentList key={`${s.id}-a`} items={s.attachments} />
+            ) : null,
+            <View key={`${s.id}-end`} style={{ height: 8 }} />,
+          ];
+        })}
 
         {report.conclusion && (
           <View style={styles.section}>
