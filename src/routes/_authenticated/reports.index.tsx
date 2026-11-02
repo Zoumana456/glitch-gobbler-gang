@@ -55,6 +55,7 @@ import { getRoleAudit } from "@/lib/role-audit.functions";
 import { levelLabel } from "@/lib/reports.types";
 import { cn } from "@/lib/utils";
 import { MonthlyReportButton } from "@/components/MonthlyReportButton";
+import { CombineMonthsButton } from "@/components/CombineMonthsButton";
 import { parseISO, format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -287,6 +288,7 @@ function ReportsListPage() {
             </Button>
           )}
           <MonthlyReportButton monthKey={currentMonthKey} variant="outline" />
+          <CombineMonthsButton />
           <Button asChild>
             <Link to="/reports/new" search={{}}>
               <Plus className="h-4 w-4 mr-2" />

@@ -22,10 +22,14 @@ const LABELS: Record<string, string> = {
 /** Génère en un clic le rapport mensuel de tout ce qui a été fait sur le mois (clé yyyy-MM). */
 export function MonthlyReportButton({
   monthKey,
+  endMonthKey,
+  label: btnLabel,
   size = "default",
   variant = "default",
 }: {
   monthKey: string;
+  endMonthKey?: string;
+  label?: string;
   size?: "default" | "sm";
   variant?: "default" | "outline" | "ghost";
 }) {
@@ -41,17 +45,21 @@ export function MonthlyReportButton({
     if (step) return;
     const first = parseISO(`${monthKey}-01`);
     const label = format(first, "LLLL yyyy", { locale: fr });
-    const cap = label.charAt(0).toUpperCase() + label.slice(1);
+    const last = parseISO(`${endMonthKey ?? monthKey}-01`);
+    const lab2 = format(last, "LLLL yyyy", { locale: fr });
+    const capOne = label.charAt(0).toUpperCase() + label.slice(1);
+    const combined = !!endMonthKey && endMonthKey !== monthKey;
+    const cap = combined ? `${capOne} & ${lab2.charAt(0).toUpperCase() + lab2.slice(1)}` : capOne;
     setStep("plan");
     try {
       const { id } = await start({
         data: {
           report_type: "synthese",
-          title: `Rapport mensuel — ${cap}`,
+          title: combined ? `Rapport combiné — ${cap}` : `Rapport mensuel — ${cap}`,
           instructions:
-            "Rapport mensuel consolidé : synthèse de tout ce qui a été fait durant le mois (rapports journaliers, projets, tâches, dépenses). Faits marquants, réalisations, difficultés, chiffres clés, perspectives.",
+            (combined ? "Rapport consolidé sur deux mois : synthèse globale et comparaison mois par mois (progression, continuité)" : "Rapport mensuel consolidé : synthèse de tout ce qui a été fait durant le mois") + " : (rapports journaliers, projets, tâches, dépenses). Faits marquants, réalisations, difficultés, chiffres clés, perspectives.",
           period_start: format(first, "yyyy-MM-dd"),
-          period_end: format(endOfMonth(first), "yyyy-MM-dd"),
+          period_end: format(endOfMonth(last), "yyyy-MM-dd"),
           sources: ["reports", "projects", "tasks", "expenses"],
         },
       });
@@ -77,7 +85,7 @@ export function MonthlyReportButton({
   return (
     <Button size={size} variant={variant} onClick={run} disabled={!!step}>
       {step ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CalendarRange className="h-4 w-4 mr-2" />}
-      {step ? LABELS[step] ?? "Génération…" : "Rapport mensuel"}
+      {step ? LABELS[step] ?? "Génération…" : btnLabel ?? "Rapport mensuel"}
     </Button>
   );
 }
