@@ -54,6 +54,7 @@ import {
 import { getRoleAudit } from "@/lib/role-audit.functions";
 import { levelLabel } from "@/lib/reports.types";
 import { cn } from "@/lib/utils";
+import { MonthlyReportButton } from "@/components/MonthlyReportButton";
 import { parseISO, format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -285,6 +286,7 @@ function ReportsListPage() {
               Télécharger ({selected.size})
             </Button>
           )}
+          <MonthlyReportButton monthKey={currentMonthKey} variant="outline" />
           <Button asChild>
             <Link to="/reports/new" search={{}}>
               <Plus className="h-4 w-4 mr-2" />
@@ -422,7 +424,7 @@ function ReportsListPage() {
         const isOpen = isSearching || openMonths.has(group.key);
         return (
         <section key={group.key} className="mb-10">
-          <h2 className="mb-3 pb-2 border-b border-border">
+          <h2 className="mb-3 pb-2 border-b border-border flex items-center gap-2">
             <button
               type="button"
               onClick={() => toggleMonth(group.key)}
@@ -445,6 +447,7 @@ function ReportsListPage() {
                 </span>
               )}
             </button>
+            <MonthlyReportButton monthKey={group.key} size="sm" variant="ghost" />
           </h2>
           {isOpen && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
