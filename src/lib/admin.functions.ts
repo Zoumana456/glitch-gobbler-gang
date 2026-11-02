@@ -473,7 +473,7 @@ export const listAuditLog = createServerFn({ method: "GET" })
       .limit(500);
     if (data.action) q = q.eq("action", data.action);
     if (data.q && data.q.trim()) {
-      const like = `%${data.q.trim()}%`;
+      const like = `%${data.q.trim().replace(/[^\p{L}\p{N}\s@_\-]/gu, " ").slice(0, 100)}%`;
       q = q.or(`actor_email.ilike.${like},entity_id.ilike.${like}`);
     }
     const { data: rows, error } = await q;

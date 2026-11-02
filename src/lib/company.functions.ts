@@ -325,22 +325,32 @@ export const getInvitationPreview = createServerFn({ method: "GET" })
   });
 
 export const listCompaniesDirectory = createServerFn({ method: "GET" })
-  .handler(async (): Promise<{ id: string; name: string }[]> => {
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ id: string; name: string }[]> => {
+    // Only companies that have a pending invitation for the caller's own email.
+    const email = String((context.claims as any)?.email ?? "").toLowerCase();
+    if (!email) return [];
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
-      .from("companies")
-      .select("id, name")
-      .order("name", { ascending: true });
-    return (data ?? []) as { id: string; name: string }[];
+      .from("company_invitations")
+      .select("company_id, companies(id, name)")
+      .ilike("email", email)
+      .eq("status", "pending")
+      .gt("expires_at", new Date().toISOString());
+    return (data ?? [])
+      .map((r: any) => r.companies)
+      .filter(Boolean) as { id: string; name: string }[];
   });
 
 export const joinCompanyDirect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { companyId: string }) =>
-    z.object({ companyId: z.string().uuid() }).parse(d),
+  .inputValidator((d: { companyId?: string }) =>
+    z.object({ companyId: z.string().uuid().optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const email = String((context.claims as any)?.email ?? "").toLowerCase();
+    if (!email) throw new Error("Adresse e-mail introuvable");
     const { data: existing } = await supabase
       .from("company_members")
       .select("id")
@@ -348,22 +358,29 @@ export const joinCompanyDirect = createServerFn({ method: "POST" })
       .maybeSingle();
     if (existing) throw new Error("Vous appartenez déjà à une entreprise");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: comp } = await supabaseAdmin
-      .from("companies")
-      .select("id, name, seat_limit")
-      .eq("id", data.companyId)
-      .maybeSingle();
-    if (!comp) throw new Error("Entreprise introuvable");
-    const { count } = await supabaseAdmin
-      .from("company_members")
-      .select("id", { count: "exact", head: true })
-      .eq("company_id", comp.id);
-    if ((count ?? 0) >= comp.seat_limit) throw new Error("Quota de sièges atteint pour cette entreprise");
+    // Joining requires a pending, unexpired invitation sent to the caller's email.
+    let q = supabaseAdmin
+      .from("company_invitations")
+      .select("id, company_id, companies(name)")
+      .ilike("email", email)
+      .eq("status", "pending")
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (data.companyId) q = q.eq("company_id", data.companyId);
+    const { data: invs } = await q;
+    const inv = (invs ?? [])[0] as any;
+    if (!inv) {
+      throw new Error(
+        "Aucune invitation trouvée pour votre e-mail. Demandez à votre entreprise de vous inviter.",
+      );
+    }
     const { error } = await supabaseAdmin
       .from("company_members")
-      .insert({ company_id: comp.id, user_id: userId, role: "employee" });
+      .insert({ company_id: inv.company_id, user_id: userId, role: "employee" });
     if (error) throw new Error(error.message);
-    return { companyName: comp.name };
+    await supabaseAdmin.from("company_invitations").update({ status: "accepted" }).eq("id", inv.id);
+    return { companyName: inv.companies?.name ?? "" };
   });
 
 export const createEmployeeDirect = createServerFn({ method: "POST" })

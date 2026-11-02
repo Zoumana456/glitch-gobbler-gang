@@ -21,6 +21,22 @@ const FOLDERS = [
   "custom",
 ] as const;
 
+// Public mail-server hostnames only: no IP literals, localhost or internal suffixes (SSRF guard).
+const mailHost = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3)
+  .max(200)
+  .refine(
+    (h) =>
+      /^(?=.{3,200}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/.test(h) &&
+      !/(^|\.)(localhost|local|internal|intranet|lan|home|corp|localdomain|arpa)$/.test(h),
+    "Serveur de messagerie invalide (nom de domaine public requis)",
+  );
+const imapPortSchema = z.number().int().refine((p) => [143, 993].includes(p), "Port IMAP non autorisé");
+const smtpPortSchema = z.number().int().refine((p) => [25, 465, 587, 2525].includes(p), "Port SMTP non autorisé");
+
 const imapSchema = z.object({
   provider: z.enum(["imap", "yahoo", "gmail", "microsoft"]),
   email: z.string().email().max(200),
@@ -28,11 +44,11 @@ const imapSchema = z.object({
   label: z.string().max(60).nullable().optional(),
   username: z.string().min(1).max(200),
   password: z.string().min(1).max(500),
-  imapHost: z.string().min(3).max(200),
-  imapPort: z.number().int().min(1).max(65535),
+  imapHost: mailHost,
+  imapPort: imapPortSchema,
   imapSecurity: z.string().max(20),
-  smtpHost: z.string().min(3).max(200),
-  smtpPort: z.number().int().min(1).max(65535),
+  smtpHost: mailHost,
+  smtpPort: smtpPortSchema,
   smtpSecurity: z.string().max(20),
 });
 

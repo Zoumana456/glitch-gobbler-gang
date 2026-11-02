@@ -7,6 +7,7 @@ import type {
   DocumentVersion,
 } from "@/lib/documents/documents.server";
 
+const safeTerm = (t: string) => t.replace(/[^\p{L}\p{N}\s@_\-]/gu, " ").trim().slice(0, 100);
 export type { DocumentFolder, DocumentRow, DocumentVersion };
 
 const BUCKET = "ged-documents";
@@ -102,7 +103,7 @@ export const listDocuments = createServerFn({ method: "GET" })
       .limit(300);
     if (data.folderId) q = q.eq("folder_id", data.folderId);
     const term = data.search?.trim();
-    if (term) q = q.or(`title.ilike.%${term}%,description.ilike.%${term}%`);
+    { const st = safeTerm(term ?? ""); if (st) q = q.or(`title.ilike.%${st}%,description.ilike.%${st}%`); }
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const names = await nameMap(
@@ -131,6 +132,8 @@ export const createDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => DocInput.parse(d))
   .handler(async ({ data, context }) => {
+    if (!data.storagePath.startsWith(`${context.userId}/`) || data.storagePath.includes(".."))
+      throw new Error("Chemin de fichier invalide");
     const { assertModuleEnabled } = await import("@/lib/modules/modules.server");
     const companyId = await assertModuleEnabled(
       context.supabase,
@@ -182,6 +185,8 @@ export const addDocumentVersion = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    if (!data.storagePath.startsWith(`${context.userId}/`) || data.storagePath.includes(".."))
+      throw new Error("Chemin de fichier invalide");
     const { assertModuleEnabled } = await import("@/lib/modules/modules.server");
     await assertModuleEnabled(context.supabase, context.userId, "documents");
     const { data: doc } = await context.supabase
@@ -274,7 +279,7 @@ export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
     // La lecture passe par le client de l'utilisateur : les règles d'accès s'appliquent.
     const { data: doc } = await context.supabase
       .from("documents")
-      .select("id, file_url")
+      .select("id, file_url, author_id")
       .eq("id", data.id)
       .maybeSingle();
     if (!doc) throw new Error("Document introuvable ou non accessible");
@@ -289,6 +294,23 @@ export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
         .maybeSingle();
       if (!v) throw new Error("Version introuvable");
       path = (v as any).storage_path as string;
+    }
+    // Only sign files stored under a company member's own folder (uploader-owned paths).
+    if (path.includes("..")) throw new Error("Chemin de fichier invalide");
+    {
+      const owner = path.split("/")[0];
+      const { data: dm } = await context.supabase
+        .from("documents")
+        .select("company_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      const { data: mem } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin
+        .from("company_members")
+        .select("id")
+        .eq("user_id", owner)
+        .eq("company_id", (dm as any)?.company_id ?? "00000000-0000-0000-0000-000000000000")
+        .maybeSingle();
+      if (!mem && owner !== (doc as any).author_id) throw new Error("Fichier non autorisé");
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

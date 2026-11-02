@@ -8,6 +8,13 @@
       "when": 1793199707494,
       "tag": "0000_ai_agents_orchestrator",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793649781163,
+      "tag": "0001_lock_down_permissive_policies",
+      "breakpoints": true
     }
   ]
 }

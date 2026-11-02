@@ -1,3 +1,4 @@
+import { historyAsContext } from "./ai-history";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -47,7 +48,7 @@ export const globalAssistant = createServerFn({ method: "POST" })
       JSON.stringify(ctx);
 
     const messages: AIMessage[] = [
-      ...data.history.map((m) => ({ role: m.role, content: m.content }) as AIMessage),
+      ...historyAsContext(data.history),
       { role: "user", content: data.message },
     ];
     const reply = await callAI({ model: DEFAULT_MODEL, system, messages });

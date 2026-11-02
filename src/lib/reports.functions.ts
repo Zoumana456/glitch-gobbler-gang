@@ -9,7 +9,7 @@ import type {
   ReportListItem,
 } from "./reports.types";
 
-const IMAGE_URL_TTL = 5 * 60; // 5 min — URL courte, régénérée à chaque affichage
+const IMAGE_URL_TTL = 60; // 60 s — URL courte, régénérée à chaque affichage
 const ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 const MAX_SHARE_DAYS = 30; // durée max d'un lien de partage public
 
@@ -776,7 +776,15 @@ export const logShareCopy = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { userId } = context;
+    const { userId, supabase } = context;
+    const { data: owned } = await supabase
+      .from("reports")
+      .select("id")
+      .eq("id", data.id)
+      .eq("author_id", userId)
+      .not("share_token", "is", null)
+      .maybeSingle();
+    if (!owned) throw new Error("Rapport introuvable");
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );

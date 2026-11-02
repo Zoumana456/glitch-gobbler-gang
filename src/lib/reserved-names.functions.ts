@@ -119,6 +119,9 @@ export const requestCompanyVerification = createServerFn({ method: "POST" })
     const slug = normalize(data.name);
     if (!slug) throw new Error("Nom invalide");
     const { supabase, userId } = context;
+    for (const p of [data.proofPath, data.identityPath, data.selfiePath]) {
+      if (!p.startsWith(`${userId}/`) || p.includes("..")) throw new Error("Chemin de fichier invalide");
+    }
     const { data: pending } = await supabase
       .from("company_verification_requests")
       .select("id")

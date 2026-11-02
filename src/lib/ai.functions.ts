@@ -1,3 +1,4 @@
+import { historyAsContext } from "./ai-history";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
@@ -408,7 +409,7 @@ export const aiChat = createServerFn({ method: "POST" })
       styleClause(data.style);
 
     const messages: AIMessage[] = [];
-    for (const m of data.history.slice(-16)) messages.push({ role: m.role, content: m.content });
+    messages.push(...historyAsContext(data.history.slice(-16)));
     messages.push({
       role: "user",
       content: `ÉTAT ACTUEL DU RAPPORT (source de vérité, ne pas répéter) :\n${draftForPrompt(data.reportDraft)}\n\nDEMANDE : ${data.userMessage}`,
@@ -762,7 +763,7 @@ export const aiAgentProcess = createServerFn({ method: "POST" })
       styleClause(data.style);
 
     const messages: AIMessage[] = [];
-    for (const m of data.history.slice(-16)) messages.push({ role: m.role, content: m.content });
+    messages.push(...historyAsContext(data.history.slice(-16)));
     messages.push({
       role: "user",
       content: [

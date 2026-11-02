@@ -63,6 +63,11 @@ export const createExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ExpenseInput.parse(d))
   .handler(async ({ data, context }): Promise<{ id: string }> => {
+    if (
+      data.receiptPath &&
+      (!data.receiptPath.startsWith(`${context.userId}/`) || data.receiptPath.includes(".."))
+    )
+      throw new Error("Chemin de justificatif invalide");
     const { assertModuleEnabled } = await import("@/lib/modules/modules.server");
     const { resolveApprover } = await import("@/lib/leaves/leaves.server");
     const companyId = await assertModuleEnabled(
@@ -205,11 +210,13 @@ export const getReceiptUrl = createServerFn({ method: "POST" })
     await assertModuleEnabled(context.supabase, context.userId, "expenses");
     const { data: row } = await context.supabase
       .from("expense_reports")
-      .select("receipt_url")
+      .select("receipt_url, author_id")
       .eq("id", data.id)
       .maybeSingle();
     const path = (row as any)?.receipt_url as string | null;
     if (!path) throw new Error("Aucun justificatif");
+    if (!path.startsWith(`${(row as any).author_id}/`) || path.includes(".."))
+      throw new Error("Justificatif non autorisé");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signed, error } = await supabaseAdmin.storage
       .from(BUCKET)

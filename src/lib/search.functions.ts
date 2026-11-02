@@ -22,7 +22,7 @@ export const globalSearch = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<SearchResult[]> => {
     const { supabase } = context;
     const q = data.query;
-    const like = `%${q.replace(/[%_]/g, "\\$&")}%`;
+    const like = `%${q.replace(/[^\p{L}\p{N}\s@\-]/gu, " ").trim().slice(0, 100)}%`;
     const results: SearchResult[] = [];
 
     const [reports, minutes, members, companies] = await Promise.all([

@@ -2,12 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 
 async function handle(request: Request) {
   const key =
-    request.headers.get("apikey") ??
+    request.headers.get("x-dispatch-secret") ??
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
     "";
-  const expected =
-    process.env["SUPABASE_ANON_KEY"] ?? process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "";
-  if (!expected || key !== expected) {
+  // Dedicated server-only secret — the publishable key is public and must not gate this.
+  const expected = process.env["MAIL_DISPATCH_SECRET"] ?? "";
+  if (!expected || expected.length < 32 || key !== expected) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

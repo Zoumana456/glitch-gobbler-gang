@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   createCompany,
   joinCompanyDirect,
-  listCompaniesDirectory,
 } from "@/lib/company.functions";
 import { checkNameReservedPublic } from "@/lib/reserved-names.functions";
 
@@ -81,23 +80,15 @@ function AuthPage() {
   const { redirect } = useSearch({ from: "/auth" });
   const createCompanyFn = useServerFn(createCompany);
   const joinCompanyFn = useServerFn(joinCompanyDirect);
-  const listCompaniesFn = useServerFn(listCompaniesDirectory);
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [accountKind, setAccountKind] = useState<AccountKind>("particulier");
   const [companyName, setCompanyName] = useState("");
-  const [joinCompanyId, setJoinCompanyId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { data: companies } = useQuery({
-    queryKey: ["companies-directory"],
-    queryFn: () => listCompaniesFn(),
-    enabled: mode === "signup" && accountKind === "employee",
-    staleTime: 60_000,
-  });
 
   const checkReservedFn = useServerFn(checkNameReservedPublic);
   const [reservedInfo, setReservedInfo] = useState<{ reserved: boolean; displayName: string | null }>(
@@ -139,9 +130,6 @@ function AuthPage() {
           );
         }
 
-        if (accountKind === "employee" && !joinCompanyId) {
-          throw new Error("Choisissez votre entreprise dans la liste");
-        }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -164,7 +152,7 @@ function AuthPage() {
           }
           if (accountKind === "employee") {
             try {
-              const res = await joinCompanyFn({ data: { companyId: joinCompanyId } });
+              const res = await joinCompanyFn({ data: {} });
               toast.success(`Compte relié à ${res.companyName}`);
             } catch (err: any) {
               toast.error(err?.message ?? "Compte créé mais rattachement échoué");
@@ -376,27 +364,8 @@ function AuthPage() {
 
                   {accountKind === "employee" && (
                     <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                      <Label htmlFor="joinCompany">Votre entreprise</Label>
-                      <Select value={joinCompanyId} onValueChange={setJoinCompanyId}>
-                        <SelectTrigger id="joinCompany">
-                          <SelectValue placeholder="Rechercher votre entreprise…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(companies ?? []).length === 0 ? (
-                            <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                              Aucune entreprise enregistrée pour l'instant.
-                            </div>
-                          ) : (
-                            (companies ?? []).map((c) => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.name}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
                       <p className="text-xs text-muted-foreground">
-                        Votre compte sera rattaché automatiquement.
+                        Inscrivez-vous avec l'adresse e-mail sur laquelle votre entreprise vous a invité : votre compte sera rattaché automatiquement.
                       </p>
                     </div>
                   )}
