@@ -129,7 +129,9 @@ export const advanceAgentRun = createServerFn({ method: "POST" })
       return { done: false, status: "running" };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      if (attempt < MAX_ATTEMPTS) {
+      // Crédits épuisés / accès refusé : inutile de réessayer.
+      const terminal = /crédits ia|\(40[23]\)/i.test(msg);
+      if (!terminal && attempt < MAX_ATTEMPTS) {
         await sb.from("agent_tasks").update({ status: "retrying", error_message: msg }).eq("id", next.id);
         await audit("task_retry", { task: next.task_type, error: msg }, next.agent_code);
         return { done: false, status: "running" };
