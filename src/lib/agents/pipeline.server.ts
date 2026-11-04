@@ -105,8 +105,8 @@ export async function executeStep(
           .order("report_date");
         out.reports = (r.data ?? []).map((x: any) => ({
           ...x,
-          intro: (x.intro ?? "").slice(0, 1200),
-          conclusion: (x.conclusion ?? "").slice(0, 600),
+          intro: (x.intro ?? "").slice(0, 6000),
+          conclusion: (x.conclusion ?? "").slice(0, 3000),
         }));
         log("reports", out.reports.length, r.error?.message);
       }
