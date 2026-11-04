@@ -19,13 +19,31 @@ export const startAgentRun = createServerFn({ method: "POST" })
     const sb = context.supabase;
     if (data.period_start > data.period_end) throw new Error("La date de début doit précéder la date de fin.");
     // Protection contre les doublons : une exécution active à la fois.
-    const { data: active } = await sb
+    // Une exécution sans activité depuis 3 minutes (onglet fermé, coupure) est considérée abandonnée et annulée.
+    const { data: activeRuns } = await sb
       .from("report_runs")
-      .select("id")
+      .select("id,started_at,created_at")
       .eq("requested_by", context.userId)
-      .in("status", ["pending", "planning", "running"])
-      .limit(1);
-    if (active?.length) throw new Error("Une exécution est déjà en cours. Attendez sa fin ou annulez-la.");
+      .in("status", ["pending", "planning", "running"]);
+    const STALE_MS = 3 * 60 * 1000;
+    const active: string[] = [];
+    for (const r of activeRuns ?? []) {
+      const { data: last } = await sb
+        .from("agent_tasks")
+        .select("started_at,completed_at")
+        .eq("run_id", r.id)
+        .order("completed_at", { ascending: false, nullsFirst: false })
+        .limit(5);
+      const times = [r.started_at, r.created_at, ...(last ?? []).flatMap((t) => [t.started_at, t.completed_at])]
+        .filter(Boolean)
+        .map((t) => new Date(t as string).getTime());
+      const lastActivity = Math.max(...times);
+      if (Date.now() - lastActivity > STALE_MS) {
+        await sb.from("report_runs").update({ status: "cancelled", error_summary: "Exécution interrompue (abandonnée).", completed_at: new Date().toISOString() }).eq("id", r.id);
+        await sb.from("agent_tasks").update({ status: "cancelled" }).eq("run_id", r.id).in("status", ["pending", "retrying", "running"]);
+      } else active.push(r.id);
+    }
+    if (active.length) throw new Error("Une exécution est déjà en cours. Attendez sa fin (quelques instants) puis réessayez.");
 
     const { data: agents } = await sb.from("ai_agents").select("code,is_enabled");
     const disabled = new Set((agents ?? []).filter((a) => !a.is_enabled).map((a) => a.code));
