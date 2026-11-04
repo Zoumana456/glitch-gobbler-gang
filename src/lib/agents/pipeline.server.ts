@@ -105,8 +105,8 @@ export async function executeStep(
           .order("report_date");
         out.reports = (r.data ?? []).map((x: any) => ({
           ...x,
-          intro: (x.intro ?? "").slice(0, 1200),
-          conclusion: (x.conclusion ?? "").slice(0, 600),
+          intro: (x.intro ?? "").slice(0, 6000),
+          conclusion: (x.conclusion ?? "").slice(0, 3000),
         }));
         log("reports", out.reports.length, r.error?.message);
       }
@@ -286,7 +286,54 @@ export async function executeStep(
         );
         if (e2) throw new Error(e2.message);
       }
-      return { output: { report_id: rep.id, sections: w.sections.length }, reportId: rep.id };
+      // Annexe détaillée : tous les travaux du mois avec leurs photos (les fichiers sont réutilisés, jamais dupliqués).
+      let pos = w.sections.length;
+      let photos = 0;
+      const srcIds: string[] = (st.prepare?.reports ?? []).map((r: any) => r.id).filter(Boolean);
+      if (srcIds.length) {
+        const [{ data: srcSecs }, { data: srcImgs }] = await Promise.all([
+          sb.from("report_sections").select("id,report_id,title,description,position").in("report_id", srcIds).order("position"),
+          sb.from("report_images").select("report_id,section_id,storage_path,caption,position").in("report_id", srcIds).order("position"),
+        ]);
+        const secIds = (srcSecs ?? []).map((s: any) => s.id);
+        const { data: bullets } = secIds.length
+          ? await sb.from("section_bullets").select("section_id,content,position").in("section_id", secIds).order("position")
+          : { data: [] as any[] };
+        for (const r of st.prepare.reports) {
+          const secs = (srcSecs ?? []).filter((s: any) => s.report_id === r.id);
+          const imgs = (srcImgs ?? []).filter((i: any) => i.report_id === r.id);
+          const d = String(r.report_date ?? "").slice(0, 10).split("-").reverse().join("/");
+          const parts: string[] = [];
+          if (r.intro) parts.push(r.intro);
+          for (const s of secs) {
+            const b = (bullets ?? []).filter((x: any) => x.section_id === s.id).map((x: any) => `• ${x.content}`);
+            const t = [s.title, s.description, ...b].filter(Boolean).join("\n");
+            if (t) parts.push(t);
+          }
+          if (r.conclusion) parts.push(r.conclusion);
+          if (!parts.length && !imgs.length) continue;
+          const { data: sec, error: e3 } = await sb
+            .from("report_sections")
+            .insert({ report_id: rep.id, title: `Travaux du ${d} — ${r.title ?? ""}`.trim(), description: parts.join("\n\n"), position: pos++ })
+            .select("id")
+            .single();
+          if (e3) throw new Error(e3.message);
+          if (imgs.length) {
+            const { error: e4 } = await sb.from("report_images").insert(
+              imgs.map((im: any, i: number) => ({
+                report_id: rep.id,
+                section_id: sec.id,
+                storage_path: im.storage_path,
+                caption: im.caption ?? "",
+                position: i,
+              })),
+            );
+            if (e4) throw new Error(e4.message);
+            photos += imgs.length;
+          }
+        }
+      }
+      return { output: { report_id: rep.id, sections: pos, photos }, reportId: rep.id };
     }
   }
   throw new Error(`Étape inconnue : ${type}`);
