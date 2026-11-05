@@ -26,8 +26,11 @@ export function MonthlyReportButton({
   label: btnLabel,
   size = "default",
   variant = "default",
+  range,
 }: {
   monthKey: string;
+  /** Période libre (jours) : remplace le calcul par mois. */
+  range?: { start: string; end: string; title: string; instructions: string };
   endMonthKey?: string;
   label?: string;
   size?: "default" | "sm";
@@ -55,11 +58,11 @@ export function MonthlyReportButton({
       const { id } = await start({
         data: {
           report_type: "synthese",
-          title: combined ? `Rapport combiné — ${cap}` : `Rapport mensuel — ${cap}`,
-          instructions:
+          title: range ? range.title : combined ? `Rapport combiné — ${cap}` : `Rapport mensuel — ${cap}`,
+          instructions: range ? range.instructions :
             (combined ? "Rapport consolidé sur deux mois : synthèse globale et comparaison mois par mois (progression, continuité)" : "Rapport mensuel consolidé : synthèse de tout ce qui a été fait durant le mois") + " : (rapports journaliers, projets, tâches, dépenses). Faits marquants, réalisations, difficultés, chiffres clés, perspectives.",
-          period_start: format(first, "yyyy-MM-dd"),
-          period_end: format(endOfMonth(last), "yyyy-MM-dd"),
+          period_start: range ? range.start : format(first, "yyyy-MM-dd"),
+          period_end: range ? range.end : format(endOfMonth(last), "yyyy-MM-dd"),
           sources: ["reports", "projects", "tasks", "expenses"],
         },
       });
@@ -73,7 +76,7 @@ export function MonthlyReportButton({
       const { run: fin } = await getRun({ data: { id } });
       if (!fin?.result_report_id) throw new Error(fin?.error_summary || "La génération n'a pas abouti.");
       qc.invalidateQueries({ queryKey: ["reports"] });
-      toast.success(`Rapport mensuel ${cap} prêt`);
+      toast.success(range ? `${range.title} prêt` : `Rapport mensuel ${cap} prêt`);
       navigate({ to: "/reports/$id", params: { id: fin.result_report_id } });
     } catch (err: any) {
       toast.error(err?.message ?? "Génération impossible");
