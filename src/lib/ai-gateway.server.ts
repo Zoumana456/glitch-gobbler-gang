@@ -1,5 +1,6 @@
-// Server-only Lovable AI Gateway helper.
-// Uses LOVABLE_API_KEY (auto-provisioned) — no user-configured key.
+// Server-only AI helper.
+// Uses the user's GEMINI_API_KEY first (with model fallback chain), then
+// falls back to the Lovable AI Gateway (LOVABLE_API_KEY) if Gemini fails.
 // OpenAI-compatible chat completions endpoint.
 
 const BASE = "https://ai.gateway.lovable.dev/v1";
