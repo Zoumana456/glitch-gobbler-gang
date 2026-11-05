@@ -29,7 +29,62 @@ export type AICallOpts = {
   temperature?: number;
 };
 
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
+
+function geminiModel(m?: string): string {
+  const name = (m ?? DEFAULT_MODEL).replace(/^google\//, "");
+  if (name.includes("pro")) return "gemini-2.5-pro";
+  return "gemini-2.5-flash";
+}
+
+async function callGemini(opts: AICallOpts, key: string): Promise<string> {
+  const messages: AIMessage[] = [];
+  if (opts.system) messages.push({ role: "system", content: opts.system });
+  for (const m of opts.messages) {
+    if (typeof m.content === "string") { messages.push(m); continue; }
+    messages.push({
+      role: m.role,
+      content: m.content.map((c) =>
+        c.type === "file"
+          ? ({ type: "image_url", image_url: { url: c.file.file_data } } as ImageContent)
+          : c,
+      ),
+    });
+  }
+  const body: Record<string, unknown> = {
+    model: geminiModel(opts.model),
+    messages,
+    temperature: opts.temperature ?? 0.4,
+  };
+  if (opts.json) body.response_format = { type: "json_object" };
+  let last = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(`${GEMINI_BASE}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+      return json.choices?.[0]?.message?.content ?? "";
+    }
+    last = `${res.status} ${(await res.text().catch(() => "")).slice(0, 240)}`;
+    if (res.status !== 429 && res.status !== 503 && res.status !== 500) break;
+    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+  }
+  throw new Error(`Gemini a échoué (${last})`);
+}
+
 export async function callAI(opts: AICallOpts): Promise<string> {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      return await callGemini(opts, geminiKey);
+    } catch (e) {
+      if (!process.env.LOVABLE_API_KEY) throw e;
+      console.error("[ai] Gemini failed, falling back:", (e as Error).message);
+    }
+  }
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY manquant côté serveur");
 
