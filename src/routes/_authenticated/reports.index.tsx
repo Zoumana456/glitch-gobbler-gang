@@ -56,6 +56,7 @@ import { levelLabel } from "@/lib/reports.types";
 import { cn } from "@/lib/utils";
 import { MonthlyReportButton } from "@/components/MonthlyReportButton";
 import { CombineMonthsButton } from "@/components/CombineMonthsButton";
+import { CombineDaysButton } from "@/components/CombineDaysButton";
 import { parseISO, format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -289,6 +290,7 @@ function ReportsListPage() {
           )}
           <MonthlyReportButton monthKey={currentMonthKey} variant="outline" />
           <CombineMonthsButton />
+          <CombineDaysButton />
           <Button asChild>
             <Link to="/reports/new" search={{}}>
               <Plus className="h-4 w-4 mr-2" />
