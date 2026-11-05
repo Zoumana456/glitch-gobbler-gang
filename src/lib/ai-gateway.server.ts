@@ -33,8 +33,8 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
 
 function geminiModel(m?: string): string {
   const name = (m ?? DEFAULT_MODEL).replace(/^google\//, "");
-  if (name.includes("pro")) return "gemini-2.5-pro";
-  return "gemini-2.5-flash";
+  if (name.includes("pro")) return "gemini-pro-latest";
+  return "gemini-flash-latest";
 }
 
 async function callGemini(opts: AICallOpts, key: string): Promise<string> {
