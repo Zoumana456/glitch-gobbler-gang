@@ -1,5 +1,6 @@
-// Server-only Lovable AI Gateway helper.
-// Uses LOVABLE_API_KEY (auto-provisioned) — no user-configured key.
+// Server-only AI helper.
+// Uses the user's GEMINI_API_KEY first (with model fallback chain), then
+// falls back to the Lovable AI Gateway (LOVABLE_API_KEY) if Gemini fails.
 // OpenAI-compatible chat completions endpoint.
 
 const BASE = "https://ai.gateway.lovable.dev/v1";
@@ -29,7 +30,70 @@ export type AICallOpts = {
   temperature?: number;
 };
 
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
+
+function geminiModel(m?: string): string {
+  const name = (m ?? DEFAULT_MODEL).replace(/^google\//, "");
+  if (name.includes("pro")) return "gemini-pro-latest";
+  return "gemini-flash-latest";
+}
+
+function geminiChain(m?: string): string[] {
+  const first = geminiModel(m);
+  const rest = first.includes("pro")
+    ? ["gemini-3.1-pro-preview", "gemini-flash-latest", "gemini-3-flash-preview", "gemini-3.1-flash-lite"]
+    : ["gemini-3-flash-preview", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
+  return [first, ...rest];
+}
+
+async function callGemini(opts: AICallOpts, key: string): Promise<string> {
+  const messages: AIMessage[] = [];
+  if (opts.system) messages.push({ role: "system", content: opts.system });
+  for (const m of opts.messages) {
+    if (typeof m.content === "string") { messages.push(m); continue; }
+    messages.push({
+      role: m.role,
+      content: m.content.map((c) =>
+        c.type === "file"
+          ? ({ type: "image_url", image_url: { url: c.file.file_data } } as ImageContent)
+          : c,
+      ),
+    });
+  }
+  const body: Record<string, unknown> = {
+    model: geminiModel(opts.model),
+    messages,
+    temperature: opts.temperature ?? 0.4,
+  };
+  if (opts.json) body.response_format = { type: "json_object" };
+  let last = "";
+  for (const model of geminiChain(opts.model)) {
+    body.model = model;
+    const res = await fetch(`${GEMINI_BASE}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+      return json.choices?.[0]?.message?.content ?? "";
+    }
+    last = `${res.status} ${(await res.text().catch(() => "")).slice(0, 240)}`;
+    if (![404, 429, 500, 503].includes(res.status)) break;
+  }
+  throw new Error(`Gemini a échoué (${last})`);
+}
+
 export async function callAI(opts: AICallOpts): Promise<string> {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      return await callGemini(opts, geminiKey);
+    } catch (e) {
+      if (!process.env.LOVABLE_API_KEY) throw e;
+      console.error("[ai] Gemini failed, falling back:", (e as Error).message);
+    }
+  }
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY manquant côté serveur");
 
