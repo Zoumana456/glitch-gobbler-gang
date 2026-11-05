@@ -37,6 +37,14 @@ function geminiModel(m?: string): string {
   return "gemini-flash-latest";
 }
 
+function geminiChain(m?: string): string[] {
+  const first = geminiModel(m);
+  const rest = first.includes("pro")
+    ? ["gemini-3.1-pro-preview", "gemini-flash-latest", "gemini-3-flash-preview", "gemini-3.1-flash-lite"]
+    : ["gemini-3-flash-preview", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
+  return [first, ...rest];
+}
+
 async function callGemini(opts: AICallOpts, key: string): Promise<string> {
   const messages: AIMessage[] = [];
   if (opts.system) messages.push({ role: "system", content: opts.system });
@@ -58,7 +66,8 @@ async function callGemini(opts: AICallOpts, key: string): Promise<string> {
   };
   if (opts.json) body.response_format = { type: "json_object" };
   let last = "";
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (const model of geminiChain(opts.model)) {
+    body.model = model;
     const res = await fetch(`${GEMINI_BASE}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
@@ -69,8 +78,7 @@ async function callGemini(opts: AICallOpts, key: string): Promise<string> {
       return json.choices?.[0]?.message?.content ?? "";
     }
     last = `${res.status} ${(await res.text().catch(() => "")).slice(0, 240)}`;
-    if (res.status !== 429 && res.status !== 503 && res.status !== 500) break;
-    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+    if (![404, 429, 500, 503].includes(res.status)) break;
   }
   throw new Error(`Gemini a échoué (${last})`);
 }
