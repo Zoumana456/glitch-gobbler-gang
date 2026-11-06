@@ -116,9 +116,16 @@ export type LoadedReport = {
   period_label?: string;
   counterparty?: string;
   budget_lines?: BudgetLine[];
+  signature?: ReportSignature | null;
 };
 
-
+export type ReportSignature = {
+  signature_image: string | null;
+  stamp_image: string | null;
+  signer_name: string;
+  signer_role: string;
+  signed_at: string;
+};
 
 export type ReportListItem = {
   id: string;

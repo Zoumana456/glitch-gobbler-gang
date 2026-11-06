@@ -277,7 +277,7 @@ function ReportsListPage() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {selected.size > 0 && (
             <Button
               variant="outline"

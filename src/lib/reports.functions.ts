@@ -298,7 +298,51 @@ export const getReport = createServerFn({ method: "GET" })
       period_label: report.period_label ?? "",
       counterparty: report.counterparty ?? "",
       budget_lines: mapBudgetLines(budgetLines),
+      signature: (report as any).signed_at
+        ? {
+            signature_image: (report as any).signature_image ?? null,
+            stamp_image: (report as any).stamp_image ?? null,
+            signer_name: (report as any).signer_name ?? "",
+            signer_role: (report as any).signer_role ?? "",
+            signed_at: (report as any).signed_at,
+          }
+        : null,
     } as LoadedReport;
+  });
+
+const dataUrl = z
+  .string()
+  .max(1_500_000)
+  .regex(/^data:image\/(png|jpeg|webp);base64,/)
+  .nullable();
+
+export const signReport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        clear: z.boolean().optional(),
+        signature_image: dataUrl.optional(),
+        stamp_image: dataUrl.optional(),
+        signer_name: z.string().max(120).optional(),
+        signer_role: z.string().max(120).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const patch = data.clear
+      ? { signature_image: null, stamp_image: null, signer_name: null, signer_role: null, signed_at: null }
+      : {
+          signature_image: data.signature_image ?? null,
+          stamp_image: data.stamp_image ?? null,
+          signer_name: data.signer_name ?? "",
+          signer_role: data.signer_role ?? "",
+          signed_at: new Date().toISOString(),
+        };
+    const { error } = await context.supabase.from("reports").update(patch as any).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 function mapBudgetLines(rows: any[] | null | undefined) {

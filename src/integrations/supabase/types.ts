@@ -2459,6 +2459,11 @@ export type Database = {
           report_date: string
           share_expires_at: string | null
           share_token: string | null
+          signature_image: string | null
+          signed_at: string | null
+          signer_name: string | null
+          signer_role: string | null
+          stamp_image: string | null
           status: string
           submitted_at: string | null
           tax_rate: number
@@ -2485,6 +2490,11 @@ export type Database = {
           report_date: string
           share_expires_at?: string | null
           share_token?: string | null
+          signature_image?: string | null
+          signed_at?: string | null
+          signer_name?: string | null
+          signer_role?: string | null
+          stamp_image?: string | null
           status?: string
           submitted_at?: string | null
           tax_rate?: number
@@ -2511,6 +2521,11 @@ export type Database = {
           report_date?: string
           share_expires_at?: string | null
           share_token?: string | null
+          signature_image?: string | null
+          signed_at?: string | null
+          signer_name?: string | null
+          signer_role?: string | null
+          stamp_image?: string | null
           status?: string
           submitted_at?: string | null
           tax_rate?: number
