@@ -15,6 +15,13 @@
       "when": 1793649781163,
       "tag": "0001_lock_down_permissive_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793965603764,
+      "tag": "0002_report_signature",
+      "breakpoints": true
     }
   ]
 }
