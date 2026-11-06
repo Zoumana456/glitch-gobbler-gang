@@ -37,6 +37,8 @@ import { formatLongDate } from "@/lib/date-utils";
 import { Lightbox } from "@/components/Lightbox";
 import { AttachmentsView } from "@/components/AttachmentUploader";
 import { ReportNotes } from "@/components/ReportNotes";
+import { ReportSignaturePanel } from "@/components/reports/ReportSignaturePanel";
+import { SendReportButtons } from "@/components/reports/SendReportButtons";
 import { ReportWorkflowCard, ReportStatusBadge } from "@/components/ReportWorkflowCard";
 import { getApprovalTimeline } from "@/lib/approvals.functions";
 
@@ -369,6 +371,7 @@ function ReportDetailPage() {
             <LinkIcon className="h-4 w-4 mr-2" />
             Lien de partage
           </Button>
+          {isMine && <SendReportButtons reportId={r.id} title={r.title} date={r.report_date} />}
           <Button
             variant="outline"
             onClick={handleDuplicate}
@@ -541,6 +544,13 @@ function ReportDetailPage() {
       {r.general_attachments && r.general_attachments.length > 0 && (
         <AttachmentsView attachments={r.general_attachments} />
       )}
+
+      <ReportSignaturePanel
+        reportId={r.id}
+        signature={r.signature}
+        defaultName={r.author_name}
+        canSign={canEdit}
+      />
 
       <ReportNotes
         reportId={r.id}
