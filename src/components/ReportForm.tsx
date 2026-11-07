@@ -42,6 +42,7 @@ import { toast } from "sonner";
 import { fr } from "date-fns/locale";
 import { parseISO, format } from "date-fns";
 import type { LoadedReport } from "@/lib/reports.types";
+import { REPORT_TEMPLATES } from "@/lib/report-templates";
 
 type FormBullet = { key: string; content: string };
 type FormImage = {
@@ -599,6 +600,43 @@ export function ReportForm({ initial }: { initial?: LoadedReport }) {
           Assistant IA
         </Button>
       </div>
+
+      {!form.id && (
+        <Card>
+          <CardContent className="py-5 space-y-3">
+            <div className="font-medium">Partir d'un modèle</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {REPORT_TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className="rounded-md border border-border p-3 text-left hover:bg-accent transition-colors"
+                  onClick={() =>
+                    setForm((p) => ({
+                      ...p,
+                      title: p.title || t.title,
+                      sections: [
+                        ...p.sections.filter((s) => s.description || s.bullets.length || s.images.length || s.attachments.length),
+                        ...t.sections.map((s) => ({
+                          key: nextKey(),
+                          title: s.title,
+                          description: "",
+                          bullets: [],
+                          images: [],
+                          attachments: [],
+                        })),
+                      ],
+                    }))
+                  }
+                >
+                  <div className="text-sm font-medium">{t.label}</div>
+                  <div className="text-xs text-muted-foreground">{t.description}</div>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Import PDF */}
       <Card>

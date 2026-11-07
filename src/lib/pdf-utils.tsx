@@ -238,6 +238,24 @@ function ReportPdfDocument({
             <AttachmentList items={report.general_attachments} />
           </View>
         )}
+        {report.signature && (
+          <View wrap={false} style={{ marginTop: 24, flexDirection: "row", justifyContent: "flex-end", alignItems: "flex-end" }}>
+            <View style={{ marginRight: 16 }}>
+              <Text style={{ fontSize: 8, color: "#6b7280" }}>LU ET APPROUVÉ</Text>
+              <Text style={{ fontSize: 10, fontWeight: 700 }}>{report.signature.signer_name}</Text>
+              {report.signature.signer_role ? <Text style={{ fontSize: 9, color: "#6b7280" }}>{report.signature.signer_role}</Text> : null}
+              <Text style={{ fontSize: 8, color: "#6b7280" }}>
+                Le {new Date(report.signature.signed_at).toLocaleDateString("fr-FR")} à {new Date(report.signature.signed_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+              </Text>
+            </View>
+            {report.signature.signature_image ? (
+              <Image src={report.signature.signature_image} style={{ width: 120, height: 60, objectFit: "contain" }} />
+            ) : null}
+            {report.signature.stamp_image ? (
+              <Image src={report.signature.stamp_image} style={{ width: 70, height: 70, objectFit: "contain", marginLeft: 8 }} />
+            ) : null}
+          </View>
+        )}
       </Page>
 
     </Document>
