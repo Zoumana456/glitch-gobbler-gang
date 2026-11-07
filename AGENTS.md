@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 - AI report agents: orchestrator advances one agent_tasks step per server call (src/lib/agents); numbers are computed deterministically, AI only plans and writes — keeps runs traceable and within worker time limits.
 - Report assistant edits drafts via atomic patch operations applied by src/lib/report-patch.ts (AI never rewrites the full report) — guarantees untouched content and photos survive edits.
+- Consolidation collects only reports with null period_start and period_end; generated summaries always set both — prevents recursive work and photo duplication without changing existing reports.
+- Validate combined-report dates in the shared range helper before formatting or enabling generation — native date inputs can be temporarily empty.
