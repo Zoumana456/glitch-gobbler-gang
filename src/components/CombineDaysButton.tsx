@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CalendarDays } from "lucide-react";
-import { format, subDays, startOfWeek, endOfWeek, subWeeks, differenceInCalendarDays, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import { format, subDays, startOfWeek, endOfWeek, subWeeks } from "date-fns";
+import { combinedReportRange } from "@/lib/combined-report-range";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,8 +14,7 @@ export function CombineDaysButton() {
   const today = new Date();
   const [start, setStart] = useState(iso(startOfWeek(today, { weekStartsOn: 1 })));
   const [end, setEnd] = useState(iso(today));
-  const [a, b] = start <= end ? [start, end] : [end, start];
-  const days = differenceInCalendarDays(parseISO(b), parseISO(a)) + 1;
+  const range = combinedReportRange(start, end);
 
   const presets = [
     { label: "Cette semaine", s: startOfWeek(today, { weekStartsOn: 1 }), e: today },
@@ -24,10 +23,6 @@ export function CombineDaysButton() {
     { label: "14 derniers jours", s: subDays(today, 13), e: today },
   ];
 
-  const fmt = (d: string) => format(parseISO(d), "d MMM yyyy", { locale: fr });
-  const weekly = days === 7;
-  const title = `${weekly ? "Rapport hebdomadaire" : `Rapport combiné — ${days} jour${days > 1 ? "s" : ""}`} — du ${fmt(a)} au ${fmt(b)}`;
-  const instructions = `Rapport consolidé sur ${days} jour(s) (${fmt(a)} → ${fmt(b)}) : synthèse globale et progression jour par jour, à partir des rapports journaliers, projets, tâches et dépenses. Faits marquants, réalisations, difficultés, chiffres clés, perspectives.`;
 
   return (
     <Dialog>
@@ -52,13 +47,13 @@ export function CombineDaysButton() {
           </label>
         </div>
         <p className="text-sm text-muted-foreground">
-          {days} jour{days > 1 ? "s" : ""} couvert{days > 1 ? "s" : ""}. Toute l'activité de la période sera reprise.
+          {range ? `${range.days} jour${range.days > 1 ? "s" : ""} couvert${range.days > 1 ? "s" : ""}. Toute l'activité de la période sera reprise.` : "Renseignez deux dates valides."}
         </p>
-        <MonthlyReportButton
-          monthKey={a.slice(0, 7)}
-          range={{ start: a, end: b, title, instructions }}
+        {range ? <MonthlyReportButton
+          monthKey={range.start.slice(0, 7)}
+          range={range}
           label="Générer le rapport"
-        />
+        /> : <Button disabled>Générer le rapport</Button>}
       </DialogContent>
     </Dialog>
   );
