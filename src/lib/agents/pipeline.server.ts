@@ -100,6 +100,9 @@ export async function executeStep(
           .from("reports")
           .select("id,title,report_date,intro,conclusion,status")
           .eq("author_id", run.requested_by)
+          // Generated summaries carry a period; only original daily reports are sources.
+          .is("period_start", null)
+          .is("period_end", null)
           .gte("report_date", run.period_start)
           .lte("report_date", run.period_end)
           .order("report_date");
