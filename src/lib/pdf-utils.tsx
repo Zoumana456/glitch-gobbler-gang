@@ -77,8 +77,8 @@ const styles = StyleSheet.create({
   bulletDot: { width: 12 },
   bulletText: { flex: 1 },
   imageRow: { flexDirection: "row", flexWrap: "wrap", marginTop: 12 },
-  imageBox: { width: "23.5%", marginRight: "2%", marginBottom: 10 },
-  image: { width: "100%", height: 115, objectFit: "cover", backgroundColor: "#f3f4f6", borderRadius: 6 },
+  imageBox: { width: 120, marginRight: 9, marginBottom: 10 },
+  image: { width: 120, height: 115, backgroundColor: "#f3f4f6" },
   imageCaption: { fontSize: 9, color: "#4b5563", marginTop: 3, textAlign: "center" },
 });
 
