@@ -206,7 +206,7 @@ function ReportPdfDocument({
               </View>
             )),
             ...rows.map((row, r) => (
-              <View key={`${s.id}-r${r}`} wrap={false} style={{ flexDirection: "row", marginTop: r === 0 ? 8 : 0, marginBottom: 10 }}>
+              <View key={`${s.id}-r${r}`} style={{ flexDirection: "row", marginTop: r === 0 ? 8 : 0, marginBottom: 10 }}>
                 {row.map((img, i) => (
                   <View key={img.id} style={[styles.imageBox, { marginBottom: 0 }, i === 3 ? { marginRight: 0 } : {}]}>
                     <Image src={img.url} style={styles.image} />
