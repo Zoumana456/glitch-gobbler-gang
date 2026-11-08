@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     flexDirection: "row",
     justifyContent: "space-between",
-    // x
+    borderTop: "1 solid #e5e7eb",
     paddingTop: 6,
   },
   header: { marginBottom: 28, borderBottom: "2 solid #2563eb", paddingBottom: 14 },
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   bulletText: { flex: 1 },
   imageRow: { flexDirection: "row", flexWrap: "wrap", marginTop: 12 },
   imageBox: { width: "23.5%", marginRight: "2%", marginBottom: 10 },
-  image: { width: "100%", height: 115, objectFit: "cover", backgroundColor: "#f3f4f6" },
+  image: { width: "100%", height: 115, objectFit: "cover", backgroundColor: "#f3f4f6", borderRadius: 6 },
   imageCaption: { fontSize: 9, color: "#4b5563", marginTop: 3, textAlign: "center" },
 });
 
@@ -131,7 +131,7 @@ function AttachmentList({ items }: { items: { id: string; file_name: string }[] 
   return (
     <View style={{ marginTop: 8 }}>
       {items.map((a) => (
-        <View style={styles.bullet} key={a.id} wrap={false}>
+        <View style={styles.bullet} key={a.id}>
           <Text style={styles.bulletDot}>•</Text>
           <Text style={styles.bulletText}>{a.file_name}</Text>
         </View>
@@ -200,7 +200,7 @@ function ReportPdfDocument({
               <Text key={`${s.id}-p${i}`} style={styles.para}>{p}</Text>
             )),
             ...s.bullets.map((b) => (
-              <View style={styles.bullet} key={b.id} wrap={false}>
+              <View style={styles.bullet} key={b.id}>
                 <Text style={styles.bulletDot}>•</Text>
                 <Text style={styles.bulletText}>{b.content}</Text>
               </View>
