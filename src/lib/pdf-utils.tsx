@@ -1,3 +1,4 @@
+import "./buffer-polyfill";
 import {
   Document,
   Page,
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     flexDirection: "row",
     justifyContent: "space-between",
-    borderBottom: "1 solid #e5e7eb",
+    /*rh*/
     paddingBottom: 6,
   },
   runningFooter: {
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
     borderTop: "1 solid #e5e7eb",
     paddingTop: 6,
   },
-  header: { marginBottom: 28, borderBottom: "2 solid #2563eb", paddingBottom: 14 },
+  header: { marginBottom: 28, paddingBottom: 14 },
   date: { fontSize: 10, color: "#6b7280", marginBottom: 4 },
   title: { fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 6, lineHeight: 1.3 },
   author: { fontSize: 10, color: "#6b7280" },
@@ -76,8 +77,8 @@ const styles = StyleSheet.create({
   bulletDot: { width: 12 },
   bulletText: { flex: 1 },
   imageRow: { flexDirection: "row", flexWrap: "wrap", marginTop: 12 },
-  imageBox: { width: "23.5%", marginRight: "2%", marginBottom: 10 },
-  image: { width: "100%", height: 115, objectFit: "cover", backgroundColor: "#f3f4f6", borderRadius: 6 },
+  imageBox: { width: 120, marginRight: 9, marginBottom: 10 },
+  image: { width: 120, height: 115, backgroundColor: "#f3f4f6" },
   imageCaption: { fontSize: 9, color: "#4b5563", marginTop: 3, textAlign: "center" },
 });
 
@@ -189,8 +190,9 @@ function ReportPdfDocument({
           for (let i = 0; i < list.length; i += 4) rows.push(list.slice(i, i + 4));
           return [
             s.title ? (
-              <View key={`${s.id}-h`} wrap={false} style={{ marginTop: 10 }}>
-                <Text style={styles.h2}>{s.title}</Text>
+              <View key={`${s.id}-h`} style={{ marginTop: 10 }}>
+                {/* Never wrap={false} here: a long first paragraph taller than a page breaks the layout engine. */}
+                <Text style={styles.h2} minPresenceAhead={60}>{s.title}</Text>
                 {paras[0] ? <Text style={styles.para}>{paras[0]}</Text> : null}
               </View>
             ) : null,
