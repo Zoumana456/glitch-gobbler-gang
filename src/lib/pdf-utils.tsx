@@ -189,8 +189,9 @@ function ReportPdfDocument({
           for (let i = 0; i < list.length; i += 4) rows.push(list.slice(i, i + 4));
           return [
             s.title ? (
-              <View key={`${s.id}-h`} wrap={false} style={{ marginTop: 10 }}>
-                <Text style={styles.h2}>{s.title}</Text>
+              <View key={`${s.id}-h`} style={{ marginTop: 10 }}>
+                {/* Never wrap={false} here: a long first paragraph taller than a page breaks the layout engine. */}
+                <Text style={styles.h2} minPresenceAhead={60}>{s.title}</Text>
                 {paras[0] ? <Text style={styles.para}>{paras[0]}</Text> : null}
               </View>
             ) : null,
