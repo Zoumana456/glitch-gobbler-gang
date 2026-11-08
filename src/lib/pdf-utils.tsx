@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: "#111827",
   },
-  para: { marginBottom: 12, textAlign: "justify" },
+  para: { marginBottom: 12 },
   bullet: { flexDirection: "row", marginBottom: 10 },
   bulletDot: { width: 12 },
   bulletText: { flex: 1 },
