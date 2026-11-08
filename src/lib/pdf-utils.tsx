@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     flexDirection: "row",
     justifyContent: "space-between",
-    borderBottom: "1 solid #e5e7eb",
+    /*rh*/
     paddingBottom: 6,
   },
   runningFooter: {
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     borderTop: "1 solid #e5e7eb",
     paddingTop: 6,
   },
-  header: { marginBottom: 28, borderBottom: "2 solid #2563eb", paddingBottom: 14 },
+  header: { marginBottom: 28, paddingBottom: 14 },
   date: { fontSize: 10, color: "#6b7280", marginBottom: 4 },
   title: { fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 6, lineHeight: 1.3 },
   author: { fontSize: 10, color: "#6b7280" },
