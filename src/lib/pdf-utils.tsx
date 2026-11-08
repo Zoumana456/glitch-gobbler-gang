@@ -1,3 +1,4 @@
+import "./buffer-polyfill";
 import {
   Document,
   Page,
