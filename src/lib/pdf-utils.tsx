@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: "#111827",
   },
-  para: { marginBottom: 12 },
+  para: { marginBottom: 12, textAlign: "justify" },
   bullet: { flexDirection: "row", marginBottom: 10 },
   bulletDot: { width: 12 },
   bulletText: { flex: 1 },
@@ -192,7 +192,7 @@ function ReportPdfDocument({
             s.title ? (
               <View key={`${s.id}-h`} style={{ marginTop: 10 }}>
                 {/* Never wrap={false} here: a long first paragraph taller than a page breaks the layout engine. */}
-                <Text style={styles.h2} minPresenceAhead={60}>{s.title}</Text>
+                <Text style={styles.h2}>{s.title}</Text>
                 {paras[0] ? <Text style={styles.para}>{paras[0]}</Text> : null}
               </View>
             ) : null,
