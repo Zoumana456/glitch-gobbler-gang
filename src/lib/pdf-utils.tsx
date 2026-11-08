@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     flexDirection: "row",
     justifyContent: "space-between",
-    borderBottom: "1 solid #e5e7eb",
+    // no border
     paddingBottom: 6,
   },
   runningFooter: {
