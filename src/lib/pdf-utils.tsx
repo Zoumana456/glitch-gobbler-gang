@@ -131,7 +131,7 @@ function AttachmentList({ items }: { items: { id: string; file_name: string }[] 
   return (
     <View style={{ marginTop: 8 }}>
       {items.map((a) => (
-        <View style={styles.bullet} key={a.id}>
+        <View style={styles.bullet} key={a.id} wrap={false}>
           <Text style={styles.bulletDot}>•</Text>
           <Text style={styles.bulletText}>{a.file_name}</Text>
         </View>
@@ -192,7 +192,7 @@ function ReportPdfDocument({
             s.title ? (
               <View key={`${s.id}-h`} style={{ marginTop: 10 }}>
                 {/* Never wrap={false} here: a long first paragraph taller than a page breaks the layout engine. */}
-                <Text style={styles.h2}>{s.title}</Text>
+                <Text style={styles.h2} minPresenceAhead={60}>{s.title}</Text>
                 {paras[0] ? <Text style={styles.para}>{paras[0]}</Text> : null}
               </View>
             ) : null,
@@ -200,13 +200,13 @@ function ReportPdfDocument({
               <Text key={`${s.id}-p${i}`} style={styles.para}>{p}</Text>
             )),
             ...s.bullets.map((b) => (
-              <View style={styles.bullet} key={b.id}>
+              <View style={styles.bullet} key={b.id} wrap={false}>
                 <Text style={styles.bulletDot}>•</Text>
                 <Text style={styles.bulletText}>{b.content}</Text>
               </View>
             )),
             ...rows.map((row, r) => (
-              <View key={`${s.id}-r${r}`} style={{ flexDirection: "row", marginTop: r === 0 ? 8 : 0, marginBottom: 10 }}>
+              <View key={`${s.id}-r${r}`} wrap={false} style={{ flexDirection: "row", marginTop: r === 0 ? 8 : 0, marginBottom: 10 }}>
                 {row.map((img, i) => (
                   <View key={img.id} style={[styles.imageBox, { marginBottom: 0 }, i === 3 ? { marginRight: 0 } : {}]}>
                     <Image src={img.url} style={styles.image} />
