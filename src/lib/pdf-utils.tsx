@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     flexDirection: "row",
     justifyContent: "space-between",
-    /*rh*/
+    borderBottom: "1 solid #e5e7eb",
     paddingBottom: 6,
   },
   runningFooter: {
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     borderTop: "1 solid #e5e7eb",
     paddingTop: 6,
   },
-  header: { marginBottom: 28, paddingBottom: 14 },
+  header: { marginBottom: 28, borderBottom: "2 solid #2563eb", paddingBottom: 14 },
   date: { fontSize: 10, color: "#6b7280", marginBottom: 4 },
   title: { fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 6, lineHeight: 1.3 },
   author: { fontSize: 10, color: "#6b7280" },
@@ -336,9 +336,54 @@ export async function generateReportPdfBlob(
     return await pdf(<BudgetPdfDocument report={report} />).toBlob();
   }
   const prepared = await inlineReportImages(report);
-  return await pdf(
-    <ReportPdfDocument report={prepared} approvals={approvals} />,
-  ).toBlob();
+  try {
+    return await pdf(<ReportPdfDocument report={prepared} approvals={approvals} />).toBlob();
+  } catch (e) {
+    // Very long reports can trip a page-layout bug in the PDF engine.
+    // Fallback: render the report in smaller parts and join them into one file.
+    if (prepared.sections.length < 2) throw e;
+    return await generateInParts(prepared, approvals);
+  }
+}
+
+async function generateInParts(report: LoadedReport, approvals?: ApprovalEntry[]): Promise<Blob> {
+  const parts: LoadedReport[] = [];
+  const sizes = [6, 4, 2, 1];
+  const renderPart = async (r: LoadedReport) =>
+    new Uint8Array(await (await pdf(<ReportPdfDocument report={r} approvals={approvals} />).toBlob()).arrayBuffer());
+  const out = await PDFDocument.create();
+  const n = report.sections.length;
+  let i = 0;
+  while (i < n) {
+    let done = false;
+    for (const size of sizes) {
+      const end = Math.min(n, i + size);
+      const part: LoadedReport = {
+        ...report,
+        intro: i === 0 ? report.intro : "",
+        sections: report.sections.slice(i, end),
+        conclusion: end === n ? report.conclusion : "",
+        general_images: end === n ? report.general_images : [],
+        general_attachments: end === n ? report.general_attachments : [],
+        signature: end === n ? report.signature : null,
+        __continuation: i > 0,
+      } as any;
+      try {
+        const bytes = await renderPart(part);
+        const doc = await PDFDocument.load(bytes);
+        const pages = await out.copyPages(doc, doc.getPageIndices());
+        pages.forEach((p) => out.addPage(p));
+        parts.push(part);
+        i = end;
+        done = true;
+        break;
+      } catch (err) {
+        if (size === 1) throw err;
+      }
+    }
+    if (!done) break;
+  }
+  return new Blob([await out.save()], { type: "application/pdf" });
 }
 
 export async function downloadReportPdf(
