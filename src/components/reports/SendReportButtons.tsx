@@ -4,6 +4,10 @@ import { toast } from "sonner";
 import { Loader2, Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { enableShare, getShareToken } from "@/lib/reports.functions";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { mailStatus } from "@/lib/mail/mail.functions";
+import { ComposeMailDialog, type ComposeSeed } from "@/components/mail/ComposeMailDialog";
 
 export function SendReportButtons({
   reportId,
@@ -17,6 +21,11 @@ export function SendReportButtons({
   const getToken = useServerFn(getShareToken);
   const enable = useServerFn(enableShare);
   const [busy, setBusy] = useState<null | "wa" | "mail">(null);
+  const statusFn = useServerFn(mailStatus);
+  const navigate = useNavigate();
+  const { data: mail } = useQuery({ queryKey: ["mail", "status"], queryFn: () => statusFn() });
+  const accounts = (mail?.accounts ?? []) as any[];
+  const [seed, setSeed] = useState<ComposeSeed | null>(null);
 
   async function link(): Promise<string> {
     let token: string | null = null;
@@ -47,7 +56,12 @@ export function SendReportButtons({
         if (win) win.location.href = target;
         else window.location.href = target;
       } else {
-        window.location.href = `mailto:?subject=${encodeURIComponent(`Rapport : ${title}`)}&body=${encodeURIComponent(body)}`;
+        if (accounts.length === 0) {
+          toast.info("Connectez d'abord votre boîte e-mail pour envoyer le rapport.");
+          navigate({ to: "/mail" });
+        } else {
+          setSeed({ subject: `Rapport : ${title}`, body });
+        }
       }
     } catch (e: any) {
       win?.close();
@@ -67,6 +81,14 @@ export function SendReportButtons({
         {busy === "mail" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Mail className="h-4 w-4 mr-2" />}
         Email
       </Button>
+      {seed && (
+        <ComposeMailDialog
+          open={!!seed}
+          onOpenChange={(v) => !v && setSeed(null)}
+          accounts={accounts}
+          seed={seed}
+        />
+      )}
     </>
   );
 }
