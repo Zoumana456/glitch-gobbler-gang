@@ -8,7 +8,7 @@ import {
   Image,
   pdf,
 } from "@react-pdf/renderer";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Font } from "@react-pdf/renderer";
 Font.registerHyphenationCallback((word) => [word]);
 const REPORT_LOGO_URL = () =>
@@ -160,12 +160,15 @@ function ReportPdfDocument({
         />
         <View fixed style={styles.runningFooter}>
           <Text>Par {report.author_name}</Text>
-          <Text
-            render={({ pageNumber, totalPages }) =>
-              `${pageNumber} / ${totalPages}`
-            }
-          />
+          {(report as any).__parts ? null : (
+            <Text
+              render={({ pageNumber, totalPages }) =>
+                `${pageNumber} / ${totalPages}`
+              }
+            />
+          )}
         </View>
+        {(report as any).__continuation ? null : (
         <View style={styles.header}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <Image src={REPORT_LOGO_URL()} style={{ width: 70, height: 60, objectFit: "contain" }} />
@@ -174,6 +177,7 @@ function ReportPdfDocument({
           <Text style={styles.title}>{report.title}</Text>
           <Text style={styles.author}>Par {report.author_name}</Text>
         </View>
+        )}
 
 
         {report.intro && (
@@ -367,6 +371,7 @@ async function generateInParts(report: LoadedReport, approvals?: ApprovalEntry[]
         general_attachments: end === n ? report.general_attachments : [],
         signature: end === n ? report.signature : null,
         __continuation: i > 0,
+        __parts: true,
       } as any;
       try {
         const bytes = await renderPart(part);
@@ -383,7 +388,15 @@ async function generateInParts(report: LoadedReport, approvals?: ApprovalEntry[]
     }
     if (!done) break;
   }
-  return new Blob([await out.save()], { type: "application/pdf" });
+  // Page numbers across the whole merged file, matching the normal footer position.
+  const font = await out.embedFont(StandardFonts.Helvetica);
+  const all = out.getPages();
+  all.forEach((page, idx) => {
+    const label = `${idx + 1} / ${all.length}`;
+    const { width } = page.getSize();
+    page.drawText(label, { x: width - 44 - font.widthOfTextAtSize(label, 9), y: 24 + 4, size: 9, font, color: rgb(0.61, 0.64, 0.69) });
+  });
+  return new Blob([(await out.save()) as BlobPart], { type: "application/pdf" });
 }
 
 export async function downloadReportPdf(
