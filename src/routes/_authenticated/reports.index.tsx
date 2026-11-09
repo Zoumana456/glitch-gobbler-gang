@@ -20,6 +20,8 @@ import {
   Search,
   ChevronDown,
   ShieldCheck,
+  Layers,
+  Loader2,
 
   
 } from "lucide-react";
@@ -136,6 +138,12 @@ function ReportsListPage() {
         .some((s) => s.toLowerCase().includes(q));
     });
   }, [query.data, search, scope, user.id, monthFrom, monthTo]);
+
+  const summaries = useMemo(
+    () => filtered.filter((r) => r.period_start && r.period_end),
+    [filtered],
+  );
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { label: string; items: typeof filtered }>();
@@ -422,6 +430,63 @@ function ReportsListPage() {
             Aucun rapport ne correspond aux filtres sélectionnés.
           </CardContent>
         </Card>
+      )}
+
+      {summaries.length > 0 && (
+        <section className="mb-10">
+          <h2 className="mb-3 pb-2 border-b border-border flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-foreground">
+            <Layers className="h-4 w-4 text-primary" />
+            Rapports combinés
+            <span className="text-xs font-normal normal-case tracking-normal text-muted-foreground">
+              ({summaries.length})
+            </span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {summaries.map((r) => (
+              <Card key={r.id} className="flex flex-col border-primary/30">
+                <CardContent className="p-5 flex flex-col flex-1 gap-2">
+                  <Badge variant="secondary" className="w-fit">
+                    Du {formatLongDate(r.period_start!)} au {formatLongDate(r.period_end!)}
+                  </Badge>
+                  <Link
+                    to="/reports/$id"
+                    params={{ id: r.id }}
+                    className="font-semibold leading-snug hover:text-primary transition-colors line-clamp-2"
+                  >
+                    {r.title}
+                  </Link>
+                  <div className="mt-auto flex flex-wrap gap-2 pt-2">
+                    <Button asChild size="sm" variant="outline">
+                      <Link to="/reports/$id" params={{ id: r.id }}>
+                        <Eye className="h-4 w-4 mr-1.5" />
+                        Voir
+                      </Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={downloadingId === r.id}
+                      onClick={async () => {
+                        setDownloadingId(r.id);
+                        try {
+                          await handleDownloadOne(r.id);
+                        } finally {
+                          setDownloadingId(null);
+                        }
+                      }}
+                    >
+                      {downloadingId === r.id ? (
+                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-1.5" />
+                      )}
+                      {downloadingId === r.id ? "Préparation…" : "Télécharger PDF"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
       )}
 
       {grouped.map((group) => {
