@@ -8,7 +8,7 @@ import {
   Image,
   pdf,
 } from "@react-pdf/renderer";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Font } from "@react-pdf/renderer";
 Font.registerHyphenationCallback((word) => [word]);
 const REPORT_LOGO_URL = () =>
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     flexDirection: "row",
     justifyContent: "space-between",
-    /*rh*/
+    borderBottom: "1 solid #e5e7eb",
     paddingBottom: 6,
   },
   runningFooter: {
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     borderTop: "1 solid #e5e7eb",
     paddingTop: 6,
   },
-  header: { marginBottom: 28, paddingBottom: 14 },
+  header: { marginBottom: 28, borderBottom: "2 solid #2563eb", paddingBottom: 14 },
   date: { fontSize: 10, color: "#6b7280", marginBottom: 4 },
   title: { fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 6, lineHeight: 1.3 },
   author: { fontSize: 10, color: "#6b7280" },
@@ -77,8 +77,8 @@ const styles = StyleSheet.create({
   bulletDot: { width: 12 },
   bulletText: { flex: 1 },
   imageRow: { flexDirection: "row", flexWrap: "wrap", marginTop: 12 },
-  imageBox: { width: 120, marginRight: 9, marginBottom: 10 },
-  image: { width: 120, height: 115, backgroundColor: "#f3f4f6" },
+  imageBox: { width: "23.5%", marginRight: "2%", marginBottom: 10 },
+  image: { width: "100%", height: 115, objectFit: "cover", backgroundColor: "#f3f4f6", borderRadius: 6 },
   imageCaption: { fontSize: 9, color: "#4b5563", marginTop: 3, textAlign: "center" },
 });
 
@@ -160,12 +160,15 @@ function ReportPdfDocument({
         />
         <View fixed style={styles.runningFooter}>
           <Text>Par {report.author_name}</Text>
-          <Text
-            render={({ pageNumber, totalPages }) =>
-              `${pageNumber} / ${totalPages}`
-            }
-          />
+          {(report as any).__parts ? null : (
+            <Text
+              render={({ pageNumber, totalPages }) =>
+                `${pageNumber} / ${totalPages}`
+              }
+            />
+          )}
         </View>
+        {(report as any).__continuation ? null : (
         <View style={styles.header}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <Image src={REPORT_LOGO_URL()} style={{ width: 70, height: 60, objectFit: "contain" }} />
@@ -174,6 +177,7 @@ function ReportPdfDocument({
           <Text style={styles.title}>{report.title}</Text>
           <Text style={styles.author}>Par {report.author_name}</Text>
         </View>
+        )}
 
 
         {report.intro && (
@@ -336,9 +340,63 @@ export async function generateReportPdfBlob(
     return await pdf(<BudgetPdfDocument report={report} />).toBlob();
   }
   const prepared = await inlineReportImages(report);
-  return await pdf(
-    <ReportPdfDocument report={prepared} approvals={approvals} />,
-  ).toBlob();
+  try {
+    return await pdf(<ReportPdfDocument report={prepared} approvals={approvals} />).toBlob();
+  } catch (e) {
+    // Very long reports can trip a page-layout bug in the PDF engine.
+    // Fallback: render the report in smaller parts and join them into one file.
+    if (prepared.sections.length < 2) throw e;
+    return await generateInParts(prepared, approvals);
+  }
+}
+
+async function generateInParts(report: LoadedReport, approvals?: ApprovalEntry[]): Promise<Blob> {
+  const parts: LoadedReport[] = [];
+  const sizes = [6, 4, 2, 1];
+  const renderPart = async (r: LoadedReport) =>
+    new Uint8Array(await (await pdf(<ReportPdfDocument report={r} approvals={approvals} />).toBlob()).arrayBuffer());
+  const out = await PDFDocument.create();
+  const n = report.sections.length;
+  let i = 0;
+  while (i < n) {
+    let done = false;
+    for (const size of sizes) {
+      const end = Math.min(n, i + size);
+      const part: LoadedReport = {
+        ...report,
+        intro: i === 0 ? report.intro : "",
+        sections: report.sections.slice(i, end),
+        conclusion: end === n ? report.conclusion : "",
+        general_images: end === n ? report.general_images : [],
+        general_attachments: end === n ? report.general_attachments : [],
+        signature: end === n ? report.signature : null,
+        __continuation: i > 0,
+        __parts: true,
+      } as any;
+      try {
+        const bytes = await renderPart(part);
+        const doc = await PDFDocument.load(bytes);
+        const pages = await out.copyPages(doc, doc.getPageIndices());
+        pages.forEach((p) => out.addPage(p));
+        parts.push(part);
+        i = end;
+        done = true;
+        break;
+      } catch (err) {
+        if (size === 1) throw err;
+      }
+    }
+    if (!done) break;
+  }
+  // Page numbers across the whole merged file, matching the normal footer position.
+  const font = await out.embedFont(StandardFonts.Helvetica);
+  const all = out.getPages();
+  all.forEach((page, idx) => {
+    const label = `${idx + 1} / ${all.length}`;
+    const { width } = page.getSize();
+    page.drawText(label, { x: width - 44 - font.widthOfTextAtSize(label, 9), y: 24 + 4, size: 9, font, color: rgb(0.61, 0.64, 0.69) });
+  });
+  return new Blob([(await out.save()) as BlobPart], { type: "application/pdf" });
 }
 
 export async function downloadReportPdf(

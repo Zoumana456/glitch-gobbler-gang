@@ -139,6 +139,9 @@ export type ReportListItem = {
   kind?: ReportKind;
   doc_type?: DocType;
   doc_number?: string | null;
+  /** Set only on combined reports (week, month, two months…). */
+  period_start?: string | null;
+  period_end?: string | null;
 };
 
 

@@ -134,7 +134,7 @@ export const listReports = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("reports")
-      .select("id, author_id, report_date, title, intro, created_at, doc_type, doc_number")
+      .select("id, author_id, report_date, title, intro, created_at, doc_type, doc_number, period_start, period_end")
       .order("report_date", { ascending: false })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -160,6 +160,8 @@ export const listReports = createServerFn({ method: "GET" })
       created_at: r.created_at,
       doc_type: (r.doc_type ?? "report") as any,
       doc_number: r.doc_number ?? null,
+      period_start: r.period_start ?? null,
+      period_end: r.period_end ?? null,
     }));
 
   });
