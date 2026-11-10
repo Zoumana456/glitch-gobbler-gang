@@ -34,15 +34,14 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
 
 function geminiModel(m?: string): string {
   const name = (m ?? DEFAULT_MODEL).replace(/^google\//, "");
-  if (name.includes("pro")) return "gemini-pro-latest";
-  return "gemini-flash-latest";
+  return name.includes("pro") ? "gemini-3.1-pro-preview" : "gemini-3.5-flash";
 }
 
 function geminiChain(m?: string): string[] {
   const first = geminiModel(m);
   const rest = first.includes("pro")
-    ? ["gemini-3.1-pro-preview", "gemini-flash-latest", "gemini-3-flash-preview", "gemini-3.1-flash-lite"]
-    : ["gemini-3-flash-preview", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
+    ? ["gemini-3.5-flash", "gemini-3.5-flash-lite"]
+    : ["gemini-3.5-flash-lite", "gemini-3-flash-preview"];
   return [first, ...rest];
 }
 
@@ -73,13 +72,15 @@ async function callGemini(opts: AICallOpts, key: string): Promise<string> {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify(body),
-    });
+      signal: AbortSignal.timeout(90_000),
+    }).catch((e) => { last = String((e as Error).message); return null; });
+    if (!res) continue;
     if (res.ok) {
       const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
       return json.choices?.[0]?.message?.content ?? "";
     }
     last = `${res.status} ${(await res.text().catch(() => "")).slice(0, 240)}`;
-    if (![404, 429, 500, 503].includes(res.status)) break;
+    if (![404, 408, 429, 500, 502, 503, 504].includes(res.status)) break;
   }
   throw new Error(`Gemini a échoué (${last})`);
 }
